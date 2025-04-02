@@ -1,4 +1,4 @@
-# FinOps360 Cost Analysis Configuration
+# FinOps360 Cost Analysis Configuration - Quarter Analysis Example
 
 # Data sources and paths
 data:
@@ -8,8 +8,8 @@ data:
 # Analysis settings
 analysis:
   # Time period configuration
-  period_type: month  # Options: month, quarter, week, year
-  period_value: Mar   # Month name, quarter (Q1-Q4), week number, or year
+  period_type: quarter  # Options: month, quarter, week, year
+  period_value: Q1      # Quarter (Q1-Q4)
   year: 2024
   
   # Grouping configuration
@@ -25,6 +25,6 @@ analysis:
 report:
   generate_html: true
   export_csv: true
-  page_title: FinOps360 Cost Analysis Report
+  page_title: FinOps360 Quarterly Cost Analysis
   company_name: FinOps360
   logo_path: ""

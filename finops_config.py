@@ -9,7 +9,8 @@ class FinOpsConfig:
     """Configuration settings for FinOps analysis."""
     file_path: str
     output_dir: str
-    month: str
+    period_type: str
+    period_value: str
     year: str
     parent_grouping: str
     parent_grouping_value: str
@@ -21,6 +22,45 @@ class FinOpsConfig:
     page_title: str
     company_name: str
     logo_path: str
+    
+    def validate(self):
+        """Validate configuration settings."""
+        # Validate period type
+        valid_period_types = ['month', 'quarter', 'week', 'year']
+        if self.period_type not in valid_period_types:
+            raise ValueError(f"Invalid period_type: {self.period_type}. Must be one of {valid_period_types}")
+        
+        # Validate period value based on type
+        if self.period_type == 'month':
+            valid_months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            if self.period_value not in valid_months:
+                raise ValueError(f"Invalid month: {self.period_value}. Must be one of {valid_months}")
+        
+        elif self.period_type == 'quarter':
+            valid_quarters = ['Q1', 'Q2', 'Q3', 'Q4']
+            if self.period_value not in valid_quarters:
+                raise ValueError(f"Invalid quarter: {self.period_value}. Must be one of {valid_quarters}")
+        
+        elif self.period_type == 'week':
+            try:
+                week_num = int(self.period_value)
+                if week_num < 1 or week_num > 53:
+                    raise ValueError(f"Invalid week number: {self.period_value}. Must be between 1 and 53")
+            except ValueError:
+                raise ValueError(f"Invalid week number: {self.period_value}. Must be an integer between 1 and 53")
+        
+        elif self.period_type == 'year':
+            try:
+                year = int(self.period_value)
+                if year < 2000 or year > 2100:
+                    raise ValueError(f"Invalid year: {self.period_value}. Must be between 2000 and 2100")
+            except ValueError:
+                raise ValueError(f"Invalid year: {self.period_value}. Must be a valid year (e.g., 2023)")
+        
+        # Validate parent grouping
+        valid_groupings = ['ORG', 'TR_PRODUCT', 'ENV', 'Cloud']
+        if self.parent_grouping not in valid_groupings:
+            raise ValueError(f"Invalid parent_grouping: {self.parent_grouping}. Must be one of {valid_groupings}")
 
 
 def load_config(config_path="config.yaml"):
@@ -28,11 +68,12 @@ def load_config(config_path="config.yaml"):
     with open(config_path, 'r') as f:
         config_data = yaml.safe_load(f)
     
-    return FinOpsConfig(
+    config = FinOpsConfig(
         file_path=config_data['data']['file_path'],
         output_dir=config_data['data']['output_dir'],
-        month=config_data['analysis']['month'],
-        year=config_data['analysis']['year'],
+        period_type=config_data['analysis']['period_type'],
+        period_value=str(config_data['analysis']['period_value']),
+        year=str(config_data['analysis']['year']),
         parent_grouping=config_data['analysis']['parent_grouping'],
         parent_grouping_value=config_data['analysis']['parent_grouping_value'],
         child_grouping=config_data['analysis']['child_grouping'],
@@ -44,9 +85,16 @@ def load_config(config_path="config.yaml"):
         company_name=config_data['report']['company_name'],
         logo_path=config_data['report']['logo_path']
     )
+    
+    # Validate configuration
+    config.validate()
+    
+    return config
 
 
 def get_output_filename(config, extension="html"):
     """Generate output filename with timestamp."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return f"{config.output_dir}/finops_report_{config.month}_{config.year}_{timestamp}.{extension}"
+    period_info = f"{config.period_type}_{config.period_value}_{config.year}"
+    
+    return f"{config.output_dir}/finops_report_{period_info}_{timestamp}.{extension}"

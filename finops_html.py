@@ -20,7 +20,7 @@ def format_change(value):
     return f"{prefix}{format_currency(value)}"
 
 
-def generate_html_report(config, analysis_results, current_month, previous_month, current_year, previous_year):
+def generate_html_report(config, analysis_results, current_period_display, previous_period_display):
     """Generate HTML report from analysis results."""
     
     # Create directory if it doesn't exist
@@ -61,6 +61,14 @@ def generate_html_report(config, analysis_results, current_month, previous_month
         'net_change': format_change(analysis_results['net_change']),
         'percent_change': format_percent(analysis_results['percent_change'])
     }
+    
+    # Get period type name for display
+    period_type_display = {
+        'month': 'Month',
+        'quarter': 'Quarter',
+        'week': 'Week',
+        'year': 'Year'
+    }.get(config.period_type.lower(), 'Period')
     
     # Generate HTML using Jinja2 template
     html_template = """
@@ -170,7 +178,7 @@ def generate_html_report(config, analysis_results, current_month, previous_month
     </header>
     
     <p class="report-subtitle">
-        Comparing {{ current_month }} {{ current_year }} with {{ previous_month }} {{ previous_year }} 
+        Comparing {{ current_period }} with {{ previous_period }} 
         for {{ parent_grouping }}: {{ parent_grouping_value }}
     </p>
     
@@ -178,7 +186,7 @@ def generate_html_report(config, analysis_results, current_month, previous_month
         <div class="summary-title">Summary</div>
         <div class="summary-grid">
             <div class="summary-item">
-                <span class="summary-label">Previous Month Spend:</span>
+                <span class="summary-label">Previous {{ period_type }} Spend:</span>
                 <div class="summary-value">{{ summary.previous_spend }}</div>
             </div>
             <div class="summary-item">
@@ -190,7 +198,7 @@ def generate_html_report(config, analysis_results, current_month, previous_month
                 <div class="summary-value positive">{{ summary.investments }}</div>
             </div>
             <div class="summary-item">
-                <span class="summary-label">Current Month Spend:</span>
+                <span class="summary-label">Current {{ period_type }} Spend:</span>
                 <div class="summary-value">{{ summary.current_spend }}</div>
             </div>
             <div class="summary-item">
@@ -223,6 +231,11 @@ def generate_html_report(config, analysis_results, current_month, previous_month
                 <td>{{ item.percent_change }}</td>
             </tr>
             {% endfor %}
+            {% if investments|length == 0 %}
+            <tr>
+                <td colspan="5" style="text-align: center;">No significant investments found in this period</td>
+            </tr>
+            {% endif %}
         </tbody>
     </table>
     
@@ -247,6 +260,11 @@ def generate_html_report(config, analysis_results, current_month, previous_month
                 <td>{{ item.percent_change }}</td>
             </tr>
             {% endfor %}
+            {% if efficiencies|length == 0 %}
+            <tr>
+                <td colspan="5" style="text-align: center;">No significant efficiencies found in this period</td>
+            </tr>
+            {% endif %}
         </tbody>
     </table>
     
@@ -266,10 +284,9 @@ def generate_html_report(config, analysis_results, current_month, previous_month
         parent_grouping_value=config.parent_grouping_value,
         child_grouping=config.child_grouping,
         top_n=config.top_n,
-        current_month=current_month,
-        previous_month=previous_month,
-        current_year=current_year,
-        previous_year=previous_year,
+        current_period=current_period_display,
+        previous_period=previous_period_display,
+        period_type=period_type_display,
         summary=summary,
         investments=investments_data,
         efficiencies=efficiencies_data,
@@ -277,12 +294,17 @@ def generate_html_report(config, analysis_results, current_month, previous_month
     )
     
     # Write to file
-    output_filename = os.path.join(
-        config.output_dir, 
-        f"finops_report_{config.month}_{config.year}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
-    )
+    output_filename = get_output_filename(config)
     
     with open(output_filename, 'w') as f:
         f.write(rendered_html)
     
     return output_filename
+
+
+def get_output_filename(config):
+    """Generate output filename with timestamp."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    period_info = f"{config.period_type}_{config.period_value}_{config.year}"
+    
+    return f"{config.output_dir}/finops_report_{period_info}_{timestamp}.html"
