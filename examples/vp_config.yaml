@@ -1,4 +1,4 @@
-# FinOps360 Cost Analysis Configuration
+# FinOps360 Cost Analysis Configuration - VP Grouping Example
 
 # Data sources and paths
 data:
@@ -9,14 +9,14 @@ data:
 analysis:
   # Time period configuration
   period_type: month  # Options: month, quarter, week, year
-  period_value: Mar   # Month name, quarter (Q1-Q4), week number, or year
+  period_value: Mar   # Month name (Jan, Feb, Mar, etc.)
   year: 2024
   
   # Grouping configuration
-  parent_grouping: ORG  # Can be any column in dataset: ORG, TR_PRODUCT, ENV, Cloud, VP, PILLAR, etc.
-  parent_grouping_value: Starling  # Default value for the parent grouping
+  parent_grouping: VP  # Using VP as parent grouping
+  parent_grouping_value: Bob  # VP name
   
-  # Child grouping for detailed analysis (Application_Name or any other column)
+  # Child grouping for detailed analysis
   child_grouping: Application_Name
   top_n: 10
   include_applications: true
@@ -25,6 +25,6 @@ analysis:
 report:
   generate_html: true
   export_csv: true
-  page_title: FinOps360 Cost Analysis Report
+  page_title: FinOps360 VP Cost Analysis
   company_name: FinOps360
   logo_path: ""

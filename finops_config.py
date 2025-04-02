@@ -1,5 +1,6 @@
 import yaml
 import os
+import pandas as pd
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -23,7 +24,7 @@ class FinOpsConfig:
     company_name: str
     logo_path: str
     
-    def validate(self):
+    def validate(self, df=None):
         """Validate configuration settings."""
         # Validate period type
         valid_period_types = ['month', 'quarter', 'week', 'year']
@@ -57,10 +58,19 @@ class FinOpsConfig:
             except ValueError:
                 raise ValueError(f"Invalid year: {self.period_value}. Must be a valid year (e.g., 2023)")
         
-        # Validate parent grouping
-        valid_groupings = ['ORG', 'TR_PRODUCT', 'ENV', 'Cloud']
-        if self.parent_grouping not in valid_groupings:
-            raise ValueError(f"Invalid parent_grouping: {self.parent_grouping}. Must be one of {valid_groupings}")
+        # Validate grouping columns if dataframe is provided
+        if df is not None:
+            # Check parent grouping
+            if self.parent_grouping not in df.columns:
+                raise ValueError(f"Invalid parent_grouping: '{self.parent_grouping}'. Must be a column in the dataset. Available columns: {list(df.columns)}")
+            
+            # Check child grouping
+            if self.child_grouping not in df.columns:
+                raise ValueError(f"Invalid child_grouping: '{self.child_grouping}'. Must be a column in the dataset. Available columns: {list(df.columns)}")
+            
+            # Check if parent_grouping_value exists in the dataset
+            if self.parent_grouping_value and self.parent_grouping_value not in df[self.parent_grouping].unique():
+                raise ValueError(f"Invalid parent_grouping_value: '{self.parent_grouping_value}'. Must be a value in the {self.parent_grouping} column. Available values: {list(df[self.parent_grouping].unique())}")
 
 
 def load_config(config_path="config.yaml"):
@@ -92,9 +102,15 @@ def load_config(config_path="config.yaml"):
     return config
 
 
+def validate_config_with_data(config, df):
+    """Validate configuration with actual data."""
+    config.validate(df)
+    
+
 def get_output_filename(config, extension="html"):
     """Generate output filename with timestamp."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     period_info = f"{config.period_type}_{config.period_value}_{config.year}"
+    parent_info = f"{config.parent_grouping}_{config.parent_grouping_value}".replace(" ", "_")
     
-    return f"{config.output_dir}/finops_report_{period_info}_{timestamp}.{extension}"
+    return f"{config.output_dir}/finops_report_{period_info}_{parent_info}_{timestamp}.{extension}"

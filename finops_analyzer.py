@@ -3,8 +3,7 @@
 FinOps360 Cost Analysis Tool
 ----------------------------
 Analyzes cloud cost data and generates reports based on config.yaml settings.
-Supports different time period comparisons: month-to-month, quarter-to-quarter, 
-week-to-week, and year-to-year.
+Supports different time period comparisons and flexible grouping options.
 """
 
 import os
@@ -14,7 +13,7 @@ import pandas as pd
 from datetime import datetime
 
 # Import local modules
-from finops_config import load_config, get_output_filename
+from finops_config import load_config, validate_config_with_data, get_output_filename
 from finops_data import (
     load_data, 
     get_period_data, 
@@ -33,6 +32,31 @@ def parse_arguments():
         default="config.yaml",
         help="Path to configuration file (default: config.yaml)"
     )
+    parser.add_argument(
+        "--parent-group",
+        help="Override parent_grouping in config (e.g. VP, PILLAR, ORG)"
+    )
+    parser.add_argument(
+        "--parent-value",
+        help="Override parent_grouping_value in config"
+    )
+    parser.add_argument(
+        "--child-group",
+        default="Application_Name",
+        help="Override child_grouping in config"
+    )
+    parser.add_argument(
+        "--period",
+        help="Override period_type in config (month, quarter, week, year)"
+    )
+    parser.add_argument(
+        "--period-value",
+        help="Override period_value in config"
+    )
+    parser.add_argument(
+        "--year",
+        help="Override year in config"
+    )
     return parser.parse_args()
 
 
@@ -45,12 +69,30 @@ def main():
         # Load configuration
         config = load_config(args.config)
         
+        # Override config with command line arguments if provided
+        if args.parent_group:
+            config.parent_grouping = args.parent_group
+        if args.parent_value:
+            config.parent_grouping_value = args.parent_value
+        if args.child_group:
+            config.child_grouping = args.child_group
+        if args.period:
+            config.period_type = args.period
+        if args.period_value:
+            config.period_value = args.period_value
+        if args.year:
+            config.year = args.year
+        
         # Create output directory if it doesn't exist
         os.makedirs(config.output_dir, exist_ok=True)
         
         # Load and preprocess data
         print(f"Loading data from {config.file_path}...")
         df = load_data(config.file_path)
+        
+        # Validate configuration with the actual data
+        print("Validating configuration...")
+        validate_config_with_data(config, df)
         
         # Get current period data
         current_period_type = config.period_type
@@ -63,7 +105,7 @@ def main():
             current_year
         )
         
-        print(f"Analyzing data for {current_period_display}...")
+        print(f"Analyzing data for {current_period_display}, grouping by {config.parent_grouping}: {config.parent_grouping_value}...")
         
         current_df = get_period_data(
             df, 
@@ -119,15 +161,15 @@ def main():
             print(f"HTML report generated: {output_file}")
         
         # Print summary to console
-        print("\n" + "="*60)
+        print("\n" + "="*70)
         print(f"FinOps360 Summary for {config.parent_grouping}: {config.parent_grouping_value}")
-        print("="*60)
+        print("="*70)
         print(f"Previous {current_period_type.capitalize()} ({previous_period_display}): ${analysis_results['total_previous']:,.2f}")
         print(f"Current {current_period_type.capitalize()} ({current_period_display}): ${analysis_results['total_current']:,.2f}")
         print(f"Efficiencies (Cost Reduction): ${analysis_results['efficiencies']:,.2f}")
         print(f"Investments (Cost Increase): +${analysis_results['investments']:,.2f}")
         print(f"Net Change: ${analysis_results['net_change']:,.2f} ({analysis_results['percent_change']:.2f}%)")
-        print("="*60)
+        print("="*70)
         
         print("\nAnalysis completed successfully!")
         return 0
