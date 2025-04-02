@@ -1,0 +1,26 @@
+# FinOps360 Cost Analysis Configuration
+
+# Data sources and paths
+data:
+  file_path: data/finops_data.csv
+  output_dir: output
+
+# Analysis settings
+analysis:
+  month: Mar
+  year: 2024
+  # Parent grouping configuration
+  parent_grouping: ORG  # Can be ORG, TR_PRODUCT, ENV, or Cloud
+  parent_grouping_value: Starling  # Default value for the parent grouping
+  # Child grouping for detailed analysis (always Application_Name)
+  child_grouping: Application_Name
+  top_n: 10
+  include_applications: true
+
+# Report settings
+report:
+  generate_html: true
+  export_csv: true
+  page_title: FinOps360 Cost Analysis Report
+  company_name: FinOps360
+  logo_path: ""
