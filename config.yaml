@@ -1,4 +1,4 @@
-# FinOps360 Cost Analysis Configuration
+# Cloud Spend Management Configuration
 
 # Data sources and paths
 data:
@@ -25,6 +25,6 @@ analysis:
 report:
   generate_html: true
   export_csv: true
-  page_title: FinOps360 Cost Analysis Report
-  company_name: FinOps360
+  page_title: Cloud Spend Management Report
+  company_name: Cloud Strategy
   logo_path: ""

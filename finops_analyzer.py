@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-FinOps360 Cost Analysis Tool
-----------------------------
+Cloud Spend Management Tool
+---------------------------
 Analyzes cloud cost data and generates reports based on config.yaml settings.
 Supports different time period comparisons and flexible grouping options.
 """
@@ -26,7 +26,7 @@ from finops_html import generate_html_report
 
 def parse_arguments():
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description="FinOps360 Cost Analysis Tool")
+    parser = argparse.ArgumentParser(description="Cloud Spend Management Tool")
     parser.add_argument(
         "--config", 
         default="config.yaml",
@@ -42,7 +42,6 @@ def parse_arguments():
     )
     parser.add_argument(
         "--child-group",
-        default="Application_Name",
         help="Override child_grouping in config"
     )
     parser.add_argument(
@@ -61,7 +60,7 @@ def parse_arguments():
 
 
 def main():
-    """Main entry point for the FinOps Analyzer."""
+    """Main entry point for the Analyzer."""
     try:
         # Parse command line arguments
         args = parse_arguments()
@@ -162,7 +161,7 @@ def main():
         
         # Print summary to console
         print("\n" + "="*70)
-        print(f"FinOps360 Summary for {config.parent_grouping}: {config.parent_grouping_value}")
+        print(f"Cloud Spend Summary for {config.parent_grouping}: {config.parent_grouping_value}")
         print("="*70)
         print(f"Previous {current_period_type.capitalize()} ({previous_period_display}): ${analysis_results['total_previous']:,.2f}")
         print(f"Current {current_period_type.capitalize()} ({current_period_display}): ${analysis_results['total_current']:,.2f}")

@@ -77,199 +77,240 @@ def generate_html_report(config, analysis_results, current_period_display, previ
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page_title }}</title>
+    <title>Cloud Spend Management Report</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.5;
             color: #333;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            font-size: 14px;
+            background-color: #f9f9f9;
         }
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #0066cc;
             padding-bottom: 10px;
         }
+        .header-title {
+            color: #0066cc;
+            font-size: 22px;
+            font-weight: 600;
+        }
+        .company-name {
+            font-size: 18px;
+            color: #555;
+        }
         .summary-box {
-            background-color: #f5f5f5;
-            border-radius: 5px;
+            background-color: #ffffff;
+            border-radius: 8px;
             padding: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
         .summary-title {
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 18px;
+            font-weight: 600;
             margin-bottom: 15px;
+            color: #0066cc;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
         }
         .summary-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 15px;
         }
         .summary-item {
             margin-bottom: 10px;
         }
         .summary-label {
-            font-weight: bold;
+            font-weight: 500;
             display: block;
+            color: #555;
+            font-size: 13px;
         }
         .summary-value {
-            font-size: 24px;
-            color: #004085;
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+        }
+        .period-info {
+            font-weight: bold;
+            color: #0066cc;
         }
         .positive {
-            color: #28a745;
+            color: #2e7d32;
         }
         .negative {
-            color: #dc3545;
+            color: #c62828;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            overflow: hidden;
         }
         th, td {
-            padding: 12px 15px;
+            padding: 10px 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #eee;
         }
         th {
-            background-color: #f2f2f2;
-            font-weight: bold;
+            background-color: #f2f7ff;
+            font-weight: 600;
+            color: #0066cc;
+            font-size: 13px;
+        }
+        tr:last-child td {
+            border-bottom: none;
         }
         tr:hover {
-            background-color: #f5f5f5;
+            background-color: #f5f9ff;
         }
         .section-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin: 30px 0 15px;
-            border-bottom: 2px solid #004085;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 25px 0 15px;
+            color: #0066cc;
+            border-bottom: 2px solid #e0e0e0;
             padding-bottom: 5px;
         }
         .report-subtitle {
-            color: #666;
+            color: #555;
             margin-bottom: 20px;
+            font-size: 15px;
+            background-color: #f2f7ff;
+            padding: 10px 15px;
+            border-radius: 4px;
+            border-left: 4px solid #0066cc;
         }
         footer {
-            margin-top: 50px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-            color: #666;
-            font-size: 14px;
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            color: #777;
+            font-size: 12px;
+            text-align: center;
+        }
+        .empty-table-msg {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            font-style: italic;
+        }
+        .cost-column {
+            text-align: right;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>{{ page_title }}</h1>
-        <div>
-            {% if logo_path %}
-            <img src="{{ logo_path }}" alt="{{ company_name }} Logo" height="50">
-            {% else %}
-            <h2>{{ company_name }}</h2>
-            {% endif %}
-        </div>
+        <div class="header-title">Cloud Spend Management Report</div>
+        <div class="company-name">{{ company_name }} | Cloud Strategy Team</div>
     </header>
     
-    <p class="report-subtitle">
-        Comparing {{ current_period }} with {{ previous_period }} 
-        for {{ parent_grouping }}: {{ parent_grouping_value }}
-    </p>
+    <div class="report-subtitle">
+        <strong>{{ period_type }} Report:</strong> {{ current_period }} compared to {{ previous_period }}<br>
+        <strong>{{ parent_grouping }}:</strong> {{ parent_grouping_value }}
+    </div>
     
     <div class="summary-box">
-        <div class="summary-title">Summary</div>
+        <div class="summary-title">Executive Summary</div>
         <div class="summary-grid">
             <div class="summary-item">
-                <span class="summary-label">Previous {{ period_type }} Spend:</span>
+                <span class="summary-label">Previous {{ period_type }} Spend</span>
                 <div class="summary-value">{{ summary.previous_spend }}</div>
             </div>
             <div class="summary-item">
-                <span class="summary-label">Efficiencies (Cost Reduction):</span>
-                <div class="summary-value negative">{{ summary.efficiencies }}</div>
-            </div>
-            <div class="summary-item">
-                <span class="summary-label">Investments (Cost Increase):</span>
-                <div class="summary-value positive">{{ summary.investments }}</div>
-            </div>
-            <div class="summary-item">
-                <span class="summary-label">Current {{ period_type }} Spend:</span>
+                <span class="summary-label">Current {{ period_type }} Spend</span>
                 <div class="summary-value">{{ summary.current_spend }}</div>
             </div>
             <div class="summary-item">
-                <span class="summary-label">Net Change:</span>
+                <span class="summary-label">Net Change</span>
                 <div class="summary-value {% if summary.net_change.startswith('+') %}positive{% else %}negative{% endif %}">
                     {{ summary.net_change }} ({{ summary.percent_change }})
                 </div>
             </div>
+            <div class="summary-item">
+                <span class="summary-label">Cost Reduction (Efficiencies)</span>
+                <div class="summary-value negative">{{ summary.efficiencies }}</div>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Cost Increase (Investments)</span>
+                <div class="summary-value positive">{{ summary.investments }}</div>
+            </div>
         </div>
     </div>
     
-    <div class="section-title">Top {{ top_n }} Investments ({{ child_grouping }})</div>
+    <div class="section-title">Top {{ top_n }} Investments by {{ child_grouping }}</div>
     <table>
         <thead>
             <tr>
                 <th>{{ child_grouping }}</th>
-                <th>Previous Cost</th>
-                <th>Current Cost</th>
-                <th>Change</th>
-                <th>% Change</th>
+                <th class="cost-column">Previous Cost</th>
+                <th class="cost-column">Current Cost</th>
+                <th class="cost-column">Change</th>
+                <th class="cost-column">% Change</th>
             </tr>
         </thead>
         <tbody>
             {% for item in investments %}
             <tr>
                 <td>{{ item.name }}</td>
-                <td>{{ item.previous_cost }}</td>
-                <td>{{ item.current_cost }}</td>
-                <td class="positive">{{ item.change }}</td>
-                <td>{{ item.percent_change }}</td>
+                <td class="cost-column">{{ item.previous_cost }}</td>
+                <td class="cost-column">{{ item.current_cost }}</td>
+                <td class="cost-column positive">{{ item.change }}</td>
+                <td class="cost-column">{{ item.percent_change }}</td>
             </tr>
             {% endfor %}
             {% if investments|length == 0 %}
             <tr>
-                <td colspan="5" style="text-align: center;">No significant investments found in this period</td>
+                <td colspan="5" class="empty-table-msg">No significant investments found in this period</td>
             </tr>
             {% endif %}
         </tbody>
     </table>
     
-    <div class="section-title">Top {{ top_n }} Efficiencies ({{ child_grouping }})</div>
+    <div class="section-title">Top {{ top_n }} Efficiencies by {{ child_grouping }}</div>
     <table>
         <thead>
             <tr>
                 <th>{{ child_grouping }}</th>
-                <th>Previous Cost</th>
-                <th>Current Cost</th>
-                <th>Change</th>
-                <th>% Change</th>
+                <th class="cost-column">Previous Cost</th>
+                <th class="cost-column">Current Cost</th>
+                <th class="cost-column">Change</th>
+                <th class="cost-column">% Change</th>
             </tr>
         </thead>
         <tbody>
             {% for item in efficiencies %}
             <tr>
                 <td>{{ item.name }}</td>
-                <td>{{ item.previous_cost }}</td>
-                <td>{{ item.current_cost }}</td>
-                <td class="negative">{{ item.change }}</td>
-                <td>{{ item.percent_change }}</td>
+                <td class="cost-column">{{ item.previous_cost }}</td>
+                <td class="cost-column">{{ item.current_cost }}</td>
+                <td class="cost-column negative">{{ item.change }}</td>
+                <td class="cost-column">{{ item.percent_change }}</td>
             </tr>
             {% endfor %}
             {% if efficiencies|length == 0 %}
             <tr>
-                <td colspan="5" style="text-align: center;">No significant efficiencies found in this period</td>
+                <td colspan="5" class="empty-table-msg">No significant efficiencies found in this period</td>
             </tr>
             {% endif %}
         </tbody>
     </table>
     
     <footer>
-        Generated on {{ timestamp }} | {{ company_name }} FinOps Report
+        Generated on {{ timestamp }} | Cloud Strategy Team
     </footer>
 </body>
 </html>
@@ -277,9 +318,7 @@ def generate_html_report(config, analysis_results, current_period_display, previ
     
     template = Template(html_template)
     rendered_html = template.render(
-        page_title=config.page_title,
         company_name=config.company_name,
-        logo_path=config.logo_path,
         parent_grouping=config.parent_grouping,
         parent_grouping_value=config.parent_grouping_value,
         child_grouping=config.child_grouping,
@@ -293,8 +332,8 @@ def generate_html_report(config, analysis_results, current_period_display, previ
         timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
     
-    # Write to file
-    output_filename = get_output_filename(config)
+    # Generate a more descriptive filename
+    output_filename = get_output_filename(config, current_period_display)
     
     with open(output_filename, 'w') as f:
         f.write(rendered_html)
@@ -302,9 +341,15 @@ def generate_html_report(config, analysis_results, current_period_display, previ
     return output_filename
 
 
-def get_output_filename(config):
-    """Generate output filename with timestamp."""
+def get_output_filename(config, current_period_display):
+    """Generate output filename with descriptive naming."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    period_info = f"{config.period_type}_{config.period_value}_{config.year}"
     
-    return f"{config.output_dir}/finops_report_{period_info}_{timestamp}.html"
+    # Format the parent grouping in a readable way
+    parent_info = f"{config.parent_grouping}_{config.parent_grouping_value}".replace(" ", "_")
+    
+    # Create a clean period info string
+    period_info = f"{config.period_type}_{current_period_display}".replace(" ", "_")
+    
+    # Generate final filename
+    return f"{config.output_dir}/cloud_spend_report_{parent_info}_{period_info}_{timestamp}.html"

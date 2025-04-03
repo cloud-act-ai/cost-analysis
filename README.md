@@ -1,6 +1,6 @@
-# FinOps360 Cost Analysis Tool
+# Cloud Spend Management Tool
 
-A modular Python application for analyzing cloud cost data and generating FinOps reports to identify efficiencies and investments.
+A modular Python application for analyzing cloud cost data and generating reports to identify efficiencies and investments.
 
 ## Features
 
@@ -10,8 +10,10 @@ A modular Python application for analyzing cloud cost data and generating FinOps
   - Week-to-week
   - Year-to-year
 
-- **Grouping Options**: Analyze costs by:
+- **Versatile Grouping Options**: Analyze costs by:
   - Organization (ORG)
+  - Vice President (VP)
+  - Business Pillar (PILLAR)
   - Product (TR_PRODUCT)
   - Environment (ENV)
   - Cloud provider (Cloud)
@@ -24,8 +26,8 @@ A modular Python application for analyzing cloud cost data and generating FinOps
   - Top N investments and efficiencies
 
 - **Report Generation**:
-  - Interactive HTML reports
-  - Export options for data
+  - Responsive HTML reports
+  - Easy CSV export option
 
 ## Installation
 
@@ -40,6 +42,11 @@ cd cost-analysis
 pip install -r requirements.txt
 ```
 
+3. Initialize the environment:
+```
+python init.py
+```
+
 ## Usage
 
 ### Basic Usage
@@ -50,15 +57,34 @@ Run the analyzer with the default configuration:
 python finops_analyzer.py
 ```
 
-### Custom Configuration
+### Custom Grouping
 
-Run with a custom configuration file:
+Analyze by different grouping columns:
 
 ```
-python finops_analyzer.py --config examples/quarter_config.yaml
+python finops_analyzer.py --parent-group VP --parent-value Bob
+python finops_analyzer.py --parent-group PILLAR --parent-value Retail
 ```
 
-### Configuration Options
+### Different Time Periods
+
+Analyze by different time periods:
+
+```
+python finops_analyzer.py --period quarter --period-value Q1
+python finops_analyzer.py --period week --period-value 11
+```
+
+### Example Configurations
+
+Use one of the predefined configurations:
+
+```
+python finops_analyzer.py --config examples/vp_config.yaml
+python finops_analyzer.py --config examples/pillar_config.yaml
+```
+
+## Configuration Options
 
 Edit `config.yaml` to customize analysis parameters:
 
@@ -69,18 +95,9 @@ period_value: Mar   # Month name, quarter (Q1-Q4), week number, or year
 year: 2024
   
 # Grouping configuration
-parent_grouping: ORG  # Can be ORG, TR_PRODUCT, ENV, or Cloud
-parent_grouping_value: Starling  # Default value for the parent grouping
+parent_grouping: VP  # Can be any column in your dataset
+parent_grouping_value: Bob  # Value for the parent grouping
 ```
-
-## Example Configurations
-
-The `examples/` directory contains sample configurations for different analysis types:
-
-- `month_config.yaml` - Month-to-month analysis
-- `quarter_config.yaml` - Quarter-to-quarter analysis
-- `week_config.yaml` - Week-to-week analysis
-- `year_config.yaml` - Year-to-year analysis
 
 ## Data Format
 
@@ -93,6 +110,8 @@ The expected CSV format includes the following columns:
 - FY - Fiscal year
 - TR_PRODUCT - Product name
 - ORG - Organization name
+- VP - Vice President
+- PILLAR - Business pillar/department
 - Application_Name - Application identifier
 - Cloud - Cloud provider name
 - Env - Environment (e.g., Prod, Dev, Stage)
@@ -104,16 +123,18 @@ The expected CSV format includes the following columns:
 - `finops_config.py` - Configuration management
 - `finops_data.py` - Data processing and analysis
 - `finops_html.py` - HTML report generation
+- `init.py` - Environment initialization
 - `config.yaml` - Default configuration file
 - `examples/` - Example configuration files
 - `output/` - Generated reports
 - `data/` - Input data files
+- `docs/` - Documentation files
 
 ## Example Output
 
 The HTML report includes:
 
-- Summary metrics with previous and current period spend
-- Efficiencies and investments summary
+- Executive summary with key metrics
+- Period and grouping information
 - Top investments table by application
 - Top efficiencies table by application
