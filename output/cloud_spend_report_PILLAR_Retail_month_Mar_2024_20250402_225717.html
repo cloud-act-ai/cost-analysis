@@ -1,105 +1,4 @@
-import pandas as pd
-import os
-from jinja2 import Template
-from datetime import datetime
 
-
-def format_currency(value):
-    """Format numeric value as currency."""
-    return f"${value:,.2f}"
-
-
-def format_percent(value, include_sign=True):
-    """Format numeric value as percentage with optional sign."""
-    if include_sign and value > 0:
-        return f"+{value:.2f}%"
-    return f"{value:.2f}%"
-
-
-def format_change(value):
-    """Format change value with sign."""
-    prefix = '+' if value > 0 else ''
-    return f"{prefix}{format_currency(value)}"
-
-
-def generate_html_report(config, analysis_results, current_period_display, previous_period_display):
-    """Generate HTML report from analysis results."""
-    
-    # Create directory if it doesn't exist
-    os.makedirs(config.output_dir, exist_ok=True)
-    
-    # Prepare data for template
-    top_investments = analysis_results['top_investments']
-    top_efficiencies = analysis_results['top_efficiencies']
-    
-    # Format investment data for HTML table
-    investments_data = []
-    for _, row in top_investments.iterrows():
-        investments_data.append({
-            'name': row[config.child_grouping],
-            'previous_cost': format_currency(row['Total_Cost_previous']),
-            'current_cost': format_currency(row['Total_Cost_current']),
-            'change': format_change(row['Change']),
-            'percent_change': format_percent(row['Percent_Change'], True),
-            'percent_value': row['Percent_Change']  # Raw value for conditional styling
-        })
-    
-    # Format efficiency data for HTML table
-    efficiencies_data = []
-    for _, row in top_efficiencies.iterrows():
-        efficiencies_data.append({
-            'name': row[config.child_grouping],
-            'previous_cost': format_currency(row['Total_Cost_previous']),
-            'current_cost': format_currency(row['Total_Cost_current']),
-            'change': format_change(row['Change']),
-            'percent_change': format_percent(abs(row['Percent_Change']), False),
-            'percent_value': row['Percent_Change']  # Raw value for conditional styling
-        })
-    
-    # Format summary data
-    summary = {
-        'previous_spend': format_currency(analysis_results['total_previous']),
-        'current_spend': format_currency(analysis_results['total_current']),
-        'efficiencies': format_change(analysis_results['efficiencies']),
-        'investments': format_change(analysis_results['investments']),
-        'net_change': format_change(analysis_results['net_change']),
-        'percent_change': format_percent(analysis_results['percent_change']),
-        'raw_net_change': analysis_results['net_change']
-    }
-    
-    # Get period type name for display
-    period_type_display = {
-        'month': 'Month',
-        'quarter': 'Quarter',
-        'week': 'Week',
-        'year': 'Year'
-    }.get(config.period_type.lower(), 'Period')
-    
-    # Get some insights from the data
-    has_investments = len(investments_data) > 0
-    has_efficiencies = len(efficiencies_data) > 0
-    top_investment = investments_data[0] if has_investments else None
-    top_efficiency = efficiencies_data[0] if has_efficiencies else None
-    
-    # Determine the message based on data
-    insight_message = ""
-    if analysis_results['net_change'] > 0:
-        if has_investments and has_efficiencies:
-            insight_message = f"Overall spending has increased by {summary['percent_change']}. Investigate top investments like <strong>{top_investment['name']}</strong> while leveraging successful cost-saving efforts in <strong>{top_efficiency['name']}</strong>."
-        elif has_investments:
-            insight_message = f"Spending increased by {summary['percent_change']}, primarily driven by <strong>{top_investment['name']}</strong>. Focus on identifying cost optimization opportunities."
-        else:
-            insight_message = f"Spending increased by {summary['percent_change']}. Review new applications or services to identify optimization targets."
-    else:
-        if has_efficiencies and has_investments:
-            insight_message = f"Great job! Overall spending decreased by {format_percent(abs(analysis_results['percent_change']))} despite some investments. Cost saving efforts in <strong>{top_efficiency['name']}</strong> significantly contributed to this reduction."
-        elif has_efficiencies:
-            insight_message = f"Excellent! Spending reduced by {format_percent(abs(analysis_results['percent_change']))}. The largest savings came from <strong>{top_efficiency['name']}</strong>."
-        else:
-            insight_message = f"Spending decreased by {format_percent(abs(analysis_results['percent_change']))}. Continue monitoring for any service impact."
-    
-    # Generate HTML using Jinja2 template
-    html_template = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -424,12 +323,12 @@ def generate_html_report(config, analysis_results, current_period_display, previ
 <body>
     <header>
         <div class="header-title">Cloud Spend Management Report</div>
-        <div class="company-name">{{ company_name }} | FinOps Strategy</div>
+        <div class="company-name">FinOps360 | FinOps Strategy</div>
     </header>
     
     <div class="report-subtitle">
-        <strong>{{ period_type }} Report:</strong> {{ current_period }} compared to {{ previous_period }}<br>
-        <strong>{{ parent_grouping }}:</strong> {{ parent_grouping_value }}
+        <strong>Month Report:</strong> Mar 2024 compared to Feb 2024<br>
+        <strong>PILLAR:</strong> Retail
     </div>
     
     <div class="insight-box">
@@ -441,38 +340,36 @@ def generate_html_report(config, analysis_results, current_period_display, previ
             </svg>
             Key Insight
         </div>
-        {{ insight_message }}
+        Overall spending has increased by +9.44%. Investigate top investments like <strong>inventory</strong> while leveraging successful cost-saving efforts in <strong>riskengine</strong>.
     </div>
     
     <div class="summary-box">
         <div class="summary-title">Executive Summary</div>
         <div class="summary-grid">
             <div class="summary-item">
-                <span class="summary-label">{{ previous_period }} Spend</span>
-                <div class="summary-value">{{ summary.previous_spend }}</div>
+                <span class="summary-label">Feb 2024 Spend</span>
+                <div class="summary-value">$1,200,298.42</div>
             </div>
             <div class="summary-item">
-                <span class="summary-label">{{ current_period }} Spend</span>
-                <div class="summary-value">{{ summary.current_spend }}</div>
+                <span class="summary-label">Mar 2024 Spend</span>
+                <div class="summary-value">$1,313,579.25</div>
             </div>
             <div class="summary-item">
                 <span class="summary-label">Net Change</span>
-                <div class="summary-value {% if summary.raw_net_change > 0 %}positive{% else %}negative{% endif %}">
-                    {% if summary.raw_net_change > 0 %}
+                <div class="summary-value positive">
+                    
                     <span class="trend-icon trend-up"></span>
-                    {% else %}
-                    <span class="trend-icon trend-down"></span>
-                    {% endif %}
-                    {{ summary.net_change }} ({{ summary.percent_change }})
+                    
+                    +$113,280.83 (+9.44%)
                 </div>
             </div>
             <div class="summary-item">
                 <span class="summary-label">Cost Reduction (Efficiencies)</span>
-                <div class="summary-value negative">{{ summary.efficiencies }}</div>
+                <div class="summary-value negative">$-129,536.08</div>
             </div>
             <div class="summary-item">
                 <span class="summary-label">Cost Increase (Investments)</span>
-                <div class="summary-value positive">{{ summary.investments }}</div>
+                <div class="summary-value positive">+$242,816.91</div>
             </div>
         </div>
     </div>
@@ -481,12 +378,12 @@ def generate_html_report(config, analysis_results, current_period_display, previ
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 22V2M12 2L6 8M12 2L18 8" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        Top {{ top_n }} Investments by {{ child_grouping }}
+        Top 10 Investments by Application_Name
     </div>
     <table>
         <thead>
             <tr>
-                <th>{{ child_grouping }}</th>
+                <th>Application_Name</th>
                 <th class="cost-column">Previous Cost</th>
                 <th class="cost-column">Current Cost</th>
                 <th class="cost-column">Change</th>
@@ -494,22 +391,38 @@ def generate_html_report(config, analysis_results, current_period_display, previ
             </tr>
         </thead>
         <tbody>
-            {% for item in investments %}
+            
             <tr>
-                <td>{{ item.name }}</td>
-                <td class="cost-column">{{ item.previous_cost }}</td>
-                <td class="cost-column">{{ item.current_cost }}</td>
-                <td class="cost-column positive">{{ item.change }}</td>
+                <td>inventory</td>
+                <td class="cost-column">$147,216.12</td>
+                <td class="cost-column">$301,611.00</td>
+                <td class="cost-column positive">+$154,394.88</td>
                 <td class="cost-column positive">
-                    <span class="badge badge-positive">{{ item.percent_change }}</span>
+                    <span class="badge badge-positive">+104.88%</span>
                 </td>
             </tr>
-            {% endfor %}
-            {% if investments|length == 0 %}
+            
             <tr>
-                <td colspan="5" class="empty-table-msg">No significant investments found in this period</td>
+                <td>sales</td>
+                <td class="cost-column">$210,253.51</td>
+                <td class="cost-column">$287,273.31</td>
+                <td class="cost-column positive">+$77,019.79</td>
+                <td class="cost-column positive">
+                    <span class="badge badge-positive">+36.63%</span>
+                </td>
             </tr>
-            {% endif %}
+            
+            <tr>
+                <td>checkout</td>
+                <td class="cost-column">$272,846.13</td>
+                <td class="cost-column">$284,248.36</td>
+                <td class="cost-column positive">+$11,402.23</td>
+                <td class="cost-column positive">
+                    <span class="badge badge-positive">+4.18%</span>
+                </td>
+            </tr>
+            
+            
         </tbody>
     </table>
     
@@ -517,12 +430,12 @@ def generate_html_report(config, analysis_results, current_period_display, previ
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2V22M12 22L6 16M12 22L18 16" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        Top {{ top_n }} Efficiencies by {{ child_grouping }}
+        Top 10 Efficiencies by Application_Name
     </div>
     <table>
         <thead>
             <tr>
-                <th>{{ child_grouping }}</th>
+                <th>Application_Name</th>
                 <th class="cost-column">Previous Cost</th>
                 <th class="cost-column">Current Cost</th>
                 <th class="cost-column">Change</th>
@@ -530,67 +443,34 @@ def generate_html_report(config, analysis_results, current_period_display, previ
             </tr>
         </thead>
         <tbody>
-            {% for item in efficiencies %}
+            
             <tr>
-                <td>{{ item.name }}</td>
-                <td class="cost-column">{{ item.previous_cost }}</td>
-                <td class="cost-column">{{ item.current_cost }}</td>
-                <td class="cost-column negative">{{ item.change }}</td>
+                <td>riskengine</td>
+                <td class="cost-column">$291,703.37</td>
+                <td class="cost-column">$187,299.41</td>
+                <td class="cost-column negative">$-104,403.96</td>
                 <td class="cost-column negative">
-                    <span class="badge badge-negative">-{{ item.percent_change }}</span>
+                    <span class="badge badge-negative">-35.79%</span>
                 </td>
             </tr>
-            {% endfor %}
-            {% if efficiencies|length == 0 %}
+            
             <tr>
-                <td colspan="5" class="empty-table-msg">No significant efficiencies found in this period</td>
+                <td>reporting</td>
+                <td class="cost-column">$278,279.29</td>
+                <td class="cost-column">$253,147.17</td>
+                <td class="cost-column negative">$-25,132.12</td>
+                <td class="cost-column negative">
+                    <span class="badge badge-negative">-9.03%</span>
+                </td>
             </tr>
-            {% endif %}
+            
+            
         </tbody>
     </table>
     
     <footer>
-        Generated on {{ timestamp }} | FinOps Strategy
+        Generated on 2025-04-02 22:57:17 | FinOps Strategy
     </footer>
 </body>
 </html>
-    """
     
-    template = Template(html_template)
-    rendered_html = template.render(
-        company_name=config.company_name,
-        parent_grouping=config.parent_grouping,
-        parent_grouping_value=config.parent_grouping_value,
-        child_grouping=config.child_grouping,
-        top_n=config.top_n,
-        current_period=current_period_display,
-        previous_period=previous_period_display,
-        period_type=period_type_display,
-        summary=summary,
-        investments=investments_data,
-        efficiencies=efficiencies_data,
-        insight_message=insight_message,
-        timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    )
-    
-    # Generate a more descriptive filename
-    output_filename = get_output_filename(config, current_period_display)
-    
-    with open(output_filename, 'w') as f:
-        f.write(rendered_html)
-    
-    return output_filename
-
-
-def get_output_filename(config, current_period_display):
-    """Generate output filename with descriptive naming."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    # Format the parent grouping in a readable way
-    parent_info = f"{config.parent_grouping}_{config.parent_grouping_value}".replace(" ", "_")
-    
-    # Create a clean period info string
-    period_info = f"{config.period_type}_{current_period_display}".replace(" ", "_")
-    
-    # Generate final filename
-    return f"{config.output_dir}/cloud_spend_report_{parent_info}_{period_info}_{timestamp}.html"
