@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Spend Management Report</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.5;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            font-size: 14px;
+            background-color: #f9f9f9;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #0066cc;
+            padding-bottom: 10px;
+        }
+        .header-title {
+            color: #0066cc;
+            font-size: 22px;
+            font-weight: 600;
+        }
+        .company-name {
+            font-size: 18px;
+            color: #555;
+        }
+        .summary-box {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .summary-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #0066cc;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        .summary-item {
+            margin-bottom: 10px;
+        }
+        .summary-label {
+            font-weight: 500;
+            display: block;
+            color: #555;
+            font-size: 13px;
+        }
+        .summary-value {
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+        }
+        .period-info {
+            font-weight: bold;
+            color: #0066cc;
+        }
+        .positive {
+            color: #c62828 !important;  /* Red for cost increases */
+        }
+        .negative {
+            color: #2e7d32 !important;  /* Green for cost decreases */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background-color: #f2f7ff;
+            font-weight: 600;
+            color: #0066cc;
+            font-size: 13px;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover {
+            background-color: #f5f9ff;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 25px 0 15px;
+            color: #0066cc;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+        .report-subtitle {
+            color: #555;
+            margin-bottom: 20px;
+            font-size: 15px;
+            background-color: #f2f7ff;
+            padding: 10px 15px;
+            border-radius: 4px;
+            border-left: 4px solid #0066cc;
+        }
+        footer {
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            color: #777;
+            font-size: 12px;
+            text-align: center;
+        }
+        .empty-table-msg {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            font-style: italic;
+        }
+        .cost-column {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title">Cloud Spend Management Report</div>
+        <div class="company-name">FinOps | FinOps Strategy</div>
+    </header>
+    
+    <div class="report-subtitle">
+        <strong>Month Report:</strong> Mar 2024 compared to Feb 2024<br>
+        <strong>VP:</strong> Bob
+    </div>
+    
+    <div class="summary-box">
+        <div class="summary-title">Executive Summary</div>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <span class="summary-label">Feb 2024 Spend</span>
+                <div class="summary-value">$1,171,366.94</div>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Mar 2024 Spend</span>
+                <div class="summary-value">$1,350,268.09</div>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Net Change</span>
+                <div class="summary-value positive">
+                    +$178,901.14 (+15.27%)
+                </div>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Cost Reduction (Efficiencies)</span>
+                <div class="summary-value negative">$-54,550.84</div>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Cost Increase (Investments)</span>
+                <div class="summary-value positive">+$233,451.98</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="section-title">Top 10 Investments by Application_Name</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Application_Name</th>
+                <th class="cost-column">Previous Cost</th>
+                <th class="cost-column">Current Cost</th>
+                <th class="cost-column">Change</th>
+                <th class="cost-column">% Change</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+            <tr>
+                <td>reporting</td>
+                <td class="cost-column">$271,229.21</td>
+                <td class="cost-column">$367,287.33</td>
+                <td class="cost-column positive">+$96,058.12</td>
+                <td class="cost-column positive">+35.42%</td>
+            </tr>
+            
+            <tr>
+                <td>inventory</td>
+                <td class="cost-column">$221,654.74</td>
+                <td class="cost-column">$300,638.85</td>
+                <td class="cost-column positive">+$78,984.11</td>
+                <td class="cost-column positive">+35.63%</td>
+            </tr>
+            
+            <tr>
+                <td>checkout</td>
+                <td class="cost-column">$202,909.35</td>
+                <td class="cost-column">$261,319.10</td>
+                <td class="cost-column positive">+$58,409.75</td>
+                <td class="cost-column positive">+28.79%</td>
+            </tr>
+            
+            
+        </tbody>
+    </table>
+    
+    <div class="section-title">Top 10 Efficiencies by Application_Name</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Application_Name</th>
+                <th class="cost-column">Previous Cost</th>
+                <th class="cost-column">Current Cost</th>
+                <th class="cost-column">Change</th>
+                <th class="cost-column">% Change</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+            <tr>
+                <td>sales</td>
+                <td class="cost-column">$268,923.92</td>
+                <td class="cost-column">$227,091.47</td>
+                <td class="cost-column negative">$-41,832.46</td>
+                <td class="cost-column negative">-15.56%</td>
+            </tr>
+            
+            <tr>
+                <td>riskengine</td>
+                <td class="cost-column">$206,649.73</td>
+                <td class="cost-column">$193,931.35</td>
+                <td class="cost-column negative">$-12,718.38</td>
+                <td class="cost-column negative">-6.15%</td>
+            </tr>
+            
+            
+        </tbody>
+    </table>
+    
+    <footer>
+        Generated on 2025-04-02 22:48:21 | FinOps Strategy
+    </footer>
+</body>
+</html>
+    

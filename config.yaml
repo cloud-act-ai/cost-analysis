@@ -26,5 +26,5 @@ report:
   generate_html: true
   export_csv: true
   page_title: Cloud Spend Management Report
-  company_name: Cloud Strategy
+  company_name: FinOps
   logo_path: ""

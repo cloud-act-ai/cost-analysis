@@ -9,8 +9,10 @@ def format_currency(value):
     return f"${value:,.2f}"
 
 
-def format_percent(value):
-    """Format numeric value as percentage."""
+def format_percent(value, include_sign=True):
+    """Format numeric value as percentage with optional sign."""
+    if include_sign and value > 0:
+        return f"+{value:.2f}%"
     return f"{value:.2f}%"
 
 
@@ -38,7 +40,8 @@ def generate_html_report(config, analysis_results, current_period_display, previ
             'previous_cost': format_currency(row['Total_Cost_previous']),
             'current_cost': format_currency(row['Total_Cost_current']),
             'change': format_change(row['Change']),
-            'percent_change': format_percent(abs(row['Percent_Change']))
+            'percent_change': format_percent(row['Percent_Change'], True),
+            'percent_value': row['Percent_Change']  # Raw value for conditional styling
         })
     
     # Format efficiency data for HTML table
@@ -49,7 +52,8 @@ def generate_html_report(config, analysis_results, current_period_display, previ
             'previous_cost': format_currency(row['Total_Cost_previous']),
             'current_cost': format_currency(row['Total_Cost_current']),
             'change': format_change(row['Change']),
-            'percent_change': format_percent(abs(row['Percent_Change']))
+            'percent_change': format_percent(abs(row['Percent_Change']), False),
+            'percent_value': row['Percent_Change']  # Raw value for conditional styling
         })
     
     # Format summary data
@@ -145,10 +149,10 @@ def generate_html_report(config, analysis_results, current_period_display, previ
             color: #0066cc;
         }
         .positive {
-            color: #2e7d32;
+            color: #c62828 !important;  /* Red for cost increases */
         }
         .negative {
-            color: #c62828;
+            color: #2e7d32 !important;  /* Green for cost decreases */
         }
         table {
             width: 100%;
@@ -215,7 +219,7 @@ def generate_html_report(config, analysis_results, current_period_display, previ
 <body>
     <header>
         <div class="header-title">Cloud Spend Management Report</div>
-        <div class="company-name">{{ company_name }} | Cloud Strategy Team</div>
+        <div class="company-name">{{ company_name }} | FinOps Strategy</div>
     </header>
     
     <div class="report-subtitle">
@@ -227,11 +231,11 @@ def generate_html_report(config, analysis_results, current_period_display, previ
         <div class="summary-title">Executive Summary</div>
         <div class="summary-grid">
             <div class="summary-item">
-                <span class="summary-label">Previous {{ period_type }} Spend</span>
+                <span class="summary-label">{{ previous_period }} Spend</span>
                 <div class="summary-value">{{ summary.previous_spend }}</div>
             </div>
             <div class="summary-item">
-                <span class="summary-label">Current {{ period_type }} Spend</span>
+                <span class="summary-label">{{ current_period }} Spend</span>
                 <div class="summary-value">{{ summary.current_spend }}</div>
             </div>
             <div class="summary-item">
@@ -269,7 +273,7 @@ def generate_html_report(config, analysis_results, current_period_display, previ
                 <td class="cost-column">{{ item.previous_cost }}</td>
                 <td class="cost-column">{{ item.current_cost }}</td>
                 <td class="cost-column positive">{{ item.change }}</td>
-                <td class="cost-column">{{ item.percent_change }}</td>
+                <td class="cost-column positive">{{ item.percent_change }}</td>
             </tr>
             {% endfor %}
             {% if investments|length == 0 %}
@@ -298,7 +302,7 @@ def generate_html_report(config, analysis_results, current_period_display, previ
                 <td class="cost-column">{{ item.previous_cost }}</td>
                 <td class="cost-column">{{ item.current_cost }}</td>
                 <td class="cost-column negative">{{ item.change }}</td>
-                <td class="cost-column">{{ item.percent_change }}</td>
+                <td class="cost-column negative">-{{ item.percent_change }}</td>
             </tr>
             {% endfor %}
             {% if efficiencies|length == 0 %}
@@ -310,7 +314,7 @@ def generate_html_report(config, analysis_results, current_period_display, previ
     </table>
     
     <footer>
-        Generated on {{ timestamp }} | Cloud Strategy Team
+        Generated on {{ timestamp }} | FinOps Strategy
     </footer>
 </body>
 </html>
