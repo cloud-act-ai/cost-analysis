@@ -7,7 +7,7 @@ def generate_random_date_2024():
     Returns a random date in 2024 as M/D/YY format (e.g. 8/7/24).
     """
     # 2024 is a leap year, so there are 366 days
-    start = datetime.date(2024, 1, 1)
+    start = datetime.date(2023, 1, 1)
     end = datetime.date(2025, 4, 30)
     delta = end - start
     random_day = random.randrange(delta.days + 1)
