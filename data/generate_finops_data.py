@@ -49,7 +49,7 @@ def get_month_name(month):
     """
     return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][month - 1]
 
-def generate_finops_data(num_rows=10000):
+def generate_finops_data(num_rows=100000):
     """
     Generate a list of dictionaries, each containing
     the columns specified for FinOps data.
@@ -76,6 +76,7 @@ def generate_finops_data(num_rows=10000):
     applications = ["checkout", "sales", "reporting", "inventory", "riskengine"]
     clouds = ["AWS", "Azure", "GCP"]
     envs = ["Prod", "Stage", "Dev"]
+    FYS=["2024", "2025", "2023"]
     
     data_rows = []
 
@@ -90,7 +91,7 @@ def generate_finops_data(num_rows=10000):
         row["WM_WEEK"] = get_wm_week(date_str)         # e.g. "Week 01"
         row["QTR"] = get_quarter(month_num)            # e.g. "Q1"
         row["Month"] = get_month_name(month_num)       # e.g. "Aug"
-        row["FY"] = "2024"                             # or you can randomize the fiscal year
+        row["FY"] = random.choice(FYS)                             # or you can randomize the fiscal year
         row["TR_PRODUCT"] = random.choice(tr_products)
         row["ORG"] = random.choice(orgs)
         row["Org_AD"] = random.choice(org_ads)
@@ -125,5 +126,5 @@ def write_csv(filename="finops_data.csv", num_rows=10000):
             writer.writerow(row)
 
 if __name__ == "__main__":
-    write_csv("finops_data.csv", 10000)
+    write_csv("finops_data.csv", 100000)
     print("CSV file 'finops_data.csv' with 10,000 rows has been generated!")
