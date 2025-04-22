@@ -1,0 +1,92 @@
+2025-04-15 07:53:34,566 - Embeddings initialized successfully.
+2025-04-15 07:53:34,616 - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-04-15 07:53:34,616 - Qdrant client initialized successfully.
+2025-04-15 07:53:34,616 - Connected to Qdrant vector store.
+2025-04-15 07:54:14,923 - HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-04-15 07:54:16,348 - Decision JSON: {
+      "use_filter": true,
+      "filter_key": "cloud",
+      "filter_value": null
+   }
+2025-04-15 07:54:51,053 - HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-04-15 07:54:52,367 - Decision JSON: {
+      "use_filter": true,
+      "filter_key": "cloud",
+      "filter_value": null
+   }
+2025-04-15 07:58:23,628 - Embeddings initialized successfully.
+2025-04-15 07:58:23,675 - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-04-15 07:58:23,675 - Qdrant client initialized successfully.
+2025-04-15 07:58:23,675 - Connected to Qdrant vector store.
+2025-04-15 07:58:38,709 - HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+2025-04-15 07:58:40,769 - Decision JSON: {
+      "use_filter": false,
+      "filter_key": "",
+      "filter_value": "",
+      "similarity_query": "SUM(cost)"
+   }
+2025-04-15 07:58:40,769 - Performing general similarity search.
+2025-04-15 07:58:40,769 - Qdrant Similarity Search Query: SUM(cost)
+2025-04-15 07:58:41,466 - HTTP Request: POST http://localhost:11434/api/embed "HTTP/1.1 200 OK"
+2025-04-15 07:58:41,534 - HTTP Request: POST http://localhost:6333/collections/finops_db/points/search "HTTP/1.1 200 OK"
+2025-04-15 07:58:41,536 - Qdrant Similarity Search Response: [Document(metadata={'cloud': 'Azure', 'service': 'Load Balancer', 'category': 'Networking', 'region': 'Global', 'cost': 11272.74, 'date': '2024-03', 'pillar': 'Cost Optimization', 'product_id': 'PROD-1193', 'app_name': 'Document Management', '_id': '7447cb6b-3c79-411f-81d9-678b2d9814f2', '_collection_name': 'finops_db'}, page_content='Cloud: Azure\nService: Load Balancer\nCategory: Networking\nRegion: Global\nCost: 11272.74\nDate: 2024-03\nPillar: Cost Optimization\nProduct ID: PROD-1193\nApplication: Document Management'), Document(metadata={'cloud': 'Azure', 'service': 'Load Balancer', 'category': 'Networking', 'region': 'Global', 'cost': 19908.42, 'date': '2023-06', 'pillar': 'Cost Optimization', 'product_id': 'PROD-9705', 'app_name': 'Document Management', '_id': '58862666-03d1-453c-b1c2-29bc6003c504', '_collection_name': 'finops_db'}, page_content='Cloud: Azure\nService: Load Balancer\nCategory: Networking\nRegion: Global\nCost: 19908.42\nDate: 2023-06\nPillar: Cost Optimization\nProduct ID: PROD-9705\nApplication: Document Management'), Document(metadata={'cloud': 'Azure', 'service': 'Load Balancer', 'category': 'Networking', 'region': 'Global', 'cost': 14377.37, 'date': '2023-01', 'pillar': 'Cost Optimization', 'product_id': 'PROD-5824', 'app_name': 'Document Management', '_id': 'c22e6027-4086-4cd6-968d-77e9c8fdbf24', '_collection_name': 'finops_db'}, page_content='Cloud: Azure\nService: Load Balancer\nCategory: Networking\nRegion: Global\nCost: 14377.37\nDate: 2023-01\nPillar: Cost Optimization\nProduct ID: PROD-5824\nApplication: Document Management'), Document(metadata={'cloud': 'Azure', 'service': 'Load Balancer', 'category': 'Networking', 'region': 'Global', 'cost': 12985.62, 'date': '2024-09', 'pillar': 'Cost Optimization', 'product_id': 'PROD-2849', 'app_name': 'User Authentication', '_id': 'b4764cf4-fea7-4199-91f2-763d9ed0cf79', '_collection_name': 'finops_db'}, page_content='Cloud: Azure\nService: Load Balancer\nCategory: Networking\nRegion: Global\nCost: 12985.62\nDate: 2024-09\nPillar: Cost Optimization\nProduct ID: PROD-2849\nApplication: User Authentication'), Document(metadata={'cloud': 'Azure', 'service': 'Load Balancer', 'category': 'Networking', 'region': 'Global', 'cost': 3521.24, 'date': '2023-08', 'pillar': 'Cost Optimization', 'product_id': 'PROD-5248', 'app_name': 'Document Management', '_id': 'c1d9262f-a283-47fd-a7ea-803f34a2900c', '_collection_name': 'finops_db'}, page_content='Cloud: Azure\nService: Load Balancer\nCategory: Networking\nRegion: Global\nCost: 3521.24\nDate: 2023-08\nPillar: Cost Optimization\nProduct ID: PROD-5248\nApplication: Document Management')]
+2025-04-15 07:58:41,537 - Generated Prompt for AI: 
+You are a FinOps assistant specializing in cloud cost analysis. You help users understand their cloud spending across different dimensions such as cloud providers, organizations, VPs, pillars, applications, and time periods.
+
+User Query: what sum of total Cloud cost  ?
+
+Relevant Information:
+- Cloud: Azure
+Service: Load Balancer
+Category: Networking
+Region: Global
+Cost: 11272.74
+Date: 2024-03
+Pillar: Cost Optimization
+Product ID: PROD-1193
+Application: Document Management
+- Cloud: Azure
+Service: Load Balancer
+Category: Networking
+Region: Global
+Cost: 19908.42
+Date: 2023-06
+Pillar: Cost Optimization
+Product ID: PROD-9705
+Application: Document Management
+- Cloud: Azure
+Service: Load Balancer
+Category: Networking
+Region: Global
+Cost: 14377.37
+Date: 2023-01
+Pillar: Cost Optimization
+Product ID: PROD-5824
+Application: Document Management
+- Cloud: Azure
+Service: Load Balancer
+Category: Networking
+Region: Global
+Cost: 12985.62
+Date: 2024-09
+Pillar: Cost Optimization
+Product ID: PROD-2849
+Application: User Authentication
+- Cloud: Azure
+Service: Load Balancer
+Category: Networking
+Region: Global
+Cost: 3521.24
+Date: 2023-08
+Pillar: Cost Optimization
+Product ID: PROD-5248
+Application: Document Management
+
+Based on the above details, provide a precise and relevant response that addresses the user's query. Focus on:
+1. Cost figures and trends
+2. Comparisons between different dimensions if applicable
+3. Highlighting significant spending areas or unusual patterns
+
+Use dollar amounts and percentages where appropriate. If the information provided doesn't directly answer the question, state that clearly without making assumptions or referencing unrelated information.
+
+2025-04-15 07:58:43,710 - HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"

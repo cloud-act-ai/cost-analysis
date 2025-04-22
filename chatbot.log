@@ -1,0 +1,5 @@
+2025-04-15 07:48:06,500 - Embeddings initialized successfully.
+2025-04-15 07:48:06,553 - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-04-15 07:48:06,553 - Qdrant client initialized successfully.
+2025-04-15 07:48:06,553 - Connected to Qdrant vector store.
+2025-04-15 07:48:06,553 - Error in main execution: EOF when reading a line
