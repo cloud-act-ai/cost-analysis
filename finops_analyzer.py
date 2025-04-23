@@ -1,177 +1,151 @@
 #!/usr/bin/env python3
 """
-Cloud Spend Management Tool
----------------------------
-Analyzes cloud cost data and generates reports based on config.yaml settings.
-Supports different time period comparisons and flexible grouping options.
+FinOps360 Analysis Tool
+-----------------------
+Main entry point for all FinOps analysis tools.
+Provides command-line interface to run various analysis modules.
 """
 
 import os
 import sys
 import argparse
-import pandas as pd
-from datetime import datetime
-
-# Import local modules
-from finops_config import load_config, validate_config_with_data, get_output_filename
-from finops_data import (
-    load_data, 
-    get_period_data, 
-    get_previous_period, 
-    get_period_display_name,
-    analyze_cost_changes
-)
-from finops_html import generate_html_report
-
 
 def parse_arguments():
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description="Cloud Spend Management Tool")
-    parser.add_argument(
+    parser = argparse.ArgumentParser(description="FinOps360 Analysis Tool")
+    
+    # Create subparsers for different analysis types
+    subparsers = parser.add_subparsers(dest="analysis_type", help="Type of analysis to run")
+    
+    # Cloud spend analysis
+    cloud_parser = subparsers.add_parser("cloud", help="Cloud spend analysis")
+    cloud_parser.add_argument(
         "--config", 
         default="config.yaml",
         help="Path to configuration file (default: config.yaml)"
     )
-    parser.add_argument(
+    cloud_parser.add_argument(
         "--parent-group",
-        help="Override parent_grouping in config (e.g. VP, PILLAR, ORG)"
+        help="Parent grouping (e.g. VP, PILLAR, ORG)"
     )
-    parser.add_argument(
+    cloud_parser.add_argument(
         "--parent-value",
-        help="Override parent_grouping_value in config"
+        help="Parent grouping value"
     )
-    parser.add_argument(
+    cloud_parser.add_argument(
         "--child-group",
-        help="Override child_grouping in config"
+        help="Child grouping for detailed analysis"
     )
-    parser.add_argument(
+    cloud_parser.add_argument(
         "--period",
-        help="Override period_type in config (month, quarter, week, year)"
+        help="Period type (month, quarter, week, year)"
     )
-    parser.add_argument(
+    cloud_parser.add_argument(
         "--period-value",
-        help="Override period_value in config"
+        help="Period value"
     )
-    parser.add_argument(
+    cloud_parser.add_argument(
         "--year",
-        help="Override year in config"
+        help="Year for analysis"
     )
+    
+    # Environment analysis
+    env_parser = subparsers.add_parser("environment", help="Environment (Prod vs Non-Prod) analysis")
+    env_parser.add_argument(
+        "--config", 
+        default="config.yaml",
+        help="Path to configuration file (default: config.yaml)"
+    )
+    env_parser.add_argument(
+        "--parent-group",
+        help="Parent grouping (e.g. VP, PILLAR, ORG)"
+    )
+    env_parser.add_argument(
+        "--parent-value",
+        help="Parent grouping value"
+    )
+    env_parser.add_argument(
+        "--nonprod-threshold",
+        default=20,
+        type=float,
+        help="Threshold percentage for high non-production costs (default: 20)"
+    )
+    env_parser.add_argument(
+        "--period",
+        help="Period type (month, quarter, week, year)"
+    )
+    env_parser.add_argument(
+        "--period-value",
+        help="Period value"
+    )
+    env_parser.add_argument(
+        "--year",
+        help="Year for analysis"
+    )
+    
     return parser.parse_args()
 
 
 def main():
-    """Main entry point for the Analyzer."""
+    """Main entry point for the FinOps Analyzer."""
     try:
         # Parse command line arguments
         args = parse_arguments()
         
-        # Load configuration
-        config = load_config(args.config)
-        
-        # Override config with command line arguments if provided
-        if args.parent_group:
-            config.parent_grouping = args.parent_group
-        if args.parent_value:
-            config.parent_grouping_value = args.parent_value
-        if args.child_group:
-            config.child_grouping = args.child_group
-        if args.period:
-            config.period_type = args.period
-        if args.period_value:
-            config.period_value = args.period_value
-        if args.year:
-            config.year = args.year
-        
-        # Create output directory if it doesn't exist
-        os.makedirs(config.output_dir, exist_ok=True)
-        
-        # Load and preprocess data
-        print(f"Loading data from {config.file_path}...")
-        df = load_data(config.file_path)
-        
-        # Validate configuration with the actual data
-        print("Validating configuration...")
-        validate_config_with_data(config, df)
-        
-        # Get current period data
-        current_period_type = config.period_type
-        current_period_value = config.period_value
-        current_year = config.year
-        
-        current_period_display = get_period_display_name(
-            current_period_type, 
-            current_period_value, 
-            current_year
-        )
-        
-        print(f"Analyzing data for {current_period_display}, grouping by {config.parent_grouping}: {config.parent_grouping_value}...")
-        
-        current_df = get_period_data(
-            df, 
-            current_period_type,
-            current_period_value, 
-            current_year, 
-            config.parent_grouping, 
-            config.parent_grouping_value
-        )
-        
-        # Get previous period data
-        previous_period_value, previous_year = get_previous_period(
-            current_period_type,
-            current_period_value, 
-            current_year
-        )
-        
-        previous_period_display = get_period_display_name(
-            current_period_type, 
-            previous_period_value, 
-            previous_year if previous_year else current_year
-        )
-        
-        print(f"Comparing with previous period: {previous_period_display}")
-        
-        previous_df = get_period_data(
-            df, 
-            current_period_type,
-            previous_period_value, 
-            previous_year if previous_year else current_year, 
-            config.parent_grouping, 
-            config.parent_grouping_value
-        )
-        
-        # Analyze cost changes
-        print("Analyzing cost changes...")
-        analysis_results = analyze_cost_changes(
-            current_df, 
-            previous_df, 
-            config.child_grouping, 
-            config.top_n
-        )
-        
-        # Generate HTML report if configured
-        if config.generate_html:
-            print("Generating HTML report...")
-            output_file = generate_html_report(
-                config, 
-                analysis_results, 
-                current_period_display, 
-                previous_period_display
-            )
-            print(f"HTML report generated: {output_file}")
-        
-        # Print summary to console
-        print("\n" + "="*70)
-        print(f"Cloud Spend Summary for {config.parent_grouping}: {config.parent_grouping_value}")
-        print("="*70)
-        print(f"Previous {current_period_type.capitalize()} ({previous_period_display}): ${analysis_results['total_previous']:,.2f}")
-        print(f"Current {current_period_type.capitalize()} ({current_period_display}): ${analysis_results['total_current']:,.2f}")
-        print(f"Efficiencies (Cost Reduction): ${analysis_results['efficiencies']:,.2f}")
-        print(f"Investments (Cost Increase): +${analysis_results['investments']:,.2f}")
-        print(f"Net Change: ${analysis_results['net_change']:,.2f} ({analysis_results['percent_change']:.2f}%)")
-        print("="*70)
-        
-        print("\nAnalysis completed successfully!")
-        return 0
+        if args.analysis_type == "cloud":
+            # Run cloud spend analysis
+            from cloud_analysis.finops_cloud_analyzer import main as cloud_main
+            cloud_args = [
+                "--config", args.config
+            ]
+            
+            # Add optional arguments if provided
+            if args.parent_group:
+                cloud_args.extend(["--parent-group", args.parent_group])
+            if args.parent_value:
+                cloud_args.extend(["--parent-value", args.parent_value])
+            if args.child_group:
+                cloud_args.extend(["--child-group", args.child_group])
+            if args.period:
+                cloud_args.extend(["--period", args.period])
+            if args.period_value:
+                cloud_args.extend(["--period-value", args.period_value])
+            if args.year:
+                cloud_args.extend(["--year", args.year])
+            
+            # Update sys.argv for the cloud analyzer
+            sys.argv = [sys.argv[0]] + cloud_args
+            return cloud_main()
+            
+        elif args.analysis_type == "environment":
+            # Run environment analysis
+            from env_analysis.finops_env_analyzer import main as env_main
+            env_args = [
+                "--config", args.config,
+                "--nonprod-threshold", str(args.nonprod_threshold)
+            ]
+            
+            # Add optional arguments if provided
+            if args.parent_group:
+                env_args.extend(["--parent-group", args.parent_group])
+            if args.parent_value:
+                env_args.extend(["--parent-value", args.parent_value])
+            if args.period:
+                env_args.extend(["--period", args.period])
+            if args.period_value:
+                env_args.extend(["--period-value", args.period_value])
+            if args.year:
+                env_args.extend(["--year", args.year])
+            
+            # Update sys.argv for the environment analyzer
+            sys.argv = [sys.argv[0]] + env_args
+            return env_main()
+            
+        else:
+            print("Please specify an analysis type (cloud or environment)")
+            print("Example: python finops_analyzer.py cloud --config config.yaml")
+            print("Example: python finops_analyzer.py environment --config config.yaml")
+            return 1
     
     except Exception as e:
         print(f"Error: {str(e)}", file=sys.stderr)

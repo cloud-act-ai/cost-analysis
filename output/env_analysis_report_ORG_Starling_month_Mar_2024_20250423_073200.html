@@ -1,0 +1,711 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environment Cost Analysis Report</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary-color: #1a73e8;
+            --primary-light: #e8f0fe;
+            --primary-dark: #0d47a1;
+            --green-color: #0f9d58;
+            --green-light: #e6f4ea;
+            --red-color: #d93025;
+            --red-light: #fce8e6;
+            --neutral-light: #f8f9fa;
+            --neutral-medium: #dadce0;
+            --neutral-dark: #5f6368;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --shadow-sm: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+            --shadow-md: 0 2px 6px rgba(60, 64, 67, 0.15), 0 1px 2px rgba(60, 64, 67, 0.3);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: var(--font-main);
+            line-height: 1.5;
+            color: var(--text-primary);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            font-size: 14px;
+            background-color: var(--neutral-light);
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 16px;
+        }
+        
+        .header-title {
+            color: var(--primary-color);
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .company-name {
+            font-size: 18px;
+            color: var(--text-secondary);
+            background-color: var(--primary-light);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+        }
+        
+        .report-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-size: 15px;
+            background-color: white;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .summary-box {
+            background-color: white;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .summary-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--neutral-medium);
+            padding-bottom: 12px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .summary-item {
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            background-color: var(--neutral-light);
+        }
+        
+        .summary-label {
+            font-weight: 500;
+            display: block;
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        
+        .summary-value {
+            font-size: 20px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-prod {
+            background-color: var(--green-light);
+            color: var(--green-color);
+        }
+        
+        .badge-nonprod {
+            background-color: var(--red-light);
+            color: var(--red-color);
+        }
+        
+        .badge-other {
+            background-color: var(--neutral-medium);
+            color: var(--neutral-dark);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 32px;
+            background-color: white;
+            box-shadow: var(--shadow-md);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--neutral-medium);
+        }
+        
+        th {
+            background-color: var(--primary-light);
+            font-weight: 600;
+            color: var(--primary-dark);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr:hover {
+            background-color: var(--neutral-light);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 32px 0 16px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title svg {
+            margin-right: 8px;
+        }
+        
+        footer {
+            margin-top: 48px;
+            padding-top: 16px;
+            border-top: 1px solid var(--neutral-medium);
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        .empty-table-msg {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        .cost-column {
+            text-align: right;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: var(--neutral-light);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            float: left;
+        }
+        
+        .progress-bar-prod {
+            background-color: var(--green-color);
+        }
+        
+        .progress-bar-nonprod {
+            background-color: var(--red-color);
+        }
+        
+        .progress-bar-other {
+            background-color: var(--neutral-dark);
+        }
+        
+        .percentage-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .percentage-item {
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .percentage-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .env-type-prod {
+            color: var(--green-color);
+        }
+        
+        .env-type-nonprod {
+            color: var(--red-color);
+        }
+        
+        .env-type-other {
+            color: var(--neutral-dark);
+        }
+        
+        .warning-row td {
+            background-color: var(--red-light);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title">Environment Cost Analysis Report</div>
+        <div class="company-name">FinOps | FinOps Strategy</div>
+    </header>
+    
+    <div class="report-subtitle">
+        <strong>Environment Analysis:</strong> Production vs. Non-Production Costs
+        
+        <br><strong>ORG:</strong> Starling
+        
+    </div>
+    
+    <div class="summary-box">
+        <div class="summary-title">Overall Environment Distribution</div>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <span class="summary-label">Total Cost</span>
+                <div class="summary-value">$3,714,949.52</div>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Production Cost</span>
+                <div class="summary-value env-type-prod">$1,202,404.45 (32.37%)</div>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Non-Production Cost</span>
+                <div class="summary-value env-type-nonprod">$2,512,545.08 (67.63%)</div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <div class="progress-bar-container">
+                <div class="progress-bar progress-bar-prod" style="width: 32.36664291081854%;"></div>
+                <div class="progress-bar progress-bar-nonprod" style="width: 67.63335708918147%;"></div>
+                
+            </div>
+            <div class="percentage-grid">
+                <div class="percentage-item">
+                    <div class="percentage-value env-type-prod">32.37%</div>
+                    <div>Production</div>
+                </div>
+                <div class="percentage-item">
+                    <div class="percentage-value env-type-nonprod">67.63%</div>
+                    <div>Non-Production</div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    
+    <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 3h18v18H3V3z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 9h18M9 3v18" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Environment Breakdown by Type
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Environment</th>
+                <th class="cost-column">Cost</th>
+                <th class="cost-column">Percentage</th>
+                <th>Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+            <tr>
+                <td>Dev</td>
+                <td class="cost-column">$1,342,524.81</td>
+                <td class="cost-column">36.14%</td>
+                <td>
+                    
+                    <span class="badge badge-nonprod">Non-Production</span>
+                    
+                </td>
+            </tr>
+            
+            <tr>
+                <td>Prod</td>
+                <td class="cost-column">$1,202,404.45</td>
+                <td class="cost-column">32.37%</td>
+                <td>
+                    
+                    <span class="badge badge-prod">Production</span>
+                    
+                </td>
+            </tr>
+            
+            <tr>
+                <td>Stage</td>
+                <td class="cost-column">$1,170,020.27</td>
+                <td class="cost-column">31.49%</td>
+                <td>
+                    
+                    <span class="badge badge-nonprod">Non-Production</span>
+                    
+                </td>
+            </tr>
+            
+            
+        </tbody>
+    </table>
+    
+    
+    <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 3L2 12h3v8h14v-8h3L12 3z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 21v-6h6v6" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Environment Distribution by Organization
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Organization</th>
+                <th class="cost-column">Total Cost</th>
+                <th>Prod/Non-Prod Split</th>
+                <th class="cost-column">Production %</th>
+                <th class="cost-column">Non-Production %</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+            <tr class="warning-row">
+                <td>Starling</td>
+                <td class="cost-column">$3,714,949.52</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 32.37%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 67.63%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">32.37%</td>
+                <td class="cost-column env-type-nonprod">67.63%</td>
+            </tr>
+            
+        </tbody>
+    </table>
+    
+    
+    
+    <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="8.5" cy="7" r="4" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M20 8v6m-3-3h6" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Environment Distribution by VP
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>VP</th>
+                <th class="cost-column">Total Cost</th>
+                <th>Prod/Non-Prod Split</th>
+                <th class="cost-column">Production %</th>
+                <th class="cost-column">Non-Production %</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+            <tr class="warning-row">
+                <td>Alice</td>
+                <td class="cost-column">$699,765.95</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 34.91%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 65.09%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">34.91%</td>
+                <td class="cost-column env-type-nonprod">65.09%</td>
+            </tr>
+            
+            <tr class="warning-row">
+                <td>Bob</td>
+                <td class="cost-column">$914,030.31</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 26.22%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 73.78%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">26.22%</td>
+                <td class="cost-column env-type-nonprod">73.78%</td>
+            </tr>
+            
+            <tr class="warning-row">
+                <td>Charlie</td>
+                <td class="cost-column">$781,586.49</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 33.24%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 66.76%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">33.24%</td>
+                <td class="cost-column env-type-nonprod">66.76%</td>
+            </tr>
+            
+            <tr class="warning-row">
+                <td>Diana</td>
+                <td class="cost-column">$633,290.99</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 36.70%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 63.30%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">36.70%</td>
+                <td class="cost-column env-type-nonprod">63.30%</td>
+            </tr>
+            
+            <tr class="warning-row">
+                <td>Emily</td>
+                <td class="cost-column">$686,275.78</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 32.97%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 67.03%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">32.97%</td>
+                <td class="cost-column env-type-nonprod">67.03%</td>
+            </tr>
+            
+        </tbody>
+    </table>
+    
+    
+    
+    <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 9h6m-6 6h6" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Environment Distribution by Pillar
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Pillar</th>
+                <th class="cost-column">Total Cost</th>
+                <th>Prod/Non-Prod Split</th>
+                <th class="cost-column">Production %</th>
+                <th class="cost-column">Non-Production %</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+            <tr class="warning-row">
+                <td>Engineering</td>
+                <td class="cost-column">$642,060.43</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 35.51%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 64.49%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">35.51%</td>
+                <td class="cost-column env-type-nonprod">64.49%</td>
+            </tr>
+            
+            <tr class="warning-row">
+                <td>Finance</td>
+                <td class="cost-column">$721,126.31</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 28.32%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 71.68%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">28.32%</td>
+                <td class="cost-column env-type-nonprod">71.68%</td>
+            </tr>
+            
+            <tr class="warning-row">
+                <td>Marketing</td>
+                <td class="cost-column">$704,356.75</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 27.76%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 72.24%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">27.76%</td>
+                <td class="cost-column env-type-nonprod">72.24%</td>
+            </tr>
+            
+            <tr class="warning-row">
+                <td>Operations</td>
+                <td class="cost-column">$815,281.36</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 36.40%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 63.60%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">36.40%</td>
+                <td class="cost-column env-type-nonprod">63.60%</td>
+            </tr>
+            
+            <tr class="warning-row">
+                <td>Retail</td>
+                <td class="cost-column">$832,124.67</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 33.40%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 66.60%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">33.40%</td>
+                <td class="cost-column env-type-nonprod">66.60%</td>
+            </tr>
+            
+        </tbody>
+    </table>
+    
+    
+    <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 9v2m0 4h.01m-6.99 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Applications with High Non-Production Costs (>= 20.0%)
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Application_Name</th>
+                <th class="cost-column">Total Cost</th>
+                <th>Prod/Non-Prod Split</th>
+                <th class="cost-column">Production %</th>
+                <th class="cost-column">Non-Production %</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+            <tr>
+                <td>reporting</td>
+                <td class="cost-column">$838,375.18</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 22.64%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 77.36%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">22.64%</td>
+                <td class="cost-column env-type-nonprod">77.36%</td>
+            </tr>
+            
+            <tr>
+                <td>checkout</td>
+                <td class="cost-column">$667,161.01</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 32.76%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 67.24%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">32.76%</td>
+                <td class="cost-column env-type-nonprod">67.24%</td>
+            </tr>
+            
+            <tr>
+                <td>riskengine</td>
+                <td class="cost-column">$736,571.78</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 34.36%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 65.64%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">34.36%</td>
+                <td class="cost-column env-type-nonprod">65.64%</td>
+            </tr>
+            
+            <tr>
+                <td>sales</td>
+                <td class="cost-column">$756,749.17</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 36.41%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 63.59%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">36.41%</td>
+                <td class="cost-column env-type-nonprod">63.59%</td>
+            </tr>
+            
+            <tr>
+                <td>inventory</td>
+                <td class="cost-column">$716,092.38</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 37.06%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 62.94%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">37.06%</td>
+                <td class="cost-column env-type-nonprod">62.94%</td>
+            </tr>
+            
+            
+        </tbody>
+    </table>
+    
+    <footer>
+        Generated on 2025-04-23 07:32:00 | FinOps Strategy
+    </footer>
+</body>
+</html>
+    

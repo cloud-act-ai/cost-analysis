@@ -20,6 +20,19 @@ analysis:
   child_grouping: Application_Name
   top_n: 10
   include_applications: true
+  
+  # Environment analysis settings (for Prod vs Non-Prod reporting)
+  nonprod_threshold: 20  # Percentage threshold for highlighting high non-prod costs
+  
+  # Display columns (optional, for customizing report columns)
+  display_columns:
+    - Application_Name
+    - ORG
+    - VP
+    - PILLAR
+    - Cloud
+    - Env
+    - Cost
 
 # Report settings
 report:
