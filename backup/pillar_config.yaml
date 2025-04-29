@@ -1,0 +1,30 @@
+# FinOps360 Cost Analysis Configuration - PILLAR Grouping Example
+
+# Data sources and paths
+data:
+  file_path: data/finops_data.csv
+  output_dir: output
+
+# Analysis settings
+analysis:
+  # Time period configuration
+  period_type: month  # Options: month, quarter, week, year
+  period_value: Mar   # Month name (Jan, Feb, Mar, etc.)
+  year: 2024
+  
+  # Grouping configuration
+  parent_grouping: PILLAR  # Using PILLAR as parent grouping
+  parent_grouping_value: Retail  # PILLAR name
+  
+  # Child grouping for detailed analysis
+  child_grouping: Application_Name
+  top_n: 10
+  include_applications: true
+
+# Report settings
+report:
+  generate_html: true
+  export_csv: true
+  page_title: FinOps360 PILLAR Cost Analysis
+  company_name: FinOps360
+  logo_path: ""

@@ -665,6 +665,45 @@ def generate_env_report_html(config, env_analysis, grouping_column="Application_
                 'raw_nonprod': row.get('Non-Production', 0)  # Raw value for conditional styling
             })
     
+    # Format groups by CTO (new schema)
+    by_cto_data = []
+    if 'by_cto' in env_analysis and not env_analysis['by_cto']['group_env_data'].empty:
+        for _, row in env_analysis['by_cto']['group_env_data'].iterrows():
+            by_cto_data.append({
+                'name': row['cto'],
+                'total_cost': format_currency(row['Total_Cost']),
+                'prod_percentage': format_percent(row.get('Production', 0), False),
+                'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
+                'other_percentage': format_percent(row.get('Other', 0), False),
+                'raw_nonprod': row.get('Non-Production', 0)  # Raw value for conditional styling
+            })
+    
+    # Format groups by Subpillar (new schema)
+    by_subpillar_data = []
+    if 'by_subpillar' in env_analysis and not env_analysis['by_subpillar']['group_env_data'].empty:
+        for _, row in env_analysis['by_subpillar']['group_env_data'].iterrows():
+            by_subpillar_data.append({
+                'name': row['tr_subpillar_name'],
+                'total_cost': format_currency(row['Total_Cost']),
+                'prod_percentage': format_percent(row.get('Production', 0), False),
+                'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
+                'other_percentage': format_percent(row.get('Other', 0), False),
+                'raw_nonprod': row.get('Non-Production', 0)  # Raw value for conditional styling
+            })
+    
+    # Format groups by Product (new schema)
+    by_product_data = []
+    if 'by_product' in env_analysis and not env_analysis['by_product']['group_env_data'].empty:
+        for _, row in env_analysis['by_product']['group_env_data'].iterrows():
+            by_product_data.append({
+                'name': row['tr_product'],
+                'total_cost': format_currency(row['Total_Cost']),
+                'prod_percentage': format_percent(row.get('Production', 0), False),
+                'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
+                'other_percentage': format_percent(row.get('Other', 0), False),
+                'raw_nonprod': row.get('Non-Production', 0)  # Raw value for conditional styling
+            })
+    
     # Generate HTML using Jinja2 template
     html_template = """
 <!DOCTYPE html>
@@ -1166,6 +1205,127 @@ def generate_env_report_html(config, env_analysis, grouping_column="Application_
     </table>
     {% endif %}
     
+    {% if show_cto_section %}
+    <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="9" cy="7" r="4" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 3.13a4 4 0 010 7.75" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Environment Distribution by CTO
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>CTO</th>
+                <th class="cost-column">Total Cost</th>
+                <th>Prod/Non-Prod Split</th>
+                <th class="cost-column">Production %</th>
+                <th class="cost-column">Non-Production %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in by_cto_data %}
+            <tr {% if item.raw_nonprod >= nonprod_threshold %}class="warning-row"{% endif %}>
+                <td>{{ item.name }}</td>
+                <td class="cost-column">{{ item.total_cost }}</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: {{ item.prod_percentage|replace('%', '') }}%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: {{ item.nonprod_percentage|replace('%', '') }}%;"></div>
+                        {% if item.other_percentage and item.other_percentage != '0.00%' %}
+                        <div class="progress-bar progress-bar-other" style="width: {{ item.other_percentage|replace('%', '') }}%;"></div>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">{{ item.prod_percentage }}</td>
+                <td class="cost-column env-type-nonprod">{{ item.nonprod_percentage }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    
+    {% if show_subpillar_section %}
+    <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 3v18M3 12h12" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Environment Distribution by Subpillar
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Subpillar</th>
+                <th class="cost-column">Total Cost</th>
+                <th>Prod/Non-Prod Split</th>
+                <th class="cost-column">Production %</th>
+                <th class="cost-column">Non-Production %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in by_subpillar_data %}
+            <tr {% if item.raw_nonprod >= nonprod_threshold %}class="warning-row"{% endif %}>
+                <td>{{ item.name }}</td>
+                <td class="cost-column">{{ item.total_cost }}</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: {{ item.prod_percentage|replace('%', '') }}%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: {{ item.nonprod_percentage|replace('%', '') }}%;"></div>
+                        {% if item.other_percentage and item.other_percentage != '0.00%' %}
+                        <div class="progress-bar progress-bar-other" style="width: {{ item.other_percentage|replace('%', '') }}%;"></div>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">{{ item.prod_percentage }}</td>
+                <td class="cost-column env-type-nonprod">{{ item.nonprod_percentage }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    
+    {% if show_product_section %}
+    <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Environment Distribution by Product
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th class="cost-column">Total Cost</th>
+                <th>Prod/Non-Prod Split</th>
+                <th class="cost-column">Production %</th>
+                <th class="cost-column">Non-Production %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in by_product_data %}
+            <tr {% if item.raw_nonprod >= nonprod_threshold %}class="warning-row"{% endif %}>
+                <td>{{ item.name }}</td>
+                <td class="cost-column">{{ item.total_cost }}</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: {{ item.prod_percentage|replace('%', '') }}%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: {{ item.nonprod_percentage|replace('%', '') }}%;"></div>
+                        {% if item.other_percentage and item.other_percentage != '0.00%' %}
+                        <div class="progress-bar progress-bar-other" style="width: {{ item.other_percentage|replace('%', '') }}%;"></div>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">{{ item.prod_percentage }}</td>
+                <td class="cost-column env-type-nonprod">{{ item.nonprod_percentage }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    
     <div class="section-title">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 9v2m0 4h.01m-6.99 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1228,6 +1388,14 @@ def generate_env_report_html(config, env_analysis, grouping_column="Application_
         by_org_data=by_org_data,
         by_vp_data=by_vp_data,
         by_pillar_data=by_pillar_data,
+        # New schema data
+        by_cto_data=by_cto_data,
+        by_subpillar_data=by_subpillar_data,
+        by_product_data=by_product_data,
+        # Include flags to determine which sections to show
+        show_cto_section=len(by_cto_data) > 0,
+        show_subpillar_section=len(by_subpillar_data) > 0,
+        show_product_section=len(by_product_data) > 0,
         nonprod_threshold=env_analysis.get('nonprod_threshold', 20),
         timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )

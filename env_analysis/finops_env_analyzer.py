@@ -118,7 +118,7 @@ def main():
         print("Analyzing environment distribution (Prod vs Non-Prod)...")
         env_distribution = get_env_distribution(period_df)
         
-        # Analyze by organization
+        # Analyze by organization (application in new schema)
         print("Analyzing environment distribution by Organization...")
         by_org = analyze_env_by_grouping(
             period_df, 
@@ -154,6 +154,39 @@ def main():
             args.nonprod_threshold
         )
         
+        # Additional analysis for new schema hierarchy
+        by_cto = None
+        by_subpillar = None
+        by_product = None
+        
+        # Check if we have the new schema columns
+        if 'cto' in period_df.columns:
+            print("Analyzing environment distribution by CTO...")
+            by_cto = analyze_env_by_grouping(
+                period_df, 
+                'cto', 
+                config.top_n, 
+                args.nonprod_threshold
+            )
+        
+        if 'tr_subpillar_name' in period_df.columns:
+            print("Analyzing environment distribution by Subpillar...")
+            by_subpillar = analyze_env_by_grouping(
+                period_df, 
+                'tr_subpillar_name', 
+                config.top_n, 
+                args.nonprod_threshold
+            )
+        
+        if 'tr_product' in period_df.columns:
+            print("Analyzing environment distribution by Product...")
+            by_product = analyze_env_by_grouping(
+                period_df, 
+                'tr_product', 
+                config.top_n, 
+                args.nonprod_threshold
+            )
+        
         # Combine all analyses
         env_analysis = {
             'overall': env_distribution,
@@ -163,6 +196,14 @@ def main():
             'high_nonprod_groups': by_app['high_nonprod_groups'],
             'nonprod_threshold': args.nonprod_threshold
         }
+        
+        # Add new schema analyses if available
+        if by_cto:
+            env_analysis['by_cto'] = by_cto
+        if by_subpillar:
+            env_analysis['by_subpillar'] = by_subpillar
+        if by_product:
+            env_analysis['by_product'] = by_product
         
         # Generate HTML report
         if config.generate_html:

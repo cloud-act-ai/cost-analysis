@@ -14,36 +14,108 @@ def load_data(file_path):
             new_col = col[1:-1]  # Remove first and last character
             df.rename(columns={col: new_col}, inplace=True)
     
-    # Convert cost to numeric
-    df['Cost'] = pd.to_numeric(df['Cost'])
+    # Convert cost to numeric - handle both old and new schema
+    cost_column = 'Cost' if 'Cost' in df.columns else 'cost'
+    df[cost_column] = pd.to_numeric(df[cost_column])
     
-    # Convert DATE to datetime if it exists
-    if 'DATE' in df.columns:
-        if not pd.api.types.is_datetime64_any_dtype(df['DATE']):
-            df['DATE'] = pd.to_datetime(df['DATE'])
+    # Convert date to datetime if it exists
+    date_column = 'DATE' if 'DATE' in df.columns else 'date'
+    if date_column in df.columns:
+        if not pd.api.types.is_datetime64_any_dtype(df[date_column]):
+            df[date_column] = pd.to_datetime(df[date_column])
+    
+    # Ensure required fields are available for the environment analyzer
+    # Map new schema columns to old schema columns if needed
+    if 'environment' in df.columns and 'Env' not in df.columns:
+        df['Env'] = df['environment']
+    
+    if 'Cost' not in df.columns and 'cost' in df.columns:
+        df['Cost'] = df['cost']
+    
+    # Handle organizational structure columns
+    if 'tr_product_pillar_team' in df.columns and 'PILLAR' not in df.columns:
+        df['PILLAR'] = df['tr_product_pillar_team']
+    
+    if 'vp' in df.columns and 'VP' not in df.columns:
+        df['VP'] = df['vp']
+    
+    if 'application' in df.columns:
+        if 'ORG' not in df.columns:
+            df['ORG'] = df['application']
+        if 'Application_Name' not in df.columns:
+            df['Application_Name'] = df['application']
     
     return df
 
 
 def get_period_data(df, period_type, period_value, year, parent_grouping, parent_grouping_value=None):
     """Filter data for specified period and organization."""
+    # Handle different column names between old and new schema
+    month_col = 'Month' if 'Month' in df.columns else 'month'
+    qtr_col = 'QTR' if 'QTR' in df.columns else 'qtr'
+    week_col = 'WM_WEEK' if 'WM_WEEK' in df.columns else 'week'
+    fy_col = 'FY' if 'FY' in df.columns else 'fy'
+    
     # Filter based on period type
     if period_type == 'month':
-        filtered_df = df[(df['Month'] == period_value) & (df['FY'] == int(year))]
+        if month_col == 'Month':
+            # Old schema: Month name like "Jan"
+            filtered_df = df[(df[month_col] == period_value) & (df[fy_col] == year)]
+        else:
+            # New schema: month as number 1-12
+            month_to_name = {idx+1: name for idx, name in enumerate(["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"])}
+            month_num = next((idx for idx, name in month_to_name.items() if name == period_value), None)
+            if month_num:
+                filtered_df = df[(df[month_col] == month_num) & (df[fy_col] == year)]
+            else:
+                filtered_df = df[df['Month'] == period_value]  # Fall back to Month column if it exists
+    
     elif period_type == 'quarter':
-        filtered_df = df[(df['QTR'] == period_value) & (df['FY'] == int(year))]
+        if qtr_col == 'QTR':
+            # Old schema: Quarter value like "Q1"
+            filtered_df = df[(df[qtr_col] == period_value) & (df[fy_col] == year)]
+        else:
+            # New schema: qtr as number 1-4
+            qtr_num = int(period_value[1]) if period_value.startswith('Q') else int(period_value)
+            filtered_df = df[(df[qtr_col] == qtr_num) & (df[fy_col] == year)]
+    
     elif period_type == 'week':
-        # Week in format 'Week XX'
-        week_str = f"Week {int(period_value):02d}"
-        filtered_df = df[(df['WM_WEEK'] == week_str) & (df['FY'] == int(year))]
+        if week_col == 'WM_WEEK':
+            # Old schema: Week in format 'Week XX'
+            week_str = f"Week {int(period_value):02d}"
+            filtered_df = df[(df[week_col] == week_str) & (df[fy_col] == year)]
+        else:
+            # New schema: week as number
+            week_num = int(period_value)
+            filtered_df = df[(df[week_col] == week_num) & (df[fy_col] == year)]
+    
     elif period_type == 'year':
-        filtered_df = df[df['FY'] == int(period_value)]
+        # Handle both string and integer fiscal years
+        if isinstance(df[fy_col].iloc[0], str) and df[fy_col].iloc[0].startswith('FY'):
+            # If FY is in format "FY2024"
+            filtered_df = df[df[fy_col] == f"FY{period_value}"]
+        else:
+            # If FY is numeric
+            filtered_df = df[df[fy_col] == period_value]
     else:
         raise ValueError(f"Invalid period_type: {period_type}")
     
     # Filter by parent grouping if specified
     if parent_grouping_value:
-        filtered_df = filtered_df[filtered_df[parent_grouping] == parent_grouping_value]
+        # Map old column names to new schema if needed
+        column_mapping = {
+            'ORG': 'application',
+            'VP': 'vp',
+            'PILLAR': 'tr_product_pillar_team'
+        }
+        
+        # If parent_grouping not in df.columns but mapped column is, use mapped column
+        if parent_grouping not in df.columns and parent_grouping in column_mapping:
+            parent_grouping_new = column_mapping[parent_grouping]
+            if parent_grouping_new in df.columns:
+                filtered_df = filtered_df[filtered_df[parent_grouping_new] == parent_grouping_value]
+        else:
+            filtered_df = filtered_df[filtered_df[parent_grouping] == parent_grouping_value]
     
     return filtered_df
 
@@ -223,17 +295,21 @@ def get_env_distribution(df, envs=None):
         prod_envs = envs.get('prod', ['Prod'])
         nonprod_envs = envs.get('nonprod', ['Dev', 'Stage', 'Test', 'QA'])
     
+    # Use 'Env' for backward compatibility, or 'environment' for new schema
+    env_column = 'Env' if 'Env' in df.columns else 'environment'
+    cost_column = 'Cost' if 'Cost' in df.columns else 'cost'
+    
     # Calculate costs by environment type
-    total_cost = df['Cost'].sum()
-    prod_cost = df[df['Env'].isin(prod_envs)]['Cost'].sum()
-    nonprod_cost = df[df['Env'].isin(nonprod_envs)]['Cost'].sum()
+    total_cost = df[cost_column].sum()
+    prod_cost = df[df[env_column].isin(prod_envs)][cost_column].sum()
+    nonprod_cost = df[df[env_column].isin(nonprod_envs)][cost_column].sum()
     
     # Calculate percentages
     prod_percentage = (prod_cost / total_cost * 100) if total_cost > 0 else 0
     nonprod_percentage = (nonprod_cost / total_cost * 100) if total_cost > 0 else 0
     
     # Get detailed breakdown by environment
-    env_breakdown = df.groupby('Env')['Cost'].sum().reset_index()
+    env_breakdown = df.groupby(env_column)[cost_column].sum().reset_index()
     env_breakdown.columns = ['Environment', 'Cost']
     env_breakdown['Percentage'] = env_breakdown['Cost'] / total_cost * 100
     env_breakdown['Type'] = 'Other'
@@ -259,21 +335,38 @@ def analyze_env_by_grouping(df, grouping_col, top_n=10, nonprod_threshold=20):
             'high_nonprod_groups': pd.DataFrame()
         }
     
+    # Use 'Env' for backward compatibility, or 'environment' for new schema
+    env_column = 'Env' if 'Env' in df.columns else 'environment'
+    cost_column = 'Cost' if 'Cost' in df.columns else 'cost'
+    
+    # Check if grouping column exists in the dataframe
+    if grouping_col not in df.columns:
+        # Try to map new schema columns to old schema columns
+        column_mapping = {
+            'ORG': 'application',
+            'VP': 'vp',
+            'PILLAR': 'tr_product_pillar_team',
+            'Application_Name': 'application'
+        }
+        if grouping_col in column_mapping and column_mapping[grouping_col] in df.columns:
+            # Create a copy of the grouping column with the old name
+            df[grouping_col] = df[column_mapping[grouping_col]]
+    
     # Aggregate by grouping column and environment
-    group_env_data = df.groupby([grouping_col, 'Env']).agg({'Cost': 'sum'}).reset_index()
+    group_env_data = df.groupby([grouping_col, env_column]).agg({cost_column: 'sum'}).reset_index()
     
     # Calculate totals by grouping
-    group_totals = df.groupby(grouping_col).agg({'Cost': 'sum'}).reset_index()
-    group_totals.rename(columns={'Cost': 'Total_Cost'}, inplace=True)
+    group_totals = df.groupby(grouping_col).agg({cost_column: 'sum'}).reset_index()
+    group_totals.rename(columns={cost_column: 'Total_Cost'}, inplace=True)
     
     # Merge to get percentages
     merged_data = group_env_data.merge(group_totals, on=grouping_col)
-    merged_data['Percentage'] = merged_data['Cost'] / merged_data['Total_Cost'] * 100
+    merged_data['Percentage'] = merged_data[cost_column] / merged_data['Total_Cost'] * 100
     
     # Identify Production vs Non-Production
     merged_data['Env_Type'] = 'Other'
-    merged_data.loc[merged_data['Env'] == 'Prod', 'Env_Type'] = 'Production'
-    merged_data.loc[merged_data['Env'].isin(['Dev', 'Stage', 'Test', 'QA']), 'Env_Type'] = 'Non-Production'
+    merged_data.loc[merged_data[env_column] == 'Prod', 'Env_Type'] = 'Production'
+    merged_data.loc[merged_data[env_column].isin(['Dev', 'Stage', 'Test', 'QA']), 'Env_Type'] = 'Non-Production'
     
     # Create a pivot table to get Prod vs Non-Prod by group
     pivoted = merged_data.pivot_table(
