@@ -1,0 +1,130 @@
+{
+  "schema": [
+    {
+      "name": "date",
+      "type": "DATE",
+      "mode": "NULLABLE",
+      "description": "Date when the cost was incurred"
+    },
+    {
+      "name": "year",
+      "type": "INTEGER",
+      "mode": "NULLABLE",
+      "description": "Year of the cost entry"
+    },
+    {
+      "name": "cloud",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "Cloud provider"
+    },
+    {
+      "name": "cto",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "CTO organization"
+    },
+    {
+      "name": "vp",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "VP organization"
+    },
+    {
+      "name": "tr_product_pillar_team",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "Product pillar team"
+    },
+    {
+      "name": "tr_subpillar_id",
+      "type": "INTEGER",
+      "mode": "NULLABLE",
+      "description": "Subpillar ID"
+    },
+    {
+      "name": "tr_subpillar_name",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "Subpillar name"
+    },
+    {
+      "name": "tr_product",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "Product name"
+    },
+    {
+      "name": "tr_product_id",
+      "type": "INTEGER",
+      "mode": "NULLABLE",
+      "description": "Product ID"
+    },
+    {
+      "name": "owner",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "Resource owner"
+    },
+    {
+      "name": "application",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "Application name"
+    },
+    {
+      "name": "service_name",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "Cloud service name"
+    },
+    {
+      "name": "environment",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "Environment (prod, dev, etc.)"
+    },
+    {
+      "name": "region",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "Cloud region"
+    },
+    {
+      "name": "project_id",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "Google Cloud project identifier"
+    },
+    {
+      "name": "cost",
+      "type": "FLOAT",
+      "mode": "NULLABLE",
+      "description": "Cost amount in USD"
+    },
+    {
+      "name": "fy",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "Fiscal year"
+    },
+    {
+      "name": "qtr",
+      "type": "INTEGER",
+      "mode": "NULLABLE",
+      "description": "Quarter"
+    },
+    {
+      "name": "week",
+      "type": "INTEGER",
+      "mode": "NULLABLE",
+      "description": "Week number"
+    },
+    {
+      "name": "Month",
+      "type": "STRING",
+      "mode": "NULLABLE",
+      "description": "Month name"
+    }
+  ]
+}
