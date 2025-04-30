@@ -2,8 +2,14 @@
 
 # Data sources and paths
 data:
-  file_path: data/finops_data.csv
+  file_path: archive/data/finops_data.csv  # CSV data path (used when not using BigQuery)
   output_dir: output
+
+# BigQuery settings (used when --use-bigquery is passed)
+bigquery:
+  project_id: finops360-dev-2025
+  dataset: test
+  table: cost_analysis_test
 
 # Analysis settings
 analysis:

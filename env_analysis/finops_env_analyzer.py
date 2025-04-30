@@ -52,6 +52,28 @@ def parse_arguments():
         "--year",
         help="Year for analysis (or 'current' for current year)"
     )
+    # BigQuery arguments
+    parser.add_argument(
+        "--use-bigquery", 
+        action="store_true",
+        help="Use BigQuery as the data source"
+    )
+    parser.add_argument(
+        "--project-id",
+        help="Google Cloud project ID for BigQuery"
+    )
+    parser.add_argument(
+        "--dataset",
+        help="BigQuery dataset name"
+    )
+    parser.add_argument(
+        "--table",
+        help="BigQuery table name"
+    )
+    parser.add_argument(
+        "--credentials",
+        help="Path to Google Cloud service account credentials JSON file"
+    )
     return parser.parse_args()
 
 
@@ -73,13 +95,33 @@ def main():
             config.year = args.year
         if args.nonprod_threshold:
             config.nonprod_threshold = args.nonprod_threshold
+            
+        # Add BigQuery parameters to config
+        if args.use_bigquery:
+            config.use_bigquery = True
+            config.bigquery_project_id = args.project_id
+            config.bigquery_dataset = args.dataset
+            config.bigquery_table = args.table
+            config.bigquery_credentials = args.credentials
+        else:
+            config.use_bigquery = False
         
         # Create output directory if it doesn't exist
         os.makedirs(config.output_dir, exist_ok=True)
         
-        # Load and preprocess data
-        print(f"Loading data from {config.file_path}...")
-        df = load_data(config.file_path)
+        # Load and preprocess data - either from CSV or BigQuery
+        if config.use_bigquery:
+            print(f"Loading data from BigQuery table {config.bigquery_project_id}.{config.bigquery_dataset}.{config.bigquery_table}...")
+            from common.finops_bigquery import load_data_from_bigquery
+            df = load_data_from_bigquery(
+                config.bigquery_project_id,
+                config.bigquery_dataset,
+                config.bigquery_table,
+                config.bigquery_credentials
+            )
+        else:
+            print(f"Loading data from {config.file_path}...")
+            df = load_data(config.file_path)
         
         # Validate configuration with the actual data
         print("Validating configuration...")
@@ -105,14 +147,28 @@ def main():
         print(f"Analyzing environment data for {period_type}: {actual_period_value}, {actual_year}")
         
         # Filter data for current period
-        period_df = get_period_data(
-            df, 
-            period_type,
-            period_value,  # Use original value as get_period_data handles 'last'
-            year,          # Use original value as get_period_data handles 'current'
-            None,
-            None
-        )
+        if config.use_bigquery:
+            # If using BigQuery, we can load just the period data
+            from common.finops_bigquery import load_period_data_from_bigquery
+            period_df = load_period_data_from_bigquery(
+                config.bigquery_project_id,
+                config.bigquery_dataset,
+                config.bigquery_table,
+                period_type,
+                period_value,  # Use original value as function handles 'last'
+                year,          # Use original value as function handles 'current'
+                credentials_path=config.bigquery_credentials
+            )
+        else:
+            # Otherwise, use the full dataframe and filter it
+            period_df = get_period_data(
+                df, 
+                period_type,
+                period_value,  # Use original value as get_period_data handles 'last'
+                year,          # Use original value as get_period_data handles 'current'
+                None,
+                None
+            )
         
         if period_df.empty:
             print(f"No data found for the specified period and filters.")

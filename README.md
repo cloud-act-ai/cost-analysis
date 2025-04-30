@@ -17,6 +17,9 @@ The Environment Analysis Tool helps organizations understand and optimize their 
   - pandas>=2.0.0
   - jinja2>=3.0.0
   - pyyaml>=6.0.0
+  - google-cloud-bigquery>=3.0.0 (for BigQuery support)
+  - pandas-gbq>=0.19.0 (for BigQuery support)
+  - pyarrow>=12.0.0 (for BigQuery support)
 
 Install requirements:
 
@@ -34,6 +37,7 @@ python finops_analyzer.py --config config.yaml [OPTIONS]
 
 ### Command-line Options
 
+#### General Options
 - `--config`: Path to configuration file (default: config.yaml)
 - `--parent-group`: Override parent_grouping in config (e.g. VP, PILLAR, ORG)
 - `--parent-value`: Override parent_grouping_value in config
@@ -41,6 +45,13 @@ python finops_analyzer.py --config config.yaml [OPTIONS]
 - `--period`: Override period_type in config (month, quarter, week, year)
 - `--period-value`: Override period_value in config
 - `--year`: Override year in config
+
+#### BigQuery Options
+- `--use-bigquery`: Use BigQuery as the data source instead of a CSV file
+- `--project-id`: Google Cloud project ID for BigQuery
+- `--dataset`: BigQuery dataset name
+- `--table`: BigQuery table name
+- `--credentials`: Path to Google Cloud service account credentials JSON file (optional)
 
 ### Configuration File
 
@@ -92,13 +103,54 @@ report:
 
 ## Data Format
 
+### CSV Data Source
 The analysis expects a CSV file with at least the following columns:
-- `Env`: Environment type (Prod, Dev, Stage, Test, QA)
-- `Cost`: Numeric cost values
-- Grouping columns: `ORG`, `VP`, `PILLAR`, `Application_Name`, etc.
-- Time columns: `Month`, `QTR`, `WM_WEEK`, `FY`
+- `Env` or `environment`: Environment type (Prod, Dev, Stage, Test, QA)
+- `Cost` or `cost`: Numeric cost values
+- Grouping columns: `ORG`, `VP`, `PILLAR`, `Application_Name`, or equivalent new schema columns
+- Time columns: `Month`, `QTR`/`qtr`, `WM_WEEK`/`week`, `FY`/`fy`
 
 Sample data is available in `data/finops_data.csv`.
+
+### BigQuery Data Source
+When using BigQuery, the table should have a similar schema:
+- `environment`: Environment type (Prod, Dev, Stage, Test, QA)
+- `cost`: Numeric cost values
+- Grouping columns: `cto`, `vp`, `tr_product_pillar_team`, `tr_subpillar_name`, `tr_product`, `application`
+- Time columns: `date`, `Month`, `qtr`, `week`, `fy`
+
+Example BigQuery Schema:
+```
+field name               mode      type      description
+date                    NULLABLE   DATE    
+year                    NULLABLE   INTEGER    
+cloud                   NULLABLE   STRING    
+cto                     NULLABLE   STRING    
+vp                      NULLABLE   STRING    
+tr_product_pillar_team  NULLABLE   STRING    
+tr_subpillar_id         NULLABLE   INTEGER    
+tr_subpillar_name       NULLABLE   STRING    
+tr_product              NULLABLE   STRING    
+tr_product_id           NULLABLE   INTEGER    
+owner                   NULLABLE   STRING    
+application             NULLABLE   STRING    
+service_name            NULLABLE   STRING    
+environment             NULLABLE   STRING    
+region                  NULLABLE   STRING    
+project_id              NULLABLE   STRING    
+cost                    NULLABLE   FLOAT    
+fy                      NULLABLE   STRING    
+qtr                     NULLABLE   INTEGER    
+week                    NULLABLE   INTEGER    
+Month                   NULLABLE   STRING
+```
+
+Example of running with BigQuery:
+```bash
+python finops_analyzer.py --config config.yaml --use-bigquery \
+  --project-id "finops360-dev-2025" --dataset "test" \
+  --table "cost_analysis_test" --nonprod-threshold 5.0
+```
 
 ## Output
 

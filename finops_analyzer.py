@@ -47,6 +47,29 @@ def parse_arguments():
         help="Year for analysis"
     )
     
+    # BigQuery parameters
+    parser.add_argument(
+        "--use-bigquery", 
+        action="store_true",
+        help="Use BigQuery as the data source"
+    )
+    parser.add_argument(
+        "--project-id",
+        help="Google Cloud project ID for BigQuery"
+    )
+    parser.add_argument(
+        "--dataset",
+        help="BigQuery dataset name"
+    )
+    parser.add_argument(
+        "--table",
+        help="BigQuery table name"
+    )
+    parser.add_argument(
+        "--credentials",
+        help="Path to Google Cloud service account credentials JSON file"
+    )
+    
     return parser.parse_args()
 
 
@@ -74,6 +97,20 @@ def main():
             env_args.extend(["--period-value", args.period_value])
         if args.year:
             env_args.extend(["--year", args.year])
+        
+        # Add BigQuery arguments if enabled
+        if args.use_bigquery:
+            env_args.append("--use-bigquery")
+            
+            if not args.project_id or not args.dataset or not args.table:
+                raise ValueError("When using BigQuery, project-id, dataset, and table are required")
+                
+            env_args.extend(["--project-id", args.project_id])
+            env_args.extend(["--dataset", args.dataset])
+            env_args.extend(["--table", args.table])
+            
+            if args.credentials:
+                env_args.extend(["--credentials", args.credentials])
         
         # Update sys.argv for the environment analyzer
         sys.argv = [sys.argv[0]] + env_args
