@@ -19,7 +19,10 @@ from common.finops_data import (
     load_data, 
     get_period_data,
     get_env_distribution,
-    analyze_env_by_grouping
+    analyze_env_by_grouping,
+    analyze_hierarchical_env,
+    get_last_period,
+    get_current_fiscal_year
 )
 from common.finops_html import generate_env_report_html
 
@@ -33,30 +36,21 @@ def parse_arguments():
         help="Path to configuration file (default: ../config.yaml)"
     )
     parser.add_argument(
-        "--parent-group",
-        help="Override parent_grouping in config (e.g. VP, PILLAR, ORG)"
-    )
-    parser.add_argument(
-        "--parent-value",
-        help="Override parent_grouping_value in config"
-    )
-    parser.add_argument(
         "--nonprod-threshold",
-        default=20,
         type=float,
         help="Threshold percentage for highlighting high non-production costs (default: 20)"
     )
     parser.add_argument(
         "--period",
-        help="Override period_type in config (month, quarter, week, year)"
+        help="Period type to analyze (month, quarter, week, year)"
     )
     parser.add_argument(
         "--period-value",
-        help="Override period_value in config"
+        help="Period value (or 'last' for most recent period)"
     )
     parser.add_argument(
         "--year",
-        help="Override year in config"
+        help="Year for analysis (or 'current' for current year)"
     )
     return parser.parse_args()
 
@@ -71,16 +65,14 @@ def main():
         config = load_config(args.config)
         
         # Override config with command line arguments if provided
-        if args.parent_group:
-            config.parent_grouping = args.parent_group
-        if args.parent_value:
-            config.parent_grouping_value = args.parent_value
         if args.period:
             config.period_type = args.period
         if args.period_value:
             config.period_value = args.period_value
         if args.year:
             config.year = args.year
+        if args.nonprod_threshold:
+            config.nonprod_threshold = args.nonprod_threshold
         
         # Create output directory if it doesn't exist
         os.makedirs(config.output_dir, exist_ok=True)
@@ -98,16 +90,28 @@ def main():
         period_value = config.period_value
         year = config.year
         
-        print(f"Analyzing environment data for {period_type}: {period_value}, {year}")
+        # Get actual period values (resolving 'last' and 'current')
+        actual_period_value = period_value
+        actual_year = year
+        
+        if period_value == 'last':
+            actual_period_value, period_year = get_last_period(df, period_type)
+            if period_year:
+                actual_year = period_year
+                
+        if year == 'current':
+            actual_year = get_current_fiscal_year(df)
+        
+        print(f"Analyzing environment data for {period_type}: {actual_period_value}, {actual_year}")
         
         # Filter data for current period
         period_df = get_period_data(
             df, 
             period_type,
-            period_value, 
-            year, 
-            config.parent_grouping, 
-            config.parent_grouping_value
+            period_value,  # Use original value as get_period_data handles 'last'
+            year,          # Use original value as get_period_data handles 'current'
+            None,
+            None
         )
         
         if period_df.empty:
@@ -118,100 +122,47 @@ def main():
         print("Analyzing environment distribution (Prod vs Non-Prod)...")
         env_distribution = get_env_distribution(period_df)
         
-        # Analyze by organization (application in new schema)
-        print("Analyzing environment distribution by Organization...")
-        by_org = analyze_env_by_grouping(
+        # Perform hierarchical analysis using the configured hierarchy
+        print("Performing hierarchical environment analysis...")
+        
+        # Use level-specific top_n values if available
+        top_n_values = {}
+        if config.top_n_by_level:
+            for level in config.hierarchy:
+                if level in config.top_n_by_level:
+                    top_n_values[level] = config.top_n_by_level[level]
+                else:
+                    top_n_values[level] = config.top_n
+        else:
+            # Use the same top_n for all levels
+            for level in config.hierarchy:
+                top_n_values[level] = config.top_n
+        
+        hierarchical_analysis = analyze_hierarchical_env(
             period_df, 
-            'ORG', 
-            config.top_n, 
-            args.nonprod_threshold
+            config.hierarchy, 
+            top_n_values, 
+            config.nonprod_threshold
         )
         
-        # Analyze by VP
-        print("Analyzing environment distribution by VP...")
-        by_vp = analyze_env_by_grouping(
-            period_df, 
-            'VP', 
-            config.top_n, 
-            args.nonprod_threshold
-        )
-        
-        # Analyze by pillar
-        print("Analyzing environment distribution by Pillar...")
-        by_pillar = analyze_env_by_grouping(
-            period_df, 
-            'PILLAR', 
-            config.top_n, 
-            args.nonprod_threshold
-        )
-        
-        # Analyze by application (or child grouping)
-        print(f"Analyzing environment distribution by {config.child_grouping}...")
-        by_app = analyze_env_by_grouping(
-            period_df, 
-            config.child_grouping, 
-            config.top_n, 
-            args.nonprod_threshold
-        )
-        
-        # Additional analysis for new schema hierarchy
-        by_cto = None
-        by_subpillar = None
-        by_product = None
-        
-        # Check if we have the new schema columns
-        if 'cto' in period_df.columns:
-            print("Analyzing environment distribution by CTO...")
-            by_cto = analyze_env_by_grouping(
-                period_df, 
-                'cto', 
-                config.top_n, 
-                args.nonprod_threshold
-            )
-        
-        if 'tr_subpillar_name' in period_df.columns:
-            print("Analyzing environment distribution by Subpillar...")
-            by_subpillar = analyze_env_by_grouping(
-                period_df, 
-                'tr_subpillar_name', 
-                config.top_n, 
-                args.nonprod_threshold
-            )
-        
-        if 'tr_product' in period_df.columns:
-            print("Analyzing environment distribution by Product...")
-            by_product = analyze_env_by_grouping(
-                period_df, 
-                'tr_product', 
-                config.top_n, 
-                args.nonprod_threshold
-            )
-        
-        # Combine all analyses
+        # Combine analyses
         env_analysis = {
             'overall': env_distribution,
-            'by_org': by_org,
-            'by_vp': by_vp,
-            'by_pillar': by_pillar,
-            'high_nonprod_groups': by_app['high_nonprod_groups'],
-            'nonprod_threshold': args.nonprod_threshold
+            'hierarchical': hierarchical_analysis,
+            'period_type': period_type,
+            'period_value': actual_period_value,
+            'year': actual_year,
+            'nonprod_threshold': config.nonprod_threshold,
+            'hierarchy': config.hierarchy,
+            'display_columns': config.display_columns
         }
-        
-        # Add new schema analyses if available
-        if by_cto:
-            env_analysis['by_cto'] = by_cto
-        if by_subpillar:
-            env_analysis['by_subpillar'] = by_subpillar
-        if by_product:
-            env_analysis['by_product'] = by_product
         
         # Generate HTML report
         if config.generate_html:
             print("Generating HTML report...")
             output_file = generate_env_report_html(
                 config, 
-                env_analysis,
-                config.child_grouping
+                env_analysis
             )
             print(f"HTML report generated: {output_file}")
         
@@ -222,7 +173,18 @@ def main():
         print(f"Total Cost: ${env_distribution['total_cost']:,.2f}")
         print(f"Production: ${env_distribution['prod_cost']:,.2f} ({env_distribution['prod_percentage']:.2f}%)")
         print(f"Non-Production: ${env_distribution['nonprod_cost']:,.2f} ({env_distribution['nonprod_percentage']:.2f}%)")
-        print(f"Applications with high non-prod costs (>={args.nonprod_threshold}%): {len(by_app['high_nonprod_groups'])}")
+        
+        # Count high non-prod applications
+        application_level = None
+        for level in config.hierarchy:
+            if level == 'application':
+                application_level = level
+                break
+        
+        if application_level and application_level in hierarchical_analysis['hierarchy_levels']:
+            high_nonprod_count = len(hierarchical_analysis['hierarchy_levels'][application_level]['high_nonprod_groups'])
+            print(f"Applications with high non-prod costs (>={config.nonprod_threshold}%): {high_nonprod_count}")
+        
         print("="*70)
         
         print("\nAnalysis completed successfully!")

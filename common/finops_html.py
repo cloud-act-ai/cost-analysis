@@ -583,7 +583,7 @@ def generate_html_report(config, analysis_results, current_period_display, previ
     return output_filename
 
 
-def generate_env_report_html(config, env_analysis, grouping_column="Application_Name"):
+def generate_env_report_html(config, env_analysis):
     """Generate HTML report for environment analysis (Prod vs Non-Prod)."""
     
     # Create directory if it doesn't exist
@@ -591,6 +591,8 @@ def generate_env_report_html(config, env_analysis, grouping_column="Application_
     
     # Get overall data
     overall = env_analysis['overall']
+    hierarchical = env_analysis['hierarchical']
+    hierarchy = env_analysis.get('hierarchy', [])
     
     # Format summary data
     summary = {
@@ -612,97 +614,74 @@ def generate_env_report_html(config, env_analysis, grouping_column="Application_
             'raw_percentage': row['Percentage']  # Raw value for conditional styling
         })
     
-    # Format high non-prod applications data
-    high_nonprod_data = []
-    if 'high_nonprod_groups' in env_analysis and not env_analysis['high_nonprod_groups'].empty:
-        for _, row in env_analysis['high_nonprod_groups'].iterrows():
-            if not pd.isna(row['Non-Production']):
-                high_nonprod_data.append({
-                    'name': row[grouping_column],
-                    'total_cost': format_currency(row['Total_Cost']),
-                    'prod_percentage': format_percent(row.get('Production', 0), False),
-                    'nonprod_percentage': format_percent(row['Non-Production'], False),
-                    'other_percentage': format_percent(row.get('Other', 0), False),
-                    'raw_nonprod': row['Non-Production']  # Raw value for conditional styling
-                })
+    # Format hierarchical data
+    hierarchy_data = {}
+    hierarchy_levels = hierarchical.get('hierarchy_levels', {})
+    nonprod_threshold = hierarchical.get('nonprod_threshold', 20)
     
-    # Format groups by organization
-    by_org_data = []
-    if 'by_org' in env_analysis and not env_analysis['by_org']['group_env_data'].empty:
-        for _, row in env_analysis['by_org']['group_env_data'].iterrows():
-            by_org_data.append({
-                'name': row['ORG'],
-                'total_cost': format_currency(row['Total_Cost']),
-                'prod_percentage': format_percent(row.get('Production', 0), False),
-                'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
-                'other_percentage': format_percent(row.get('Other', 0), False),
-                'raw_nonprod': row.get('Non-Production', 0)  # Raw value for conditional styling
-            })
-    
-    # Format groups by VP
-    by_vp_data = []
-    if 'by_vp' in env_analysis and not env_analysis['by_vp']['group_env_data'].empty:
-        for _, row in env_analysis['by_vp']['group_env_data'].iterrows():
-            by_vp_data.append({
-                'name': row['VP'],
-                'total_cost': format_currency(row['Total_Cost']),
-                'prod_percentage': format_percent(row.get('Production', 0), False),
-                'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
-                'other_percentage': format_percent(row.get('Other', 0), False),
-                'raw_nonprod': row.get('Non-Production', 0)  # Raw value for conditional styling
-            })
-    
-    # Format groups by PILLAR
-    by_pillar_data = []
-    if 'by_pillar' in env_analysis and not env_analysis['by_pillar']['group_env_data'].empty:
-        for _, row in env_analysis['by_pillar']['group_env_data'].iterrows():
-            by_pillar_data.append({
-                'name': row['PILLAR'],
-                'total_cost': format_currency(row['Total_Cost']),
-                'prod_percentage': format_percent(row.get('Production', 0), False),
-                'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
-                'other_percentage': format_percent(row.get('Other', 0), False),
-                'raw_nonprod': row.get('Non-Production', 0)  # Raw value for conditional styling
-            })
-    
-    # Format groups by CTO (new schema)
-    by_cto_data = []
-    if 'by_cto' in env_analysis and not env_analysis['by_cto']['group_env_data'].empty:
-        for _, row in env_analysis['by_cto']['group_env_data'].iterrows():
-            by_cto_data.append({
-                'name': row['cto'],
-                'total_cost': format_currency(row['Total_Cost']),
-                'prod_percentage': format_percent(row.get('Production', 0), False),
-                'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
-                'other_percentage': format_percent(row.get('Other', 0), False),
-                'raw_nonprod': row.get('Non-Production', 0)  # Raw value for conditional styling
-            })
-    
-    # Format groups by Subpillar (new schema)
-    by_subpillar_data = []
-    if 'by_subpillar' in env_analysis and not env_analysis['by_subpillar']['group_env_data'].empty:
-        for _, row in env_analysis['by_subpillar']['group_env_data'].iterrows():
-            by_subpillar_data.append({
-                'name': row['tr_subpillar_name'],
-                'total_cost': format_currency(row['Total_Cost']),
-                'prod_percentage': format_percent(row.get('Production', 0), False),
-                'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
-                'other_percentage': format_percent(row.get('Other', 0), False),
-                'raw_nonprod': row.get('Non-Production', 0)  # Raw value for conditional styling
-            })
-    
-    # Format groups by Product (new schema)
-    by_product_data = []
-    if 'by_product' in env_analysis and not env_analysis['by_product']['group_env_data'].empty:
-        for _, row in env_analysis['by_product']['group_env_data'].iterrows():
-            by_product_data.append({
-                'name': row['tr_product'],
-                'total_cost': format_currency(row['Total_Cost']),
-                'prod_percentage': format_percent(row.get('Production', 0), False),
-                'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
-                'other_percentage': format_percent(row.get('Other', 0), False),
-                'raw_nonprod': row.get('Non-Production', 0)  # Raw value for conditional styling
-            })
+    # Process each level of the hierarchy
+    for level in hierarchy:
+        if level in hierarchy_levels:
+            level_data = []
+            level_analysis = hierarchy_levels[level]
+            
+            # Get group environment data (the main table)
+            if not level_analysis['group_env_data'].empty:
+                for _, row in level_analysis['group_env_data'].iterrows():
+                    level_data.append({
+                        'name': row[level],
+                        'total_cost': format_currency(row['Total_Cost']),
+                        'prod_percentage': format_percent(row.get('Production', 0), False),
+                        'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
+                        'other_percentage': format_percent(row.get('Other', 0), False),
+                        'raw_nonprod': row.get('Non-Production', 0)  # Raw value for conditional styling
+                    })
+            
+            # Store formatted data
+            hierarchy_data[level] = {
+                'data': level_data,
+                'display_name': level.replace('_', ' ').title(),
+                'high_nonprod': []
+            }
+            
+            # Get high non-prod items
+            if not level_analysis['high_nonprod_groups'].empty:
+                for _, row in level_analysis['high_nonprod_groups'].iterrows():
+                    hierarchy_data[level]['high_nonprod'].append({
+                        'name': row[level],
+                        'total_cost': format_currency(row['Total_Cost']),
+                        'prod_percentage': format_percent(row.get('Production', 0), False),
+                        'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
+                        'other_percentage': format_percent(row.get('Other', 0), False),
+                        'raw_nonprod': row.get('Non-Production', 0)
+                    })
+            
+            # Process child data
+            child_key = f"{level}_children"
+            if child_key in hierarchy_levels:
+                children_data = hierarchy_levels[child_key]
+                
+                # For each parent item, get its children
+                parent_children = {}
+                for parent_name, child_analysis in children_data.items():
+                    child_items = []
+                    
+                    if not child_analysis['group_env_data'].empty:
+                        next_level = hierarchy[hierarchy.index(level) + 1]
+                        for _, row in child_analysis['group_env_data'].iterrows():
+                            child_items.append({
+                                'name': row[next_level],
+                                'total_cost': format_currency(row['Total_Cost']),
+                                'prod_percentage': format_percent(row.get('Production', 0), False),
+                                'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
+                                'other_percentage': format_percent(row.get('Other', 0), False),
+                                'raw_nonprod': row.get('Non-Production', 0)
+                            })
+                    
+                    parent_children[parent_name] = child_items
+                
+                # Store parent-child relationships
+                hierarchy_data[level]['children'] = parent_children
     
     # Generate HTML using Jinja2 template
     html_template = """
@@ -712,6 +691,7 @@ def generate_env_report_html(config, env_analysis, grouping_column="Application_
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Environment Cost Analysis Report</title>
+    <!-- No JavaScript needed for simplified report -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -974,15 +954,98 @@ def generate_env_report_html(config, env_analysis, grouping_column="Application_
             color: var(--neutral-dark);
         }
         
-        .warning-row td {
-            background-color: var(--red-light);
-        }
+        /* Remove warning-row styling */
         
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .summary-grid {
                 grid-template-columns: 1fr;
             }
+        }
+        
+        /* Hierarchy-specific styles */
+        .table-container {
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        
+        .child-container {
+            padding: 10px 20px;
+            background-color: var(--primary-light);
+            border-radius: var(--radius-sm);
+        }
+        
+        .child-table-wrapper {
+            margin: 10px 0;
+        }
+        
+        .child-table-wrapper h4 {
+            margin-bottom: 10px;
+            color: var(--primary-dark);
+        }
+        
+        .child-table {
+            width: 100%;
+            background-color: white;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .child-table th {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            font-weight: 600;
+            text-align: left;
+            padding: 8px 12px;
+        }
+        
+        .child-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--neutral-medium);
+        }
+        
+        .expand-button {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            border-radius: var(--radius-sm);
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .expand-button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .section-divider {
+            margin: 30px 0;
+            border: 0;
+            border-top: 1px solid var(--neutral-medium);
+        }
+        
+        .subsection-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin: 20px 0 10px;
+            color: var(--red-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .subsection-title svg {
+            margin-right: 8px;
+        }
+        
+        .warning-table {
+            border: 1px solid var(--red-light);
+        }
+        
+        .warning-table th {
+            background-color: var(--red-light);
+            color: var(--red-color);
         }
     </style>
 </head>
@@ -1165,166 +1228,52 @@ def generate_env_report_html(config, env_analysis, grouping_column="Application_
     </table>
     {% endif %}
     
-    {% if by_pillar_data|length > 0 %}
-    <div class="section-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9 9h6m-6 6h6" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Environment Distribution by Pillar
-    </div>
-    <table>
-        <thead>
-            <tr>
-                <th>Pillar</th>
-                <th class="cost-column">Total Cost</th>
-                <th>Prod/Non-Prod Split</th>
-                <th class="cost-column">Production %</th>
-                <th class="cost-column">Non-Production %</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in by_pillar_data %}
-            <tr {% if item.raw_nonprod >= nonprod_threshold %}class="warning-row"{% endif %}>
-                <td>{{ item.name }}</td>
-                <td class="cost-column">{{ item.total_cost }}</td>
-                <td>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar progress-bar-prod" style="width: {{ item.prod_percentage|replace('%', '') }}%;"></div>
-                        <div class="progress-bar progress-bar-nonprod" style="width: {{ item.nonprod_percentage|replace('%', '') }}%;"></div>
-                        {% if item.other_percentage and item.other_percentage != '0.00%' %}
-                        <div class="progress-bar progress-bar-other" style="width: {{ item.other_percentage|replace('%', '') }}%;"></div>
-                        {% endif %}
-                    </div>
-                </td>
-                <td class="cost-column env-type-prod">{{ item.prod_percentage }}</td>
-                <td class="cost-column env-type-nonprod">{{ item.nonprod_percentage }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
-    
-    {% if show_cto_section %}
-    <div class="section-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="9" cy="7" r="4" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M23 21v-2a4 4 0 00-3-3.87" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M16 3.13a4 4 0 010 7.75" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Environment Distribution by CTO
-    </div>
-    <table>
-        <thead>
-            <tr>
-                <th>CTO</th>
-                <th class="cost-column">Total Cost</th>
-                <th>Prod/Non-Prod Split</th>
-                <th class="cost-column">Production %</th>
-                <th class="cost-column">Non-Production %</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in by_cto_data %}
-            <tr {% if item.raw_nonprod >= nonprod_threshold %}class="warning-row"{% endif %}>
-                <td>{{ item.name }}</td>
-                <td class="cost-column">{{ item.total_cost }}</td>
-                <td>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar progress-bar-prod" style="width: {{ item.prod_percentage|replace('%', '') }}%;"></div>
-                        <div class="progress-bar progress-bar-nonprod" style="width: {{ item.nonprod_percentage|replace('%', '') }}%;"></div>
-                        {% if item.other_percentage and item.other_percentage != '0.00%' %}
-                        <div class="progress-bar progress-bar-other" style="width: {{ item.other_percentage|replace('%', '') }}%;"></div>
-                        {% endif %}
-                    </div>
-                </td>
-                <td class="cost-column env-type-prod">{{ item.prod_percentage }}</td>
-                <td class="cost-column env-type-nonprod">{{ item.nonprod_percentage }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
-    
-    {% if show_subpillar_section %}
-    <div class="section-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9 3v18M3 12h12" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Environment Distribution by Subpillar
-    </div>
-    <table>
-        <thead>
-            <tr>
-                <th>Subpillar</th>
-                <th class="cost-column">Total Cost</th>
-                <th>Prod/Non-Prod Split</th>
-                <th class="cost-column">Production %</th>
-                <th class="cost-column">Non-Production %</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in by_subpillar_data %}
-            <tr {% if item.raw_nonprod >= nonprod_threshold %}class="warning-row"{% endif %}>
-                <td>{{ item.name }}</td>
-                <td class="cost-column">{{ item.total_cost }}</td>
-                <td>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar progress-bar-prod" style="width: {{ item.prod_percentage|replace('%', '') }}%;"></div>
-                        <div class="progress-bar progress-bar-nonprod" style="width: {{ item.nonprod_percentage|replace('%', '') }}%;"></div>
-                        {% if item.other_percentage and item.other_percentage != '0.00%' %}
-                        <div class="progress-bar progress-bar-other" style="width: {{ item.other_percentage|replace('%', '') }}%;"></div>
-                        {% endif %}
-                    </div>
-                </td>
-                <td class="cost-column env-type-prod">{{ item.prod_percentage }}</td>
-                <td class="cost-column env-type-nonprod">{{ item.nonprod_percentage }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
-    
-    {% if show_product_section %}
-    <div class="section-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Environment Distribution by Product
-    </div>
-    <table>
-        <thead>
-            <tr>
-                <th>Product</th>
-                <th class="cost-column">Total Cost</th>
-                <th>Prod/Non-Prod Split</th>
-                <th class="cost-column">Production %</th>
-                <th class="cost-column">Non-Production %</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in by_product_data %}
-            <tr {% if item.raw_nonprod >= nonprod_threshold %}class="warning-row"{% endif %}>
-                <td>{{ item.name }}</td>
-                <td class="cost-column">{{ item.total_cost }}</td>
-                <td>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar progress-bar-prod" style="width: {{ item.prod_percentage|replace('%', '') }}%;"></div>
-                        <div class="progress-bar progress-bar-nonprod" style="width: {{ item.nonprod_percentage|replace('%', '') }}%;"></div>
-                        {% if item.other_percentage and item.other_percentage != '0.00%' %}
-                        <div class="progress-bar progress-bar-other" style="width: {{ item.other_percentage|replace('%', '') }}%;"></div>
-                        {% endif %}
-                    </div>
-                </td>
-                <td class="cost-column env-type-prod">{{ item.prod_percentage }}</td>
-                <td class="cost-column env-type-nonprod">{{ item.nonprod_percentage }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
+    {# Render each level of the hierarchy #}
+    {% for level in hierarchy %}
+        {% if level in hierarchy_data and hierarchy_data[level].data|length > 0 %}
+        <div class="section-title" id="section-{{ level }}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 9h6m-6 6h6" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Environment Distribution by {{ hierarchy_data[level].display_name }}
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>{{ hierarchy_data[level].display_name }}</th>
+                        <th class="cost-column">Total Cost</th>
+                        <th>Prod/Non-Prod Split</th>
+                        <th class="cost-column">Production %</th>
+                        <th class="cost-column">Non-Production %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in hierarchy_data[level].data %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td class="cost-column">{{ item.total_cost }}</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: {{ item.prod_percentage|replace('%', '') }}%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: {{ item.nonprod_percentage|replace('%', '') }}%;"></div>
+                                {% if item.other_percentage and item.other_percentage != '0.00%' %}
+                                <div class="progress-bar progress-bar-other" style="width: {{ item.other_percentage|replace('%', '') }}%;"></div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">{{ item.prod_percentage }}</td>
+                        <td class="cost-column env-type-nonprod">{{ item.nonprod_percentage }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <hr class="section-divider">
+        {% endif %}
+    {% endfor %}
     
     <div class="section-title">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1375,33 +1324,44 @@ def generate_env_report_html(config, env_analysis, grouping_column="Application_
 </html>
     """
     
+    # Extract high non-prod applications for the warning section
+    high_nonprod_data = []
+    application_level = hierarchy[-1] if hierarchy else None
+    
+    if application_level and application_level in hierarchy_levels:
+        level_analysis = hierarchy_levels[application_level]
+        if 'high_nonprod_groups' in level_analysis and not level_analysis['high_nonprod_groups'].empty:
+            for _, row in level_analysis['high_nonprod_groups'].iterrows():
+                high_nonprod_data.append({
+                    'name': row[application_level],
+                    'total_cost': format_currency(row['Total_Cost']),
+                    'prod_percentage': format_percent(row.get('Production', 0), False),
+                    'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
+                    'other_percentage': format_percent(row.get('Other', 0), False),
+                    'raw_nonprod': row.get('Non-Production', 0)
+                })
+    
     template = Template(html_template)
     rendered_html = template.render(
         company_name=config.company_name,
-        parent_grouping=config.parent_grouping if config.parent_grouping_value else None,
-        parent_grouping_value=config.parent_grouping_value,
-        grouping_column=grouping_column,
+        period_type=env_analysis.get('period_type', config.period_type),
+        period_value=env_analysis.get('period_value', config.period_value),
+        year=env_analysis.get('year', config.year),
         summary=summary,
         overall=overall,
         env_breakdown=env_breakdown_data,
+        hierarchy=hierarchy,
+        hierarchy_data=hierarchy_data,
+        nonprod_threshold=hierarchical.get('nonprod_threshold', 20),
         high_nonprod=high_nonprod_data,
-        by_org_data=by_org_data,
-        by_vp_data=by_vp_data,
-        by_pillar_data=by_pillar_data,
-        # New schema data
-        by_cto_data=by_cto_data,
-        by_subpillar_data=by_subpillar_data,
-        by_product_data=by_product_data,
-        # Include flags to determine which sections to show
-        show_cto_section=len(by_cto_data) > 0,
-        show_subpillar_section=len(by_subpillar_data) > 0,
-        show_product_section=len(by_product_data) > 0,
-        nonprod_threshold=env_analysis.get('nonprod_threshold', 20),
+        grouping_column=application_level.replace('_', ' ').title() if application_level else "Application",
         timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
     
-    # Generate a more descriptive filename
-    output_filename = get_output_filename(config, "env_analysis")
+    # Generate a descriptive filename with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    period_info = f"{env_analysis.get('period_type', config.period_type)}_{env_analysis.get('period_value', config.period_value)}_{env_analysis.get('year', config.year)}"
+    output_filename = f"{config.output_dir}/env_analysis_report_{period_info.replace(' ', '_')}_{timestamp}.html"
     
     with open(output_filename, 'w') as f:
         f.write(rendered_html)

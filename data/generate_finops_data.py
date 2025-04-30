@@ -223,5 +223,5 @@ def write_csv(filename="finops_data.csv", num_rows=10000):
             writer.writerow(row)
 
 if __name__ == "__main__":
-    write_csv("finops_data.csv", 100000)
+    write_csv("finops_data.csv", 10000)
     print("CSV file 'finops_data.csv' with 100,000 rows has been generated!")

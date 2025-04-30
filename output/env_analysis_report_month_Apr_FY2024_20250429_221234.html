@@ -1,0 +1,1722 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environment Cost Analysis Report</title>
+    <!-- No JavaScript needed for simplified report -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary-color: #1a73e8;
+            --primary-light: #e8f0fe;
+            --primary-dark: #0d47a1;
+            --green-color: #0f9d58;
+            --green-light: #e6f4ea;
+            --red-color: #d93025;
+            --red-light: #fce8e6;
+            --neutral-light: #f8f9fa;
+            --neutral-medium: #dadce0;
+            --neutral-dark: #5f6368;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --shadow-sm: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+            --shadow-md: 0 2px 6px rgba(60, 64, 67, 0.15), 0 1px 2px rgba(60, 64, 67, 0.3);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: var(--font-main);
+            line-height: 1.5;
+            color: var(--text-primary);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            font-size: 14px;
+            background-color: var(--neutral-light);
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 16px;
+        }
+        
+        .header-title {
+            color: var(--primary-color);
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .company-name {
+            font-size: 18px;
+            color: var(--text-secondary);
+            background-color: var(--primary-light);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+        }
+        
+        .report-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-size: 15px;
+            background-color: white;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .summary-box {
+            background-color: white;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .summary-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--neutral-medium);
+            padding-bottom: 12px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .summary-item {
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            background-color: var(--neutral-light);
+        }
+        
+        .summary-label {
+            font-weight: 500;
+            display: block;
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        
+        .summary-value {
+            font-size: 20px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-prod {
+            background-color: var(--green-light);
+            color: var(--green-color);
+        }
+        
+        .badge-nonprod {
+            background-color: var(--red-light);
+            color: var(--red-color);
+        }
+        
+        .badge-other {
+            background-color: var(--neutral-medium);
+            color: var(--neutral-dark);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 32px;
+            background-color: white;
+            box-shadow: var(--shadow-md);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--neutral-medium);
+        }
+        
+        th {
+            background-color: var(--primary-light);
+            font-weight: 600;
+            color: var(--primary-dark);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr:hover {
+            background-color: var(--neutral-light);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 32px 0 16px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title svg {
+            margin-right: 8px;
+        }
+        
+        footer {
+            margin-top: 48px;
+            padding-top: 16px;
+            border-top: 1px solid var(--neutral-medium);
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        .empty-table-msg {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        .cost-column {
+            text-align: right;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: var(--neutral-light);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            float: left;
+        }
+        
+        .progress-bar-prod {
+            background-color: var(--green-color);
+        }
+        
+        .progress-bar-nonprod {
+            background-color: var(--red-color);
+        }
+        
+        .progress-bar-other {
+            background-color: var(--neutral-dark);
+        }
+        
+        .percentage-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .percentage-item {
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .percentage-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .env-type-prod {
+            color: var(--green-color);
+        }
+        
+        .env-type-nonprod {
+            color: var(--red-color);
+        }
+        
+        .env-type-other {
+            color: var(--neutral-dark);
+        }
+        
+        /* Remove warning-row styling */
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Hierarchy-specific styles */
+        .table-container {
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        
+        .child-container {
+            padding: 10px 20px;
+            background-color: var(--primary-light);
+            border-radius: var(--radius-sm);
+        }
+        
+        .child-table-wrapper {
+            margin: 10px 0;
+        }
+        
+        .child-table-wrapper h4 {
+            margin-bottom: 10px;
+            color: var(--primary-dark);
+        }
+        
+        .child-table {
+            width: 100%;
+            background-color: white;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .child-table th {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            font-weight: 600;
+            text-align: left;
+            padding: 8px 12px;
+        }
+        
+        .child-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--neutral-medium);
+        }
+        
+        .expand-button {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            border-radius: var(--radius-sm);
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .expand-button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .section-divider {
+            margin: 30px 0;
+            border: 0;
+            border-top: 1px solid var(--neutral-medium);
+        }
+        
+        .subsection-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin: 20px 0 10px;
+            color: var(--red-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .subsection-title svg {
+            margin-right: 8px;
+        }
+        
+        .warning-table {
+            border: 1px solid var(--red-light);
+        }
+        
+        .warning-table th {
+            background-color: var(--red-light);
+            color: var(--red-color);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title">Environment Cost Analysis Report</div>
+        <div class="company-name">FinOps | FinOps Strategy</div>
+    </header>
+    
+    <div class="report-subtitle">
+        <strong>Environment Analysis:</strong> Production vs. Non-Production Costs
+        
+    </div>
+    
+    <div class="summary-box">
+        <div class="summary-title">Overall Environment Distribution</div>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <span class="summary-label">Total Cost</span>
+                <div class="summary-value">$26,026,904.41</div>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Production Cost</span>
+                <div class="summary-value env-type-prod">$16,487,175.37 (63.35%)</div>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Non-Production Cost</span>
+                <div class="summary-value env-type-nonprod">$9,539,729.04 (36.65%)</div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <div class="progress-bar-container">
+                <div class="progress-bar progress-bar-prod" style="width: 63.346662785088384%;"></div>
+                <div class="progress-bar progress-bar-nonprod" style="width: 36.653337214911595%;"></div>
+                
+                <div class="progress-bar progress-bar-other" style="width: 2.1316282072803006e-14%;"></div>
+                
+            </div>
+            <div class="percentage-grid">
+                <div class="percentage-item">
+                    <div class="percentage-value env-type-prod">63.35%</div>
+                    <div>Production</div>
+                </div>
+                <div class="percentage-item">
+                    <div class="percentage-value env-type-nonprod">36.65%</div>
+                    <div>Non-Production</div>
+                </div>
+                
+                <div class="percentage-item">
+                    <div class="percentage-value env-type-other">0.0033372149116175365%</div>
+                    <div>Other/Unknown</div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    
+    <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 3h18v18H3V3z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 9h18M9 3v18" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Environment Breakdown by Type
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Environment</th>
+                <th class="cost-column">Cost</th>
+                <th class="cost-column">Percentage</th>
+                <th>Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+            <tr>
+                <td>Dev</td>
+                <td class="cost-column">$4,344,927.97</td>
+                <td class="cost-column">16.69%</td>
+                <td>
+                    
+                    <span class="badge badge-nonprod">Non-Production</span>
+                    
+                </td>
+            </tr>
+            
+            <tr>
+                <td>Prod</td>
+                <td class="cost-column">$16,487,175.37</td>
+                <td class="cost-column">63.35%</td>
+                <td>
+                    
+                    <span class="badge badge-prod">Production</span>
+                    
+                </td>
+            </tr>
+            
+            <tr>
+                <td>QA</td>
+                <td class="cost-column">$1,568,996.96</td>
+                <td class="cost-column">6.03%</td>
+                <td>
+                    
+                    <span class="badge badge-nonprod">Non-Production</span>
+                    
+                </td>
+            </tr>
+            
+            <tr>
+                <td>Stage</td>
+                <td class="cost-column">$2,110,341.20</td>
+                <td class="cost-column">8.11%</td>
+                <td>
+                    
+                    <span class="badge badge-nonprod">Non-Production</span>
+                    
+                </td>
+            </tr>
+            
+            <tr>
+                <td>Test</td>
+                <td class="cost-column">$1,515,462.91</td>
+                <td class="cost-column">5.82%</td>
+                <td>
+                    
+                    <span class="badge badge-nonprod">Non-Production</span>
+                    
+                </td>
+            </tr>
+            
+            
+        </tbody>
+    </table>
+    
+    
+    
+    
+    
+    
+    
+        
+        <div class="section-title" id="section-cto">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 9h6m-6 6h6" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Environment Distribution by Cto
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cto</th>
+                        <th class="cost-column">Total Cost</th>
+                        <th>Prod/Non-Prod Split</th>
+                        <th class="cost-column">Production %</th>
+                        <th class="cost-column">Non-Production %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td>David Rodriguez</td>
+                        <td class="cost-column">$5,314,091.82</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 62.00%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 38.00%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">62.00%</td>
+                        <td class="cost-column env-type-nonprod">38.00%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Emma Williams</td>
+                        <td class="cost-column">$5,459,157.10</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 62.58%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 37.42%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">62.58%</td>
+                        <td class="cost-column env-type-nonprod">37.42%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>James Smith</td>
+                        <td class="cost-column">$5,145,032.79</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 66.06%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 33.94%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">66.06%</td>
+                        <td class="cost-column env-type-nonprod">33.94%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Michael Chen</td>
+                        <td class="cost-column">$5,119,009.93</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 64.16%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 35.84%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">64.16%</td>
+                        <td class="cost-column env-type-nonprod">35.84%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Sarah Johnson</td>
+                        <td class="cost-column">$4,989,612.77</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 61.99%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 38.01%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">61.99%</td>
+                        <td class="cost-column env-type-nonprod">38.01%</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+        
+        <hr class="section-divider">
+        
+    
+        
+        <div class="section-title" id="section-tr_product_pillar_team">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 9h6m-6 6h6" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Environment Distribution by Tr Product Pillar Team
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tr Product Pillar Team</th>
+                        <th class="cost-column">Total Cost</th>
+                        <th>Prod/Non-Prod Split</th>
+                        <th class="cost-column">Production %</th>
+                        <th class="cost-column">Non-Production %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td>Engineering</td>
+                        <td class="cost-column">$4,720,966.19</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 60.26%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 39.74%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">60.26%</td>
+                        <td class="cost-column env-type-nonprod">39.74%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Finance</td>
+                        <td class="cost-column">$5,321,180.44</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 64.44%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 35.56%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">64.44%</td>
+                        <td class="cost-column env-type-nonprod">35.56%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Marketing</td>
+                        <td class="cost-column">$5,089,160.39</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 61.14%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 38.86%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">61.14%</td>
+                        <td class="cost-column env-type-nonprod">38.86%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Operations</td>
+                        <td class="cost-column">$5,320,706.68</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 63.34%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 36.66%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">63.34%</td>
+                        <td class="cost-column env-type-nonprod">36.66%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Retail</td>
+                        <td class="cost-column">$5,574,890.71</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 66.94%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 33.06%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">66.94%</td>
+                        <td class="cost-column env-type-nonprod">33.06%</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+        
+        <hr class="section-divider">
+        
+    
+        
+        <div class="section-title" id="section-tr_subpillar_name">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 9h6m-6 6h6" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Environment Distribution by Tr Subpillar Name
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tr Subpillar Name</th>
+                        <th class="cost-column">Total Cost</th>
+                        <th>Prod/Non-Prod Split</th>
+                        <th class="cost-column">Production %</th>
+                        <th class="cost-column">Non-Production %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td>Accounting</td>
+                        <td class="cost-column">$1,727,784.57</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 67.27%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 32.73%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">67.27%</td>
+                        <td class="cost-column env-type-nonprod">32.73%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Analytics</td>
+                        <td class="cost-column">$1,668,570.11</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 58.07%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 41.93%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">58.07%</td>
+                        <td class="cost-column env-type-nonprod">41.93%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Audit</td>
+                        <td class="cost-column">$1,956,113.66</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 65.93%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 34.07%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">65.93%</td>
+                        <td class="cost-column env-type-nonprod">34.07%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Brand Management</td>
+                        <td class="cost-column">$1,807,294.32</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 64.01%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 35.99%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">64.01%</td>
+                        <td class="cost-column env-type-nonprod">35.99%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Customer Service</td>
+                        <td class="cost-column">$1,800,741.24</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 65.34%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 34.66%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">65.34%</td>
+                        <td class="cost-column env-type-nonprod">34.66%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Development</td>
+                        <td class="cost-column">$1,733,143.66</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 63.45%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 36.55%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">63.45%</td>
+                        <td class="cost-column env-type-nonprod">36.55%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Digital Marketing</td>
+                        <td class="cost-column">$1,613,295.96</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 61.09%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 38.91%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">61.09%</td>
+                        <td class="cost-column env-type-nonprod">38.91%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>E-commerce</td>
+                        <td class="cost-column">$2,096,027.18</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 71.46%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 28.54%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">71.46%</td>
+                        <td class="cost-column env-type-nonprod">28.54%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Financial Planning</td>
+                        <td class="cost-column">$1,637,282.21</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 59.68%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 40.32%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">59.68%</td>
+                        <td class="cost-column env-type-nonprod">40.32%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Infrastructure</td>
+                        <td class="cost-column">$1,425,543.36</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 58.04%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 41.96%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">58.04%</td>
+                        <td class="cost-column env-type-nonprod">41.96%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Logistics</td>
+                        <td class="cost-column">$1,770,333.68</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 61.00%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 39.00%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">61.00%</td>
+                        <td class="cost-column env-type-nonprod">39.00%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Process Optimization</td>
+                        <td class="cost-column">$1,749,631.76</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 63.65%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 36.35%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">63.65%</td>
+                        <td class="cost-column env-type-nonprod">36.35%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Quality Assurance</td>
+                        <td class="cost-column">$1,562,279.17</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 58.75%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 41.25%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">58.75%</td>
+                        <td class="cost-column env-type-nonprod">41.25%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Store Operations</td>
+                        <td class="cost-column">$1,567,021.96</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 59.32%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 40.68%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">59.32%</td>
+                        <td class="cost-column env-type-nonprod">40.68%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Supply Chain</td>
+                        <td class="cost-column">$1,911,841.57</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 68.22%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 31.78%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">68.22%</td>
+                        <td class="cost-column env-type-nonprod">31.78%</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+        
+        <hr class="section-divider">
+        
+    
+        
+        <div class="section-title" id="section-tr_product">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 9h6m-6 6h6" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Environment Distribution by Tr Product
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tr Product</th>
+                        <th class="cost-column">Total Cost</th>
+                        <th>Prod/Non-Prod Split</th>
+                        <th class="cost-column">Production %</th>
+                        <th class="cost-column">Non-Production %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td>Asset Management</td>
+                        <td class="cost-column">$880,858.77</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 68.37%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 31.63%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">68.37%</td>
+                        <td class="cost-column env-type-nonprod">31.63%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Billing Platform</td>
+                        <td class="cost-column">$819,055.09</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 66.49%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 33.51%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">66.49%</td>
+                        <td class="cost-column env-type-nonprod">33.51%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Brand Portal</td>
+                        <td class="cost-column">$926,435.55</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 59.87%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 40.13%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">59.87%</td>
+                        <td class="cost-column env-type-nonprod">40.13%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Budget Forecasting</td>
+                        <td class="cost-column">$851,383.88</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 56.97%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 43.03%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">56.97%</td>
+                        <td class="cost-column env-type-nonprod">43.03%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Bug Tracking</td>
+                        <td class="cost-column">$757,063.08</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 55.64%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 44.36%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">55.64%</td>
+                        <td class="cost-column env-type-nonprod">44.36%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>CI/CD Pipeline</td>
+                        <td class="cost-column">$830,867.90</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 61.53%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 38.47%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">61.53%</td>
+                        <td class="cost-column env-type-nonprod">38.47%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>CRM System</td>
+                        <td class="cost-column">$776,730.14</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 61.67%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 38.33%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">61.67%</td>
+                        <td class="cost-column env-type-nonprod">38.33%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Campaign Management</td>
+                        <td class="cost-column">$644,019.41</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 56.24%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 43.76%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">56.24%</td>
+                        <td class="cost-column env-type-nonprod">43.76%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Checkout System</td>
+                        <td class="cost-column">$1,147,779.96</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 74.56%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 25.44%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">74.56%</td>
+                        <td class="cost-column env-type-nonprod">25.44%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Cloud Platform</td>
+                        <td class="cost-column">$749,271.94</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 63.76%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 36.24%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">63.76%</td>
+                        <td class="cost-column env-type-nonprod">36.24%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Compliance Tracking</td>
+                        <td class="cost-column">$1,027,891.96</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 65.97%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 34.03%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">65.97%</td>
+                        <td class="cost-column env-type-nonprod">34.03%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Customer Analytics</td>
+                        <td class="cost-column">$946,554.27</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 60.85%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 39.15%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">60.85%</td>
+                        <td class="cost-column env-type-nonprod">39.15%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Development Tools</td>
+                        <td class="cost-column">$902,275.76</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 65.22%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 34.78%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">65.22%</td>
+                        <td class="cost-column env-type-nonprod">34.78%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Financial Reporting</td>
+                        <td class="cost-column">$785,898.33</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 62.61%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 37.39%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">62.61%</td>
+                        <td class="cost-column env-type-nonprod">37.39%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Fleet Management</td>
+                        <td class="cost-column">$918,255.28</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 60.61%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 39.39%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">60.61%</td>
+                        <td class="cost-column env-type-nonprod">39.39%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>GL System</td>
+                        <td class="cost-column">$908,729.48</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 67.98%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 32.02%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">67.98%</td>
+                        <td class="cost-column env-type-nonprod">32.02%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Inventory Management</td>
+                        <td class="cost-column">$870,378.29</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 64.34%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 35.66%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">64.34%</td>
+                        <td class="cost-column env-type-nonprod">35.66%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Market Research</td>
+                        <td class="cost-column">$722,015.84</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 54.44%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 45.56%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">54.44%</td>
+                        <td class="cost-column env-type-nonprod">45.56%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Network Management</td>
+                        <td class="cost-column">$676,271.42</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 51.71%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 48.29%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">51.71%</td>
+                        <td class="cost-column env-type-nonprod">48.29%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>POS System</td>
+                        <td class="cost-column">$696,643.67</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 53.05%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 46.95%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">53.05%</td>
+                        <td class="cost-column env-type-nonprod">46.95%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Performance Monitoring</td>
+                        <td class="cost-column">$841,279.00</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 68.95%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 31.05%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">68.95%</td>
+                        <td class="cost-column env-type-nonprod">31.05%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Product Catalog</td>
+                        <td class="cost-column">$948,247.22</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 67.71%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 32.29%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">67.71%</td>
+                        <td class="cost-column env-type-nonprod">32.29%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Risk Assessment</td>
+                        <td class="cost-column">$928,221.70</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 65.88%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 34.12%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">65.88%</td>
+                        <td class="cost-column env-type-nonprod">34.12%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Routing Optimization</td>
+                        <td class="cost-column">$852,078.40</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 61.41%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 38.59%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">61.41%</td>
+                        <td class="cost-column env-type-nonprod">38.59%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Shipping Automation</td>
+                        <td class="cost-column">$844,685.72</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 67.28%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 32.72%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">67.28%</td>
+                        <td class="cost-column env-type-nonprod">32.72%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Social Media Analytics</td>
+                        <td class="cost-column">$969,276.55</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 64.32%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 35.68%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">64.32%</td>
+                        <td class="cost-column env-type-nonprod">35.68%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Support Ticketing</td>
+                        <td class="cost-column">$1,024,011.10</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 68.11%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 31.89%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">68.11%</td>
+                        <td class="cost-column env-type-nonprod">31.89%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Test Automation</td>
+                        <td class="cost-column">$805,216.09</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 61.68%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 38.32%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">61.68%</td>
+                        <td class="cost-column env-type-nonprod">38.32%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Warehouse Control</td>
+                        <td class="cost-column">$1,067,155.85</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 68.97%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 31.03%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">68.97%</td>
+                        <td class="cost-column env-type-nonprod">31.03%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Workflow Automation</td>
+                        <td class="cost-column">$908,352.76</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 58.74%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 41.26%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">58.74%</td>
+                        <td class="cost-column env-type-nonprod">41.26%</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+        
+        <hr class="section-divider">
+        
+    
+        
+        <div class="section-title" id="section-application">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 9h6m-6 6h6" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Environment Distribution by Application
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Application</th>
+                        <th class="cost-column">Total Cost</th>
+                        <th>Prod/Non-Prod Split</th>
+                        <th class="cost-column">Production %</th>
+                        <th class="cost-column">Non-Production %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td>APIGateway</td>
+                        <td class="cost-column">$2,414,765.39</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 64.74%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 35.26%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">64.74%</td>
+                        <td class="cost-column env-type-nonprod">35.26%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>AdminPortal</td>
+                        <td class="cost-column">$2,813,498.98</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 65.06%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 34.94%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">65.06%</td>
+                        <td class="cost-column env-type-nonprod">34.94%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>AnalyticsDashboard</td>
+                        <td class="cost-column">$2,428,892.73</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 60.93%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 39.07%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">60.93%</td>
+                        <td class="cost-column env-type-nonprod">39.07%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>BackendService</td>
+                        <td class="cost-column">$2,563,327.15</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 63.85%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 36.15%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">63.85%</td>
+                        <td class="cost-column env-type-nonprod">36.15%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>DataProcessor</td>
+                        <td class="cost-column">$2,660,729.26</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 65.22%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 34.78%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">65.22%</td>
+                        <td class="cost-column env-type-nonprod">34.78%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>FrontendUI</td>
+                        <td class="cost-column">$2,576,040.66</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 67.00%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 33.00%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">67.00%</td>
+                        <td class="cost-column env-type-nonprod">33.00%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>IntegrationHub</td>
+                        <td class="cost-column">$2,660,085.84</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 61.47%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 38.53%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">61.47%</td>
+                        <td class="cost-column env-type-nonprod">38.53%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>MainApp</td>
+                        <td class="cost-column">$2,510,744.11</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 53.63%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 46.37%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">53.63%</td>
+                        <td class="cost-column env-type-nonprod">46.37%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>MobileApp</td>
+                        <td class="cost-column">$2,733,211.67</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 66.37%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 33.63%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">66.37%</td>
+                        <td class="cost-column env-type-nonprod">33.63%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>SupportApp</td>
+                        <td class="cost-column">$2,665,608.62</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar progress-bar-prod" style="width: 64.52%;"></div>
+                                <div class="progress-bar progress-bar-nonprod" style="width: 35.48%;"></div>
+                                
+                            </div>
+                        </td>
+                        <td class="cost-column env-type-prod">64.52%</td>
+                        <td class="cost-column env-type-nonprod">35.48%</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+        
+        <hr class="section-divider">
+        
+    
+    
+    <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 9v2m0 4h.01m-6.99 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Applications with High Non-Production Costs (>= 20.0%)
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Application</th>
+                <th class="cost-column">Total Cost</th>
+                <th>Prod/Non-Prod Split</th>
+                <th class="cost-column">Production %</th>
+                <th class="cost-column">Non-Production %</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+            <tr>
+                <td>MainApp</td>
+                <td class="cost-column">$2,510,744.11</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 53.63%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 46.37%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">53.63%</td>
+                <td class="cost-column env-type-nonprod">46.37%</td>
+            </tr>
+            
+            <tr>
+                <td>AnalyticsDashboard</td>
+                <td class="cost-column">$2,428,892.73</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 60.93%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 39.07%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">60.93%</td>
+                <td class="cost-column env-type-nonprod">39.07%</td>
+            </tr>
+            
+            <tr>
+                <td>IntegrationHub</td>
+                <td class="cost-column">$2,660,085.84</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 61.47%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 38.53%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">61.47%</td>
+                <td class="cost-column env-type-nonprod">38.53%</td>
+            </tr>
+            
+            <tr>
+                <td>BackendService</td>
+                <td class="cost-column">$2,563,327.15</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 63.85%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 36.15%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">63.85%</td>
+                <td class="cost-column env-type-nonprod">36.15%</td>
+            </tr>
+            
+            <tr>
+                <td>SupportApp</td>
+                <td class="cost-column">$2,665,608.62</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 64.52%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 35.48%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">64.52%</td>
+                <td class="cost-column env-type-nonprod">35.48%</td>
+            </tr>
+            
+            <tr>
+                <td>APIGateway</td>
+                <td class="cost-column">$2,414,765.39</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 64.74%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 35.26%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">64.74%</td>
+                <td class="cost-column env-type-nonprod">35.26%</td>
+            </tr>
+            
+            <tr>
+                <td>AdminPortal</td>
+                <td class="cost-column">$2,813,498.98</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 65.06%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 34.94%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">65.06%</td>
+                <td class="cost-column env-type-nonprod">34.94%</td>
+            </tr>
+            
+            <tr>
+                <td>DataProcessor</td>
+                <td class="cost-column">$2,660,729.26</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 65.22%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 34.78%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">65.22%</td>
+                <td class="cost-column env-type-nonprod">34.78%</td>
+            </tr>
+            
+            <tr>
+                <td>MobileApp</td>
+                <td class="cost-column">$2,733,211.67</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 66.37%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 33.63%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">66.37%</td>
+                <td class="cost-column env-type-nonprod">33.63%</td>
+            </tr>
+            
+            <tr>
+                <td>FrontendUI</td>
+                <td class="cost-column">$2,576,040.66</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar progress-bar-prod" style="width: 67.00%;"></div>
+                        <div class="progress-bar progress-bar-nonprod" style="width: 33.00%;"></div>
+                        
+                    </div>
+                </td>
+                <td class="cost-column env-type-prod">67.00%</td>
+                <td class="cost-column env-type-nonprod">33.00%</td>
+            </tr>
+            
+            
+        </tbody>
+    </table>
+    
+    <footer>
+        Generated on 2025-04-29 22:12:34 | FinOps Strategy
+    </footer>
+</body>
+</html>
+    
