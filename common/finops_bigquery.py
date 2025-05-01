@@ -5,7 +5,6 @@ import os
 from datetime import datetime
 from google.cloud.bigquery import Client, QueryJobConfig
 from google.cloud.bigquery_storage import BigQueryReadClient
-from google.cloud.bigquery.dataframe import BigQueryDataFrame
 
 def load_data_from_bigquery(project_id, dataset, table, credentials_path=None, use_bqdf=True):
     """
@@ -33,19 +32,16 @@ def load_data_from_bigquery(project_id, dataset, table, credentials_path=None, u
     
     try:
         if use_bqdf:
-            # Initialize BigQuery and BigQuery Storage clients for optimal performance
+            # Initialize BigQuery client for optimal performance
             bq_client = Client(project=project_id)
-            storage_client = BigQueryReadClient()
             
-            # Create BigQuery DataFrame
-            bqdf = BigQueryDataFrame(
-                source_or_reference=f"{project_id}.{dataset}.{table}",
-                client=bq_client,
-                storage_client=storage_client
+            # Create reference to BigQuery table
+            table_ref = f"{project_id}.{dataset}.{table}"
+            
+            # Use the bigquery_storage_client parameter to enable faster downloads
+            df = bq_client.list_rows(table_ref).to_dataframe(
+                create_bqstorage_client=True
             )
-            
-            # Convert to pandas DataFrame for compatibility with the rest of the codebase
-            df = bqdf.to_pandas()
         else:
             # Use pandas_gbq to execute the query and load into a DataFrame
             df = pandas_gbq.read_gbq(query, project_id=project_id)
@@ -198,14 +194,11 @@ def load_period_data_from_bigquery(project_id, dataset, table, period_type, peri
     
     try:
         if use_bqdf:
-            # Initialize BigQuery and BigQuery Storage clients
+            # Initialize BigQuery client
             bq_client = Client(project=project_id)
-            storage_client = BigQueryReadClient()
             
-            # Create BigQuery DataFrame with filter applied directly
+            # Create the query with filter applied directly
             table_id = f"{project_id}.{dataset}.{table}"
-            
-            # Create the query
             query = f"""
             SELECT * 
             FROM `{table_id}`
@@ -215,16 +208,9 @@ def load_period_data_from_bigquery(project_id, dataset, table, period_type, peri
             # Configure the query job
             job_config = QueryJobConfig(use_query_cache=True)
             
-            # Run the query and create a BigQueryDataFrame from the result
+            # Run the query and create a DataFrame with BigQuery Storage API
             query_job = bq_client.query(query, job_config=job_config)
-            bqdf = BigQueryDataFrame(
-                source_or_reference=query_job,
-                client=bq_client,
-                storage_client=storage_client
-            )
-            
-            # Convert to pandas DataFrame for compatibility with the rest of the codebase
-            df = bqdf.to_pandas()
+            df = query_job.to_dataframe(create_bqstorage_client=True)
         else:
             # Create the query
             query = f"""
@@ -289,9 +275,8 @@ def filter_bigquery_data(project_id, dataset, table, filters=None, columns=None,
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_path
     
     try:
-        # Initialize BigQuery and BigQuery Storage clients
+        # Initialize BigQuery client
         bq_client = Client(project=project_id)
-        storage_client = BigQueryReadClient()
         
         # Build column selection
         column_selection = "*"
@@ -412,9 +397,8 @@ def aggregate_bigquery_data(project_id, dataset, table, group_by, agg_functions,
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_path
     
     try:
-        # Initialize BigQuery and BigQuery Storage clients
+        # Initialize BigQuery client
         bq_client = Client(project=project_id)
-        storage_client = BigQueryReadClient()
         
         # Build SELECT with aggregation functions
         select_clauses = []
@@ -510,16 +494,9 @@ def aggregate_bigquery_data(project_id, dataset, table, group_by, agg_functions,
         # Configure the query job with caching
         job_config = QueryJobConfig(use_query_cache=True)
         
-        # Run the query and create a BigQueryDataFrame
+        # Run the query and create a DataFrame with BigQuery Storage API
         query_job = bq_client.query(query, job_config=job_config)
-        bqdf = BigQueryDataFrame(
-            source_or_reference=query_job,
-            client=bq_client,
-            storage_client=storage_client
-        )
-        
-        # Convert to pandas DataFrame
-        df = bqdf.to_pandas()
+        df = query_job.to_dataframe(create_bqstorage_client=True)
         
         return df
         
