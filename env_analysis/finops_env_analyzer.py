@@ -74,6 +74,11 @@ def parse_arguments():
         "--credentials",
         help="Path to Google Cloud service account credentials JSON file"
     )
+    parser.add_argument(
+        "--disable-bqdf",
+        action="store_true",
+        help="Disable BigQuery DataFrames and use pandas_gbq instead (less efficient for large datasets)"
+    )
     return parser.parse_args()
 
 
@@ -103,21 +108,29 @@ def main():
             config.bigquery_dataset = args.dataset
             config.bigquery_table = args.table
             config.bigquery_credentials = args.credentials
+            config.use_bqdf = not args.disable_bqdf
         else:
             config.use_bigquery = False
+            config.use_bqdf = False
         
         # Create output directory if it doesn't exist
         os.makedirs(config.output_dir, exist_ok=True)
         
         # Load and preprocess data - either from CSV or BigQuery
         if config.use_bigquery:
-            print(f"Loading data from BigQuery table {config.bigquery_project_id}.{config.bigquery_dataset}.{config.bigquery_table}...")
             from common.finops_bigquery import load_data_from_bigquery
+            
+            if config.use_bqdf:
+                print(f"Loading data from BigQuery table {config.bigquery_project_id}.{config.bigquery_dataset}.{config.bigquery_table} using BigQuery DataFrames...")
+            else:
+                print(f"Loading data from BigQuery table {config.bigquery_project_id}.{config.bigquery_dataset}.{config.bigquery_table} using pandas_gbq...")
+                
             df = load_data_from_bigquery(
                 config.bigquery_project_id,
                 config.bigquery_dataset,
                 config.bigquery_table,
-                config.bigquery_credentials
+                config.bigquery_credentials,
+                use_bqdf=config.use_bqdf
             )
         else:
             print(f"Loading data from {config.file_path}...")
@@ -157,7 +170,8 @@ def main():
                 period_type,
                 period_value,  # Use original value as function handles 'last'
                 year,          # Use original value as function handles 'current'
-                credentials_path=config.bigquery_credentials
+                credentials_path=config.bigquery_credentials,
+                use_bqdf=config.use_bqdf
             )
         else:
             # Otherwise, use the full dataframe and filter it

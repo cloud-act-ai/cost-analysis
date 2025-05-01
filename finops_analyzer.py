@@ -69,6 +69,11 @@ def parse_arguments():
         "--credentials",
         help="Path to Google Cloud service account credentials JSON file"
     )
+    parser.add_argument(
+        "--disable-bqdf",
+        action="store_true",
+        help="Disable BigQuery DataFrames and use pandas_gbq instead (less efficient for large datasets)"
+    )
     
     return parser.parse_args()
 
@@ -111,6 +116,10 @@ def main():
             
             if args.credentials:
                 env_args.extend(["--credentials", args.credentials])
+                
+            # Pass BigQuery DataFrames flag if specified
+            if args.disable_bqdf:
+                env_args.append("--disable-bqdf")
         
         # Update sys.argv for the environment analyzer
         sys.argv = [sys.argv[0]] + env_args
