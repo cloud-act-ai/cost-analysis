@@ -45,6 +45,7 @@ python analyze_environments_simple.py --project YOUR_GCP_PROJECT_ID --skip-model
 
 The script generates a text report with environment-specific analysis:
 - Total costs by environment
+- Optimization potential with estimated savings
 - Cost distribution and ratios between environments
 - Anomalies and forecasted growth
 - Top cost contributors

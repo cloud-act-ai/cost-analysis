@@ -145,7 +145,30 @@ SELECT
   f.total_forecasted_cost,
   f.total_current_cost,
   t.top_3_cost_items,
-  CURRENT_DATE() AS analysis_date
+  CURRENT_DATE() AS analysis_date,
+  
+  -- New column for optimization potential (percentage of total cost that could be saved)
+  CASE
+    WHEN s.environment_category = 'Production' THEN
+      CASE 
+        WHEN a.critical_anomalies > 5 THEN 15.0  -- High anomalies suggest high optimization potential
+        WHEN a.critical_anomalies > 0 THEN 10.0
+        ELSE 5.0
+      END
+    WHEN s.environment_category = 'Development' THEN
+      CASE
+        WHEN e.avg_dev_to_prod_ratio > 0.5 THEN 40.0  -- Oversized dev environments
+        WHEN e.avg_dev_to_prod_ratio > 0.3 THEN 25.0
+        ELSE 15.0
+      END
+    WHEN s.environment_category = 'Test/Stage' THEN
+      CASE
+        WHEN e.avg_test_to_prod_ratio > 0.3 THEN 45.0  -- Oversized test environments
+        WHEN e.avg_test_to_prod_ratio > 0.2 THEN 30.0
+        ELSE 20.0
+      END
+    ELSE 0.0
+  END AS optimization_potential_pct
 FROM
   env_summary s
 LEFT JOIN

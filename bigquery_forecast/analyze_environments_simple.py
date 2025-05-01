@@ -31,7 +31,8 @@ def generate_simple_report(project_id):
       environment_category,
       total_cost,
       environment_summary,
-      recommendation
+      recommendation,
+      optimization_potential_pct
     FROM 
       `finops360-dev-2025.test.env_analysis_consolidated`
     """
@@ -56,6 +57,7 @@ def generate_simple_report(project_id):
         for row in rows:
             f.write(f"## {row.environment_category} Environment\n")
             f.write(f"Total Cost: ${row.total_cost:,.2f}\n")
+            f.write(f"Optimization Potential: {row.optimization_potential_pct:.1f}% (Estimated savings: ${row.total_cost * row.optimization_potential_pct / 100:,.2f})\n")
             f.write(f"\nSummary: {row.environment_summary}\n")
             f.write(f"\nRecommendation: {row.recommendation}\n")
             f.write("\n" + "-" * 50 + "\n\n")
