@@ -1,59 +1,59 @@
-# BigQuery Time Series Forecast & GenAI Analysis
+# Environment Analysis for Cloud Cost Management
 
-This module provides advanced cost analysis using BigQuery's ML capabilities for time series forecasting and GenAI insights.
+This package provides advanced cloud cost analysis tools focused on different environments (Production, Development, Test/Stage), using ARIMA+ time series forecasting models and anomaly detection to provide actionable insights.
 
 ## Features
 
-- **Time Series Forecasting**: Uses BigQuery ML.FORECAST to predict future costs
-- **Anomaly Detection**: Identifies cost anomalies using statistical methods
-- **Trend Analysis**: Shows month-over-month and year-over-year cost trends
-- **Resource Utilization**: Analyzes resource usage patterns to identify optimization opportunities
-- **GenAI Insights**: Uses BigQuery's ML.GENERATE_TEXT to provide natural language analysis
+- **Environment-specific Analysis**: Compare costs across Production, Development, and Test/Stage environments
+- **Time Series Forecasting**: Uses BigQuery ML.FORECAST with ARIMA_PLUS models to predict future costs
+- **Anomaly Detection**: Identifies cost anomalies across environments
+- **Efficiency Metrics**: Calculates Development-to-Production and Test-to-Production cost ratios
+- **Automated Insights**: Generates actionable recommendations for cost optimization
 
-## Structure
+## Directory Structure
 
-- `/sql`: Contains all SQL queries for analysis
-  - `create_forecast_model.sql`: Creates the time series forecast model
-  - `time_series_forecast.sql`: Generates forecasts using the model
-  - `cost_anomaly_detection.sql`: Detects cost anomalies
-  - `trend_analysis.sql`: Analyzes cost trends over time
-  - `resource_utilization.sql`: Identifies underutilized resources
-  - `create_llm_model.sql`: Creates connection to LLM for GenAI analysis
-  - `genai_cost_analysis.sql`: Generates natural language insights
-
-- `/config`: Configuration files
-  - `table_schema.json`: Schema definition for cost data table
+```
+bigquery_forecast/
+├── sql/                           # SQL queries
+│   ├── environment_analysis_models.sql     # Environment-specific time series models
+│   ├── environment_anomaly_detection.sql   # Cost anomaly detection across environments
+│   ├── environment_cost_analysis.sql       # Environment cost patterns and efficiency
+│   ├── environment_forecast.sql            # 30-day forecasts by environment
+│   └── simple_environment_insights.sql     # Consolidated insights with recommendations
+└── analyze_environments_simple.py          # Execution script
+```
 
 ## Usage
 
-Run the analysis using the Python script:
-
 ```bash
-python3 run_forecast.py --project your-gcp-project-id --query all
+# Run the complete analysis
+python analyze_environments_simple.py --project YOUR_GCP_PROJECT_ID
+
+# Skip model creation (use existing models)
+python analyze_environments_simple.py --project YOUR_GCP_PROJECT_ID --skip-models
 ```
 
-Or run specific analyses:
+## Analysis Process
 
-```bash
-python3 run_forecast.py --project your-gcp-project-id --query forecast
-python3 run_forecast.py --project your-gcp-project-id --query anomaly
-python3 run_forecast.py --project your-gcp-project-id --query genai
-```
+1. **Data Organization**: Groups cloud costs by environment categories
+2. **Time Series Models**: Creates separate forecasting models for each environment
+3. **Anomaly Detection**: Uses statistical methods to identify cost outliers 
+4. **Forecasting**: Projects costs 30 days into the future
+5. **Insight Generation**: Produces summarized insights and recommendations
+
+## Output
+
+The script generates a text report with environment-specific analysis:
+- Total costs by environment
+- Cost distribution and ratios between environments
+- Anomalies and forecasted growth
+- Top cost contributors
+- Specific recommendations for each environment
+
+Reports are saved to the `../output/` directory with timestamps.
 
 ## Prerequisites
 
-- BigQuery dataset with cost analysis data in table `finops360-dev-2025.test.cost_analysis_test`
-- Google Cloud project with BigQuery ML and Vertex AI API enabled
-- Appropriate permissions to create models and run queries
-
-## Table Schema
-
-The expected schema for the cost analysis table includes:
-- `usage_date`: Date when cost was incurred
-- `service`: Cloud service (e.g., Compute Engine)
-- `environment`: Environment name (prod, dev, etc.)
-- `project_id`: Google Cloud project identifier
-- `cost`: Cost amount in USD
-- `region`: Cloud region (optional)
-- `resource_type`: Type of resource (optional)
-- `tags`: Resource labels (optional)
+- BigQuery dataset containing cost data
+- Appropriate permissions for creating models and running queries
+- Python 3.6+ with google-cloud-bigquery package installed

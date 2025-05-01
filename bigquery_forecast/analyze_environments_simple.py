@@ -98,7 +98,7 @@ def main():
         },
         {
             'name': 'genai_summary',
-            'file': os.path.join(sql_dir, 'environment_genai_summary.sql'),
+            'file': os.path.join(sql_dir, 'simple_environment_insights.sql'),
             'description': 'Generating environment analysis summary'
         }
     ]

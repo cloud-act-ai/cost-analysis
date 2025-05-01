@@ -1,9 +1,9 @@
--- Environment Analysis GenAI Summary
+-- Simple Environment Cost Analysis Insights
+-- Creates a consolidated view with text-based insights (simulating GenAI)
 
--- Step 1: Create a consolidated view for GenAI analysis
 CREATE OR REPLACE TABLE `finops360-dev-2025.test.env_analysis_consolidated` AS
 
--- Environment summary metrics
+-- Step 1: Create environment cost summary
 WITH env_summary AS (
   SELECT
     environment_category,
@@ -31,7 +31,7 @@ anomaly_stats AS (
     environment_category
 ),
 
--- Forecast statistics for end of forecast period (30 days out)
+-- Forecast statistics
 forecast_stats AS (
   SELECT
     environment_category,
@@ -41,23 +41,16 @@ forecast_stats AS (
   FROM
     `finops360-dev-2025.test.env_forecasts_consolidated`
   WHERE
-    -- Get the last day in the forecast period (30 days from now)
     DATE(forecast_date) = DATE_ADD(CURRENT_DATE(), INTERVAL 30 DAY)
   GROUP BY
     environment_category
 ),
 
 -- Efficiency metrics
-efficiency_overview AS (
+efficiency_metrics AS (
   SELECT
-    AVG(non_prod_to_prod_ratio) AS avg_non_prod_to_prod_ratio,
     AVG(dev_to_prod_ratio) AS avg_dev_to_prod_ratio,
-    AVG(test_to_prod_ratio) AS avg_test_to_prod_ratio,
-    COUNT(CASE WHEN efficiency_rating = 'Excellent (< 30%)' THEN 1 END) AS excellent_efficiency_count,
-    COUNT(CASE WHEN efficiency_rating = 'Good (30-50%)' THEN 1 END) AS good_efficiency_count,
-    COUNT(CASE WHEN efficiency_rating = 'Fair (50-70%)' THEN 1 END) AS fair_efficiency_count,
-    COUNT(CASE WHEN efficiency_rating = 'Poor (70-100%)' THEN 1 END) AS poor_efficiency_count,
-    COUNT(CASE WHEN efficiency_rating = 'Very Poor (>100%)' THEN 1 END) AS very_poor_efficiency_count
+    AVG(test_to_prod_ratio) AS avg_test_to_prod_ratio
   FROM
     `finops360-dev-2025.test.env_efficiency_metrics`
 ),
@@ -75,27 +68,17 @@ top_costs AS (
     environment_category
 )
 
--- Combine all statistics into a single row per environment for GenAI summarization
+-- Create final consolidated view
+
 SELECT
   s.environment_category,
   s.total_cost,
   s.avg_daily_cost,
-  s.product_count,
-  s.service_count,
   a.anomaly_count,
-  a.avg_anomaly_pct_change,
   a.critical_anomalies,
-  a.high_anomalies,
   f.avg_projected_growth_pct,
-  f.total_forecasted_cost,
-  f.total_current_cost,
-  CASE 
-    WHEN s.environment_category = 'Production' THEN 0.0 -- Production is our baseline
-    ELSE e.avg_non_prod_to_prod_ratio
-  END AS avg_non_prod_to_prod_ratio,
-  t.top_3_cost_items,
-  CURRENT_DATE() AS analysis_date,
-  -- Generate natural language summary (SQL-based instead of LLM)
+  
+  -- Generate environment summary
   CASE
     WHEN s.environment_category = 'Production' THEN
       CONCAT(
@@ -129,7 +112,7 @@ SELECT
       'Other environments'
   END AS environment_summary,
   
-  -- Generate recommendations based on the analysis (SQL-based rules)
+  -- Generate recommendations based on the analysis
   CASE
     WHEN s.environment_category = 'Production' THEN
       CASE
@@ -153,7 +136,16 @@ SELECT
         ELSE 'Test/Stage environment costs appear reasonable. Continue monitoring the test-to-prod ratio.'
       END
     ELSE 'No recommendations available for this environment category.'
-  END AS recommendation
+  END AS recommendation,
+  
+  -- Include raw metrics for reporting
+  s.product_count,
+  s.service_count,
+  a.high_anomalies,
+  f.total_forecasted_cost,
+  f.total_current_cost,
+  t.top_3_cost_items,
+  CURRENT_DATE() AS analysis_date
 FROM
   env_summary s
 LEFT JOIN
@@ -163,6 +155,6 @@ LEFT JOIN
 LEFT JOIN
   top_costs t ON s.environment_category = t.environment_category
 CROSS JOIN
-  efficiency_overview e  -- Efficiency metrics are global, not per environment
+  efficiency_metrics e
 WHERE
   s.environment_category IN ('Production', 'Development', 'Test/Stage');
