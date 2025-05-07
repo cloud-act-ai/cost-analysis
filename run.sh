@@ -1,35 +1,80 @@
 #!/bin/bash
-# Script to run the FinOps360 dashboard
+# FinOps360 Cost Analysis Dashboard Runner
 
 # Create output directories if they don't exist
 mkdir -p reports
 
-# Check if data exists, if not generate it
-if [ ! -f "data/cost_analysis_new.csv" ]; then
-    echo "Generating sample data..."
-    python data/generate_updated_data.py --no-header
-fi
+echo "FinOps360 Cost Analysis Dashboard Generator"
+echo "-------------------------------------------"
 
 # Check if BigQuery is available
 if command -v bq &> /dev/null; then
-    echo "BigQuery CLI available, checking authentication..."
+    echo "BigQuery CLI detected. Checking authentication..."
     
     # Check if user is authenticated
     if bq ls &> /dev/null; then
-        echo "BigQuery authenticated, loading data..."
-        bash data/load_to_bigquery.sh
-        
-        echo "Creating BigQuery views..."
-        bash data/run_bigquery_views.sh
+        echo "BigQuery authenticated!"
+        echo "✓ Will attempt to use BigQuery data source"
+        # Update config to use BigQuery
+        cat > config.yaml << EOF
+# FinOps360 Cost Analysis Configuration
+
+# BigQuery settings
+bigquery:
+  project_id: finops360-dev-2025
+  dataset: test
+  table: cost_analysis_new
+  avg_table: avg_daily_cost_table
+  use_bigquery: true
+  # credentials: /path/to/credentials.json  # Uncomment and set if needed
+
+# Output settings
+output_dir: reports
+EOF
     else
-        echo "BigQuery authentication not available, using local data..."
+        echo "BigQuery CLI found but not authenticated."
+        echo "✗ Using sample data instead"
+        # Update config to use sample data
+        cat > config.yaml << EOF
+# FinOps360 Cost Analysis Configuration
+
+# BigQuery settings
+bigquery:
+  project_id: finops360-dev-2025
+  dataset: test
+  table: cost_analysis_new
+  avg_table: avg_daily_cost_table
+  use_bigquery: false
+
+# Output settings
+output_dir: reports
+EOF
     fi
 else
-    echo "BigQuery CLI not available, using local data..."
+    echo "BigQuery CLI not found on this system."
+    echo "✗ Using sample data instead"
+    # Update config to use sample data
+    cat > config.yaml << EOF
+# FinOps360 Cost Analysis Configuration
+
+# BigQuery settings
+bigquery:
+  project_id: finops360-dev-2025
+  dataset: test
+  table: cost_analysis_new
+  avg_table: avg_daily_cost_table
+  use_bigquery: false
+
+# Output settings
+output_dir: reports
+EOF
 fi
 
 # Generate the HTML report
+echo ""
 echo "Generating HTML dashboard..."
-python create_html_report.py
+python -m app.main
 
-echo "Dashboard generation complete! The report is available in the reports directory."
+echo ""
+echo "✓ Dashboard generation complete!"
+echo "The report is available in the reports directory."
