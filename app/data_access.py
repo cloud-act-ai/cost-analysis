@@ -132,11 +132,20 @@ def get_recent_comparisons(client: bigquery.Client, project_id: str, dataset: st
     else:
         prev_month = this_month.replace(month=this_month.month-1, day=1)
         
-    # Set end dates
-    this_month_end = (prev_month.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    # Calculate the last day of the current comparison month
+    if this_month.month == 12:
+        next_month = this_month.replace(year=this_month.year+1, month=1, day=1)
+    else:
+        next_month = this_month.replace(month=this_month.month+1, day=1)
+    this_month_end = next_month - timedelta(days=1)
     this_month_end = min(this_month_end, today)  # Don't go past today
-    days_in_prev_month = (prev_month.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
-    prev_month_end = prev_month.replace(day=min(this_month_end.day, days_in_prev_month.day))
+    
+    # Calculate the last day of the previous month
+    if prev_month.month == 12:
+        next_prev_month = prev_month.replace(year=prev_month.year+1, month=1, day=1)
+    else:
+        next_prev_month = prev_month.replace(month=prev_month.month+1, day=1)
+    prev_month_end = next_prev_month - timedelta(days=1)
     
     month_query = load_sql_query("month_comparison", 
                                 project_id=project_id, 

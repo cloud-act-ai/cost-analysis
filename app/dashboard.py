@@ -217,6 +217,7 @@ def generate_html_report(
             'prod_ytd_cost': prod_ytd['ytd_cost'].iloc[0] if not prod_ytd.empty and 'ytd_cost' in prod_ytd.columns else 0,
             'nonprod_ytd_cost': nonprod_ytd['ytd_cost'].iloc[0] if not nonprod_ytd.empty and 'ytd_cost' in nonprod_ytd.columns else 0,
             'total_fy26_cost': total_fy26_cost,
+            'total_fy25_cost': total_fy25_cost,
             'prod_ytd_percent': prod_ytd_percent,
             'nonprod_ytd_percent': nonprod_ytd_percent,
             'fy26_percent': fy26_percent,
@@ -224,28 +225,27 @@ def generate_html_report(
             'nonprod_percentage_change': nonprod_percentage_change,
             
             # Recent comparisons
-            'day_prod_cost': day_comparison[day_comparison['environment_type'] == 'PROD']['day4_cost'].iloc[0] if not day_comparison.empty and 'PROD' in day_comparison['environment_type'].values and 'day4_cost' in day_comparison.columns else 0,
-            'day_nonprod_cost': day_comparison[day_comparison['environment_type'] == 'NON-PROD']['day4_cost'].iloc[0] if not day_comparison.empty and 'NON-PROD' in day_comparison['environment_type'].values and 'day4_cost' in day_comparison.columns else 0,
+            'day_prod_cost': day_comparison[day_comparison['environment_type'] == 'PROD']['day_current_cost'].iloc[0] if not day_comparison.empty and 'PROD' in day_comparison['environment_type'].values and 'day_current_cost' in day_comparison.columns else 0,
+            'day_nonprod_cost': day_comparison[day_comparison['environment_type'] == 'NON-PROD']['day_current_cost'].iloc[0] if not day_comparison.empty and 'NON-PROD' in day_comparison['environment_type'].values and 'day_current_cost' in day_comparison.columns else 0,
+            'day_prod_previous_cost': day_comparison[day_comparison['environment_type'] == 'PROD']['day_previous_cost'].iloc[0] if not day_comparison.empty and 'PROD' in day_comparison['environment_type'].values and 'day_previous_cost' in day_comparison.columns else 0,
+            'day_nonprod_previous_cost': day_comparison[day_comparison['environment_type'] == 'NON-PROD']['day_previous_cost'].iloc[0] if not day_comparison.empty and 'NON-PROD' in day_comparison['environment_type'].values and 'day_previous_cost' in day_comparison.columns else 0,
             'day_prod_percent': day_comparison[day_comparison['environment_type'] == 'PROD']['percent_change'].iloc[0] if not day_comparison.empty and 'PROD' in day_comparison['environment_type'].values and 'percent_change' in day_comparison.columns else 0,
             'day_nonprod_percent': day_comparison[day_comparison['environment_type'] == 'NON-PROD']['percent_change'].iloc[0] if not day_comparison.empty and 'NON-PROD' in day_comparison['environment_type'].values and 'percent_change' in day_comparison.columns else 0,
             
             'week_prod_cost': week_comparison[week_comparison['environment_type'] == 'PROD']['this_week_cost'].iloc[0] if not week_comparison.empty and 'PROD' in week_comparison['environment_type'].values and 'this_week_cost' in week_comparison.columns else 0,
             'week_nonprod_cost': week_comparison[week_comparison['environment_type'] == 'NON-PROD']['this_week_cost'].iloc[0] if not week_comparison.empty and 'NON-PROD' in week_comparison['environment_type'].values and 'this_week_cost' in week_comparison.columns else 0,
+            'week_prod_previous_cost': week_comparison[week_comparison['environment_type'] == 'PROD']['prev_week_cost'].iloc[0] if not week_comparison.empty and 'PROD' in week_comparison['environment_type'].values and 'prev_week_cost' in week_comparison.columns else 0,
+            'week_nonprod_previous_cost': week_comparison[week_comparison['environment_type'] == 'NON-PROD']['prev_week_cost'].iloc[0] if not week_comparison.empty and 'NON-PROD' in week_comparison['environment_type'].values and 'prev_week_cost' in week_comparison.columns else 0,
             'week_prod_percent': week_comparison[week_comparison['environment_type'] == 'PROD']['percent_change'].iloc[0] if not week_comparison.empty and 'PROD' in week_comparison['environment_type'].values and 'percent_change' in week_comparison.columns else 0,
             'week_nonprod_percent': week_comparison[week_comparison['environment_type'] == 'NON-PROD']['percent_change'].iloc[0] if not week_comparison.empty and 'NON-PROD' in week_comparison['environment_type'].values and 'percent_change' in week_comparison.columns else 0,
             
             'month_prod_cost': month_comparison[month_comparison['environment_type'] == 'PROD']['this_month_cost'].iloc[0] if not month_comparison.empty and 'PROD' in month_comparison['environment_type'].values and 'this_month_cost' in month_comparison.columns else 0,
             'month_nonprod_cost': month_comparison[month_comparison['environment_type'] == 'NON-PROD']['this_month_cost'].iloc[0] if not month_comparison.empty and 'NON-PROD' in month_comparison['environment_type'].values and 'this_month_cost' in month_comparison.columns else 0,
+            'month_prod_previous_cost': month_comparison[month_comparison['environment_type'] == 'PROD']['prev_month_cost'].iloc[0] if not month_comparison.empty and 'PROD' in month_comparison['environment_type'].values and 'prev_month_cost' in month_comparison.columns else 0,
+            'month_nonprod_previous_cost': month_comparison[month_comparison['environment_type'] == 'NON-PROD']['prev_month_cost'].iloc[0] if not month_comparison.empty and 'NON-PROD' in month_comparison['environment_type'].values and 'prev_month_cost' in month_comparison.columns else 0,
             'month_prod_percent': month_comparison[month_comparison['environment_type'] == 'PROD']['percent_change'].iloc[0] if not month_comparison.empty and 'PROD' in month_comparison['environment_type'].values and 'percent_change' in month_comparison.columns else 0,
             'month_nonprod_percent': month_comparison[month_comparison['environment_type'] == 'NON-PROD']['percent_change'].iloc[0] if not month_comparison.empty and 'NON-PROD' in month_comparison['environment_type'].values and 'percent_change' in month_comparison.columns else 0,
             
-            # Previous costs for comparison
-            'day_prod_previous_cost': day_comparison[day_comparison['environment_type'] == 'PROD']['day_previous_cost'].iloc[0] if not day_comparison.empty and 'PROD' in day_comparison['environment_type'].values and 'day_previous_cost' in day_comparison.columns else 0,
-            'day_nonprod_previous_cost': day_comparison[day_comparison['environment_type'] == 'NON-PROD']['day_previous_cost'].iloc[0] if not day_comparison.empty and 'NON-PROD' in day_comparison['environment_type'].values and 'day_previous_cost' in day_comparison.columns else 0,
-            'week_prod_previous_cost': week_comparison[week_comparison['environment_type'] == 'PROD']['prev_week_cost'].iloc[0] if not week_comparison.empty and 'PROD' in week_comparison['environment_type'].values and 'prev_week_cost' in week_comparison.columns else 0,
-            'week_nonprod_previous_cost': week_comparison[week_comparison['environment_type'] == 'NON-PROD']['prev_week_cost'].iloc[0] if not week_comparison.empty and 'NON-PROD' in week_comparison['environment_type'].values and 'prev_week_cost' in week_comparison.columns else 0,
-            'month_prod_previous_cost': month_comparison[month_comparison['environment_type'] == 'PROD']['prev_month_cost'].iloc[0] if not month_comparison.empty and 'PROD' in month_comparison['environment_type'].values and 'prev_month_cost' in month_comparison.columns else 0,
-            'month_nonprod_previous_cost': month_comparison[month_comparison['environment_type'] == 'NON-PROD']['prev_month_cost'].iloc[0] if not month_comparison.empty and 'NON-PROD' in month_comparison['environment_type'].values and 'prev_month_cost' in month_comparison.columns else 0,
             
             # Date information for comparison section
             'day_current_date': date_info.get('day_current_date', ''),

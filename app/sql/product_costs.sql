@@ -54,5 +54,5 @@ SELECT
     END AS nonprod_percentage
 FROM combined_costs
 WHERE total_ytd_cost > 0
-ORDER BY nonprod_percentage DESC, total_ytd_cost DESC
+ORDER BY nonprod_percentage DESC, nonprod_ytd_cost DESC, total_ytd_cost DESC
 LIMIT {top_n}

@@ -15,11 +15,11 @@ else
 fi
 
 # Check for Plotly availability
-if python -c "import plotly" 2>/dev/null; then
+if python3 -c "import plotly" 2>/dev/null; then
     echo "✓ Interactive charts enabled (Plotly detected)"
 else
     echo "! Interactive charts not available (Plotly not installed)"
-    echo "  To enable interactive charts, run: pip install plotly>=5.14.0"
+    echo "  To enable interactive charts, run: pip3 install plotly>=5.14.0"
 fi
 
 # Generate the HTML report
@@ -27,7 +27,7 @@ echo ""
 echo "Generating HTML dashboard..."
 
 # Run the application
-python -m app.main
+python3 -m app.main
 
 echo ""
 echo "✓ Dashboard generation complete!"
