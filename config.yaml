@@ -9,5 +9,8 @@ bigquery:
   use_bigquery: true
   # credentials: /path/to/credentials.json  # Uncomment and set if needed
 
+# Dashboard settings
+interactive_charts: true
+
 # Output settings
 output_dir: reports

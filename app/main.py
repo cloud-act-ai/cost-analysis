@@ -5,7 +5,7 @@ import os
 import sys
 import argparse
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 
 import pandas as pd
 from google.cloud import bigquery
@@ -28,6 +28,8 @@ def parse_args():
                        help="Path to config file (default: config.yaml)")
     parser.add_argument('--template', type=str, default='app/templates/dashboard_template.html',
                        help="Path to HTML template (default: app/templates/dashboard_template.html)")
+    parser.add_argument('--no-interactive', action='store_true',
+                       help="Disable interactive charts")
     
     return parser.parse_args()
 
@@ -68,16 +70,30 @@ def main():
             # Create a dummy client for the function signature
             client = None
         
+        # Get project and dataset from config
+        project_id = config.get('bigquery_project_id', 'sample-project') 
+        dataset = config.get('bigquery_dataset', 'sample-dataset')
+        
+        # Determine if interactive charts should be used
+        use_interactive_charts = not args.no_interactive and config.get('interactive_charts', True)
+        
+        # Log interactive charts status
+        if use_interactive_charts:
+            logger.info("Interactive charts enabled")
+        else:
+            logger.info("Interactive charts disabled")
+        
         # Generate HTML report
         report_path = generate_html_report(
             client=client,
-            project_id=config.get('bigquery_project_id', 'sample-project'),
-            dataset=config.get('bigquery_dataset', 'sample-dataset'),
+            project_id=project_id,
+            dataset=dataset,
             cost_table=config.get('bigquery_table', 'sample-table'),
             avg_table=config.get('avg_table', 'avg_daily_cost_table'),
             template_path=args.template,
             output_path=args.output,
-            use_bigquery=use_bigquery
+            use_bigquery=use_bigquery,
+            use_interactive_charts=use_interactive_charts
         )
         
         # Open the report if in a desktop environment

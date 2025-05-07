@@ -14,18 +14,34 @@ A comprehensive cloud cost analysis tool with environment cost breakdowns, trend
 
 ## Quick Start
 
-Run the entire system with a single command:
+Run the dashboard with a single command:
 
 ```bash
-bash run.sh
+./run.sh
+```
+
+Specify a different BigQuery project and dataset:
+
+```bash
+./run.sh --project your-project-id --dataset your-dataset
+```
+
+Change the output directory:
+
+```bash
+./run.sh --output-dir custom-reports
+```
+
+Disable interactive charts:
+
+```bash
+./run.sh --no-interactive
 ```
 
 This script will:
-1. Check if required data exists, generating it if needed
-2. Check for BigQuery availability and authenticate if possible
-3. Load data to BigQuery tables if available
-4. Create necessary BigQuery views
-5. Generate the HTML dashboard
+1. Always use BigQuery for data access
+2. Generate interactive charts if Plotly is installed
+3. Create a comprehensive HTML dashboard with visualizations
 
 ## Installation
 
@@ -34,19 +50,20 @@ This script will:
 pip install -r requirements.txt
 ```
 
-2. Configure your BigQuery settings in `config.yaml`:
-```yaml
-bigquery:
-  project_id: your-project-id
-  dataset: your-dataset
-  table: cost_analysis_new
-  avg_table: avg_daily_cost_table
-  use_bigquery: true
+2. Enable interactive charts by installing Plotly:
+```bash
+pip install plotly>=5.14.0
 ```
 
 3. Set up your BigQuery credentials (if needed):
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
+```
+
+4. Authenticate with Google Cloud (optional):
+```bash
+gcloud auth login
+gcloud config set project your-project-id
 ```
 
 ## Project Structure
@@ -65,16 +82,25 @@ The application has been streamlined with a clean architecture:
 
 ## Usage
 
-### Generate HTML Dashboard
+### Advanced Usage
+
+The dashboard offers interactive charts with the following features:
+- Filter by environment (PROD/NON-PROD)
+- View forecasted costs
+- Explore product cost breakdowns
+- Analyze trends and patterns
+
+You can run the underlying Python module directly:
 
 ```bash
 python -m app.main
 ```
 
 Options:
-- `--output`: Output HTML file path (default: reports/finops_dashboard.html)
-- `--config`: Path to config file (default: config.yaml)
-- `--template`: Path to HTML template (default: app/templates/dashboard_template.html)
+- `--output`: Output HTML file path
+- `--config`: Path to config file
+- `--template`: Path to HTML template
+- `--no-interactive`: Disable interactive charts
 
 ## BigQuery Integration
 

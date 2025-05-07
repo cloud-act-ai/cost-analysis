@@ -20,7 +20,8 @@
       "Bash(grep:*)",
       "Bash(grep:*)",
       "Bash(bash:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(./run.sh:*)"
     ],
     "deny": []
   }

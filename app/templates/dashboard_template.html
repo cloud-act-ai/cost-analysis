@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinOps360 Cost Analysis Dashboard</title>
+    <!-- Plotly.js for interactive charts -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         /* Base Styles */
         body {
@@ -121,6 +123,37 @@
             width: 100%;
             height: auto;
             max-height: 500px;
+        }
+        
+        .chart-container {
+            position: relative;
+        }
+        
+        .chart-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .chart-toggle:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .interactive-chart {
+            width: 100%;
+            height: 500px;
+            display: none;
+        }
+        
+        .static-chart {
+            display: block;
         }
         
         /* Comparison Section */
@@ -332,12 +365,41 @@
         <div class="chart-section">
             <div class="chart-container full-width">
                 <h2>Daily Cost Analysis for PROD and NON-PROD Environments</h2>
+                
+                {% if use_interactive_charts is defined and use_interactive_charts %}
+                <div id="daily-trend-interactive" style="width: 100%; height: 500px;"></div>
+                
+                <script>
+                    // Parse the interactive chart data from the template
+                    var dailyTrendData = {{ daily_trend_chart_json|safe }};
+                    
+                    // Create the interactive chart
+                    Plotly.newPlot('daily-trend-interactive', dailyTrendData.data, dailyTrendData.layout);
+                </script>
+                {% else %}
                 <img src="data:image/png;base64,{{ daily_trend_chart }}" alt="Daily Cost Analysis" class="chart">
+                {% endif %}
             </div>
         </div>
         
+        
         <div class="table-section">
             <h2>Product ID Cost Details</h2>
+            
+            {% if use_interactive_charts is defined and use_interactive_charts %}
+            <div class="chart-container" style="margin-bottom: 20px;">
+                <div id="product-chart-interactive" style="width: 100%; height: 500px;"></div>
+                
+                <script>
+                    // Parse the interactive product chart data from the template
+                    var productChartData = {{ product_chart_json|safe }};
+                    
+                    // Create the interactive chart
+                    Plotly.newPlot('product-chart-interactive', productChartData.data, productChartData.layout);
+                </script>
+            </div>
+            {% endif %}
+            
             <table>
                 <thead>
                     <tr>
@@ -368,8 +430,53 @@
             </table>
         </div>
         
+        <div class="table-section">
+            <h2>Source Configuration</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Setting</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Data Source</td>
+                        <td>{% if use_bigquery %}BigQuery{% else %}Sample Data{% endif %}</td>
+                    </tr>
+                    {% if use_bigquery and project_id is defined %}
+                    <tr>
+                        <td>Project ID</td>
+                        <td>{{ project_id }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if use_bigquery and dataset is defined %}
+                    <tr>
+                        <td>Dataset</td>
+                        <td>{{ dataset }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if use_bigquery and cost_table is defined %}
+                    <tr>
+                        <td>Cost Table</td>
+                        <td>{{ cost_table }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if use_bigquery and avg_table is defined %}
+                    <tr>
+                        <td>Avg Cost Table</td>
+                        <td>{{ avg_table }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
         <footer>
             <p>Generated on {{ report_generation_date }} | FinOps360 Cost Analysis Tool</p>
+            {% if use_interactive_charts is defined and use_interactive_charts %}
+            <p><small>Interactive charts powered by Plotly.js</small></p>
+            {% endif %}
         </footer>
     </div>
 </body>

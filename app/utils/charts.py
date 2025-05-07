@@ -9,12 +9,14 @@ from typing import Dict, List, Optional, Tuple, Any
 
 import pandas as pd
 import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
+
+# Note: Plotly imports are only used in interactive_charts.py
+# import plotly.graph_objects as go
+# import plotly.express as px
+# from plotly.subplots import make_subplots
 
 logger = logging.getLogger(__name__)
 

@@ -5,7 +5,7 @@ import os
 import logging
 import jinja2
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union, List, Tuple
 
 import pandas as pd
 from google.cloud import bigquery
@@ -17,6 +17,27 @@ from app.utils.charts import (
     create_environment_breakdown_chart,
     create_product_breakdown_chart
 )
+
+# Try to import interactive charts, but don't fail if plotly is not installed
+try:
+    from app.utils.interactive_charts import (
+        create_interactive_daily_trend_chart,
+        create_interactive_product_breakdown_chart,
+        create_interactive_environment_breakdown_chart,
+        get_project_dataset_config
+    )
+    has_interactive_charts = True
+except ImportError:
+    # Create dummy functions if plotly is not available
+    def create_interactive_daily_trend_chart(*args, **kwargs):
+        return "{}"
+    def create_interactive_product_breakdown_chart(*args, **kwargs):
+        return "{}"
+    def create_interactive_environment_breakdown_chart(*args, **kwargs):
+        return "{}"
+    def get_project_dataset_config(*args, **kwargs):
+        return {}
+    has_interactive_charts = False
 from app.data_access import (
     get_ytd_costs,
     get_fy26_costs,
@@ -48,7 +69,8 @@ def generate_html_report(
     avg_table: str,
     template_path: str,
     output_path: str,
-    use_bigquery: bool = True
+    use_bigquery: bool = True,
+    use_interactive_charts: bool = True
 ) -> str:
     """
     Generate a comprehensive HTML report.
@@ -62,6 +84,7 @@ def generate_html_report(
         template_path: Path to HTML template
         output_path: Path to save the generated report
         use_bigquery: Whether to use BigQuery or sample data
+        use_interactive_charts: Whether to generate interactive charts
         
     Returns:
         Path to the generated HTML report
@@ -150,7 +173,7 @@ def generate_html_report(
                 'nonprod_percentage': row['nonprod_percentage'] if 'nonprod_percentage' in row else 0
             })
         
-        # Create chart - only keep daily cost chart
+        # Create static chart
         daily_trend_chart = create_daily_trend_chart(daily_trend_data)
         
         # Load Jinja2 template
@@ -164,6 +187,16 @@ def generate_html_report(
             'report_start_date': (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d'),
             'report_end_date': (datetime.now() - timedelta(days=3)).strftime('%Y-%m-%d'),
             'report_generation_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            
+            # Add BigQuery integration data
+            'use_bigquery': use_bigquery,
+            'project_id': project_id,
+            'dataset': dataset,
+            'cost_table': cost_table,
+            'avg_table': avg_table,
+            
+            # Interactive charts flag
+            'use_interactive_charts': use_interactive_charts,
             
             # Scorecard data
             'prod_ytd_cost': prod_ytd['ytd_cost'].iloc[0] if not prod_ytd.empty and 'ytd_cost' in prod_ytd.columns else 0,
@@ -191,12 +224,27 @@ def generate_html_report(
             'month_prod_percent': month_comparison[month_comparison['environment_type'] == 'PROD']['percent_change'].iloc[0] if not month_comparison.empty and 'PROD' in month_comparison['environment_type'].values and 'percent_change' in month_comparison.columns else 0,
             'month_nonprod_percent': month_comparison[month_comparison['environment_type'] == 'NON-PROD']['percent_change'].iloc[0] if not month_comparison.empty and 'NON-PROD' in month_comparison['environment_type'].values and 'percent_change' in month_comparison.columns else 0,
             
-            # Charts - only keep daily cost chart 
+            # Static charts 
             'daily_trend_chart': daily_trend_chart,
             
             # Tables
             'product_cost_table': product_cost_table
         }
+        
+        # Add interactive charts data if enabled and plotly is available
+        if use_interactive_charts and has_interactive_charts:
+            # Create interactive charts
+            daily_trend_chart_json = create_interactive_daily_trend_chart(daily_trend_data)
+            product_chart_json = create_interactive_product_breakdown_chart(product_costs)
+            env_chart_json = create_interactive_environment_breakdown_chart(ytd_costs)
+            
+            # Add to template data
+            template_data['daily_trend_chart_json'] = daily_trend_chart_json
+            template_data['product_chart_json'] = product_chart_json
+            template_data['env_chart_json'] = env_chart_json
+        else:
+            # Disable interactive charts if plotly is not available
+            template_data['use_interactive_charts'] = False
         
         # Render template and save to file
         html_output = template.render(**template_data)
