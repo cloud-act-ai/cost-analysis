@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(python:*)",
+      "Bash(chmod:*)",
+      "Bash(chmod:*)",
+      "Bash(./load_to_bigquery.sh:*)",
+      "Bash(./load_to_bigquery.sh:*)",
+      "Bash(mkdir:*)",
+      "Bash(mkdir:*)",
+      "Bash(./data/generate_updated_data.py --no-header)",
+      "Bash(./data/generate_updated_data.py --no-header)",
+      "Bash(cp:*)",
+      "Bash(ls:*)",
+      "Bash(cp:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(grep:*)",
+      "Bash(bash:*)",
+      "Bash(bash:*)"
+    ],
+    "deny": []
+  }
+}
