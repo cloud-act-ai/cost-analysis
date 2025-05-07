@@ -14,28 +14,18 @@ A comprehensive cloud cost analysis tool with environment cost breakdowns, trend
 
 ## Quick Start
 
-Run the dashboard with a single command:
+1. Edit `config.yaml` with your BigQuery settings:
+```yaml
+bigquery:
+  project_id: your-project-id
+  dataset: your-dataset
+  table: cost_analysis_new
+  avg_table: avg_daily_cost_table
+```
 
+2. Run the dashboard with a single command:
 ```bash
 ./run.sh
-```
-
-Specify a different BigQuery project and dataset:
-
-```bash
-./run.sh --project your-project-id --dataset your-dataset
-```
-
-Change the output directory:
-
-```bash
-./run.sh --output-dir custom-reports
-```
-
-Disable interactive charts:
-
-```bash
-./run.sh --no-interactive
 ```
 
 This script will:

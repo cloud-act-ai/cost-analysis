@@ -442,27 +442,27 @@
                 <tbody>
                     <tr>
                         <td>Data Source</td>
-                        <td>{% if use_bigquery %}BigQuery{% else %}Sample Data{% endif %}</td>
+                        <td>BigQuery</td>
                     </tr>
-                    {% if use_bigquery and project_id is defined %}
+                    {% if project_id is defined %}
                     <tr>
                         <td>Project ID</td>
                         <td>{{ project_id }}</td>
                     </tr>
                     {% endif %}
-                    {% if use_bigquery and dataset is defined %}
+                    {% if dataset is defined %}
                     <tr>
                         <td>Dataset</td>
                         <td>{{ dataset }}</td>
                     </tr>
                     {% endif %}
-                    {% if use_bigquery and cost_table is defined %}
+                    {% if cost_table is defined %}
                     <tr>
                         <td>Cost Table</td>
                         <td>{{ cost_table }}</td>
                     </tr>
                     {% endif %}
-                    {% if use_bigquery and avg_table is defined %}
+                    {% if avg_table is defined %}
                     <tr>
                         <td>Avg Cost Table</td>
                         <td>{{ avg_table }}</td>

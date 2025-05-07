@@ -69,7 +69,6 @@ def generate_html_report(
     avg_table: str,
     template_path: str,
     output_path: str,
-    use_bigquery: bool = True,
     use_interactive_charts: bool = True
 ) -> str:
     """
@@ -83,30 +82,25 @@ def generate_html_report(
         avg_table: Average daily cost table name
         template_path: Path to HTML template
         output_path: Path to save the generated report
-        use_bigquery: Whether to use BigQuery or sample data
         use_interactive_charts: Whether to generate interactive charts
         
     Returns:
         Path to the generated HTML report
     """
     try:
-        # Decide whether to use BigQuery data or sample data
-        if use_bigquery:
-            try:
-                # Get data from BigQuery
-                ytd_costs = get_ytd_costs(client, project_id, dataset, cost_table)
-                fy26_costs = get_fy26_costs(client, project_id, dataset, cost_table)
-                fy25_costs = get_fy25_costs(client, project_id, dataset, cost_table)
-                day_comparison, week_comparison, month_comparison = get_recent_comparisons(client, project_id, dataset, cost_table)
-                product_costs = get_product_costs(client, project_id, dataset, cost_table)
-                daily_trend_data = get_daily_trend_data(client, project_id, dataset, avg_table)
-                logger.info("Successfully retrieved data from BigQuery")
-            except Exception as e:
-                logger.warning(f"Error retrieving data from BigQuery: {e}. Using sample data instead.")
-                use_bigquery = False
-        
-        # Use sample data if BigQuery is disabled or had an error
-        if not use_bigquery:
+        try:
+            # Get data from BigQuery
+            ytd_costs = get_ytd_costs(client, project_id, dataset, cost_table)
+            fy26_costs = get_fy26_costs(client, project_id, dataset, cost_table)
+            fy25_costs = get_fy25_costs(client, project_id, dataset, cost_table)
+            day_comparison, week_comparison, month_comparison = get_recent_comparisons(client, project_id, dataset, cost_table)
+            product_costs = get_product_costs(client, project_id, dataset, cost_table)
+            daily_trend_data = get_daily_trend_data(client, project_id, dataset, avg_table)
+            logger.info("Successfully retrieved data from BigQuery")
+        except Exception as e:
+            logger.error(f"Error retrieving data from BigQuery: {e}")
+            
+            # If tables don't exist, create sample data
             logger.info("Using sample data for dashboard generation")
             ytd_costs = create_sample_ytd_costs()
             fy26_costs = create_sample_fy26_costs()
@@ -189,7 +183,6 @@ def generate_html_report(
             'report_generation_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             
             # Add BigQuery integration data
-            'use_bigquery': use_bigquery,
             'project_id': project_id,
             'dataset': dataset,
             'cost_table': cost_table,

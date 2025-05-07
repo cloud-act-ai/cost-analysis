@@ -6,8 +6,6 @@ bigquery:
   dataset: test
   table: cost_analysis_new
   avg_table: avg_daily_cost_table
-  use_bigquery: true
-  # credentials: /path/to/credentials.json  # Uncomment and set if needed
 
 # Dashboard settings
 interactive_charts: true

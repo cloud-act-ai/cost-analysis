@@ -7,7 +7,6 @@ import argparse
 import logging
 from typing import Dict, Any, Optional, Union
 
-import pandas as pd
 from google.cloud import bigquery
 
 from app.utils.config import load_config
@@ -22,8 +21,8 @@ def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Generate FinOps HTML dashboard")
     
-    parser.add_argument('--output', type=str, default='reports/finops_dashboard.html',
-                       help="Output HTML file path (default: reports/finops_dashboard.html)")
+    parser.add_argument('--output', type=str,
+                       help="Output HTML file path (overrides config)")
     parser.add_argument('--config', type=str, default='config.yaml',
                        help="Path to config file (default: config.yaml)")
     parser.add_argument('--template', type=str, default='app/templates/dashboard_template.html',
@@ -38,41 +37,40 @@ def main():
     args = parse_args()
     
     try:
-        # Create output directory if it doesn't exist
-        output_dir = os.path.dirname(args.output)
-        if output_dir and not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        
         # Load configuration
         config = load_config(args.config)
         
-        # Validate BigQuery configuration
-        if not config.get('use_bigquery'):
-            logger.warning("BigQuery is not enabled in the configuration. Creating sample dashboard with placeholder data.")
-            # Continue with sample data generation instead of exiting
+        # Set the output path from config or command line
+        output_path = args.output or os.path.join(config.get('output_dir', 'reports'), 'finops_dashboard.html')
         
-        # Check if BigQuery is enabled
-        use_bigquery = config.get('use_bigquery', False)
+        # Create output directory if it doesn't exist
+        output_dir = os.path.dirname(output_path)
+        if output_dir and not os.path.exists(output_dir):
+            os.makedirs(output_dir)
         
-        if use_bigquery:
-            # Set up BigQuery client
-            credentials_path = config.get('bigquery_credentials')
-            if credentials_path:
-                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_path
-                
-            try:
-                client = bigquery.Client(project=config.bigquery_project_id)
-            except Exception as e:
-                logger.warning(f"Failed to create BigQuery client: {e}")
-                use_bigquery = False
-                client = None
-        else:
-            # Create a dummy client for the function signature
-            client = None
+        # Get project and dataset settings
+        project_id = config.get('bigquery_project_id')
+        dataset = config.get('bigquery_dataset')
+        cost_table = config.get('bigquery_table', 'cost_analysis_new')
+        avg_table = config.get('avg_table', 'avg_daily_cost_table')
         
-        # Get project and dataset from config
-        project_id = config.get('bigquery_project_id', 'sample-project') 
-        dataset = config.get('bigquery_dataset', 'sample-dataset')
+        # Verify required configurations
+        if not project_id or not dataset:
+            logger.error("Missing required BigQuery configuration. "
+                        "Please set project_id and dataset in config.yaml")
+            sys.exit(1)
+        
+        # Set up BigQuery client
+        credentials_path = config.get('bigquery_credentials')
+        if credentials_path:
+            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_path
+            
+        try:
+            client = bigquery.Client(project=project_id)
+            logger.info(f"Connected to BigQuery project: {project_id}")
+        except Exception as e:
+            logger.error(f"Failed to create BigQuery client: {e}")
+            sys.exit(1)
         
         # Determine if interactive charts should be used
         use_interactive_charts = not args.no_interactive and config.get('interactive_charts', True)
@@ -88,11 +86,10 @@ def main():
             client=client,
             project_id=project_id,
             dataset=dataset,
-            cost_table=config.get('bigquery_table', 'sample-table'),
-            avg_table=config.get('avg_table', 'avg_daily_cost_table'),
+            cost_table=cost_table,
+            avg_table=avg_table,
             template_path=args.template,
-            output_path=args.output,
-            use_bigquery=use_bigquery,
+            output_path=output_path,
             use_interactive_charts=use_interactive_charts
         )
         

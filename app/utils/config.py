@@ -18,6 +18,10 @@ class FinOpsConfig:
         if hasattr(self, 'bigquery'):
             for key, value in self.bigquery.items():
                 setattr(self, f"bigquery_{key}", value)
+        
+        # Ensure BigQuery is always enabled
+        if hasattr(self, 'bigquery') and not hasattr(self, 'bigquery_use_bigquery'):
+            setattr(self, 'bigquery_use_bigquery', True)
     
     def get(self, key: str, default: Any = None) -> Any:
         """Dictionary-like getter for compatibility with existing code."""
