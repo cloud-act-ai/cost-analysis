@@ -99,3 +99,5 @@ For detailed instructions on integrating with your own BigQuery data sources, se
 ## License
 
 © 2025 FinOps360
+
+
