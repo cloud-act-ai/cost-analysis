@@ -64,7 +64,8 @@ The application has been streamlined with a clean architecture:
   - `main.py`: Primary entry point
   - `dashboard.py`: Dashboard generation logic
   - `data_access.py`: BigQuery data access functions
-  - `data/`: Schema definitions and SQL scripts
+  - `data/`: Schema definitions and data files
+  - `sql/`: SQL query templates for BigQuery
   - `templates/`: HTML templates for the dashboard
   - `utils/`: Utility modules for configuration, BigQuery access, and chart generation
 - `reports/`: Generated HTML reports
@@ -95,6 +96,34 @@ Options:
 ## BigQuery Integration
 
 For detailed instructions on integrating with your own BigQuery data sources, see [BIGQUERY_INTEGRATION.md](BIGQUERY_INTEGRATION.md).
+
+### Loading Sample Data to BigQuery
+
+The application includes scripts to generate and load sample data to your BigQuery instance:
+
+1. Generate sample data:
+```bash
+python app/data/generate_data.py
+```
+
+2. Load the data to BigQuery:
+```bash
+./load_to_bigquery.sh
+```
+
+This will create and populate two tables in your configured BigQuery project:
+- `cost_analysis_new`: Contains detailed cost data by product, environment, etc.
+- `avg_daily_cost_table`: Contains daily cost averages and forecasts
+
+The script will automatically:
+- Create or replace the tables
+- Load the sample data
+- Verify the data was loaded correctly
+
+**Note**: You must be authenticated with the Google Cloud CLI for this to work:
+```bash
+gcloud auth application-default login
+```
 
 ## License
 

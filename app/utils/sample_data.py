@@ -2,7 +2,7 @@
 Sample data generator for when BigQuery is not available.
 This provides placeholder data for the dashboard.
 """
-import datetime
+from datetime import datetime, timedelta, date
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Tuple
@@ -42,9 +42,10 @@ def create_sample_day_comparison() -> pd.DataFrame:
     """Create sample day-to-day comparison DataFrame."""
     data = {
         'environment_type': ['PROD', 'NON-PROD'],
-        'day4_cost': [10200.0, 3800.0],
-        'day5_cost': [10000.0, 3700.0],
-        'percent_change': [2.0, 2.7]
+        'day_current_cost': [10200.0, 3800.0],
+        'day_previous_cost': [10000.0, 3700.0],
+        'percent_change': [2.0, 2.7],
+        'compare_date': [date.today() - timedelta(days=4), date.today() - timedelta(days=4)]
     }
     return pd.DataFrame(data)
 
@@ -69,6 +70,40 @@ def create_sample_month_comparison() -> pd.DataFrame:
         'percent_change': [3.3, 10.0]
     }
     return pd.DataFrame(data)
+
+
+def create_sample_date_info() -> Dict[str, str]:
+    """Create sample date information for the template."""
+    today = date.today()
+    
+    # Calculate sample dates based on typical offsets
+    day_current = today - timedelta(days=4)
+    day_previous = today - timedelta(days=5)
+    
+    this_week_start = today - timedelta(days=today.weekday() + 7)
+    this_week_end = this_week_start + timedelta(days=6)
+    prev_week_start = this_week_start - timedelta(days=7)
+    prev_week_end = prev_week_start + timedelta(days=6)
+    
+    # Get current month and previous month
+    if today.month == 1:
+        this_month = date(today.year - 1, 12, 1)
+    else:
+        this_month = date(today.year, today.month - 1, 1)
+        
+    if this_month.month == 1:
+        prev_month = date(this_month.year - 1, 12, 1)
+    else:
+        prev_month = date(this_month.year, this_month.month - 1, 1)
+    
+    return {
+        'day_current_date': day_current.strftime('%Y-%m-%d'),
+        'day_previous_date': day_previous.strftime('%Y-%m-%d'),
+        'week_current_date_range': f"{this_week_start.strftime('%b %d')} - {this_week_end.strftime('%b %d, %Y')}",
+        'week_previous_date_range': f"{prev_week_start.strftime('%b %d')} - {prev_week_end.strftime('%b %d, %Y')}",
+        'month_current_date_range': f"{this_month.strftime('%b %Y')}",
+        'month_previous_date_range': f"{prev_month.strftime('%b %Y')}"
+    }
 
 
 def create_sample_product_costs() -> pd.DataFrame:

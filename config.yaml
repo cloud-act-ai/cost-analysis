@@ -10,5 +10,14 @@ bigquery:
 # Dashboard settings
 interactive_charts: true
 
+# Data settings
+data:
+  day_comparison_offset: 4  # Days ago to compare for day-to-day changes
+  week_comparison_offset: 1  # Weeks ago to compare for week-to-week changes
+  month_comparison_offset: 1  # Months ago to compare for month-to-month changes
+  top_products_count: 10     # Number of top products to display
+  nonprod_percentage_threshold: 30  # Highlight products with nonprod % above this threshold
+  display_millions: true      # Display costs in millions for scorecards
+
 # Output settings
 output_dir: reports

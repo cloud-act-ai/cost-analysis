@@ -9,6 +9,37 @@ from typing import Optional, List, Dict, Any, Union
 
 logger = logging.getLogger(__name__)
 
+def load_sql_query(query_name: str, **kwargs) -> str:
+    """
+    Load a SQL query from file and format it with parameters.
+    
+    Args:
+        query_name: Name of the SQL file (without extension)
+        **kwargs: Parameters to format the query with
+        
+    Returns:
+        Formatted SQL query string
+    """
+    # Determine the base path of the application
+    base_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "../.."))
+    sql_dir = os.path.join(base_dir, "app", "sql")
+    
+    # Full path to the SQL file
+    sql_file = os.path.join(sql_dir, f"{query_name}.sql")
+    
+    try:
+        with open(sql_file, 'r') as f:
+            query = f.read()
+        
+        # Format the query with the provided parameters
+        if kwargs:
+            query = query.format(**kwargs)
+            
+        return query
+    except Exception as e:
+        logger.error(f"Error loading SQL query {query_name}: {e}")
+        return ""
+
 def setup_bigquery_client(project_id: str, credentials_path: Optional[str] = None) -> bigquery.Client:
     """
     Set up a BigQuery client.

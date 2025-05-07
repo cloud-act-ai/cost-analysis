@@ -8,7 +8,7 @@ from typing import Tuple, Dict, List, Any, Optional
 import pandas as pd
 from google.cloud import bigquery
 
-from app.utils.bigquery import run_query
+from app.utils.bigquery import run_query, load_sql_query
 
 logger = logging.getLogger(__name__)
 
@@ -25,18 +25,7 @@ def get_ytd_costs(client: bigquery.Client, project_id: str, dataset: str, table:
     Returns:
         DataFrame with YTD costs by environment
     """
-    query = f"""
-    SELECT
-        CASE 
-            WHEN environment LIKE '%PROD%' THEN 'PROD'
-            ELSE 'NON-PROD'
-        END AS environment_type,
-        SUM(cost) AS ytd_cost,
-        COUNT(DISTINCT date) AS days
-    FROM `{project_id}.{dataset}.{table}`
-    WHERE date BETWEEN '2025-02-01' AND CURRENT_DATE() - 3
-    GROUP BY environment_type
-    """
+    query = load_sql_query("ytd_costs", project_id=project_id, dataset=dataset, table=table)
     return run_query(client, query)
 
 def get_fy26_costs(client: bigquery.Client, project_id: str, dataset: str, table: str) -> pd.DataFrame:
@@ -52,18 +41,7 @@ def get_fy26_costs(client: bigquery.Client, project_id: str, dataset: str, table
     Returns:
         DataFrame with FY26 costs by environment
     """
-    query = f"""
-    SELECT
-        CASE 
-            WHEN environment LIKE '%PROD%' THEN 'PROD'
-            ELSE 'NON-PROD'
-        END AS environment_type,
-        SUM(cost) AS total_cost,
-        COUNT(DISTINCT date) AS days
-    FROM `{project_id}.{dataset}.{table}`
-    WHERE date BETWEEN '2025-02-01' AND '2026-01-31'
-    GROUP BY environment_type
-    """
+    query = load_sql_query("fy26_costs", project_id=project_id, dataset=dataset, table=table)
     return run_query(client, query)
 
 def get_fy25_costs(client: bigquery.Client, project_id: str, dataset: str, table: str) -> pd.DataFrame:
@@ -79,21 +57,11 @@ def get_fy25_costs(client: bigquery.Client, project_id: str, dataset: str, table
     Returns:
         DataFrame with FY25 costs by environment
     """
-    query = f"""
-    SELECT
-        CASE 
-            WHEN environment LIKE '%PROD%' THEN 'PROD'
-            ELSE 'NON-PROD'
-        END AS environment_type,
-        SUM(cost) AS total_cost,
-        COUNT(DISTINCT date) AS days
-    FROM `{project_id}.{dataset}.{table}`
-    WHERE date BETWEEN '2024-02-01' AND '2025-01-31'
-    GROUP BY environment_type
-    """
+    query = load_sql_query("fy25_costs", project_id=project_id, dataset=dataset, table=table)
     return run_query(client, query)
 
-def get_recent_comparisons(client: bigquery.Client, project_id: str, dataset: str, table: str) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def get_recent_comparisons(client: bigquery.Client, project_id: str, dataset: str, table: str,
+                       day_offset: int = 4, week_offset: int = 1, month_offset: int = 1) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Dict[str, str]]:
     """
     Get recent day, week, and month comparisons.
     
@@ -102,133 +70,99 @@ def get_recent_comparisons(client: bigquery.Client, project_id: str, dataset: st
         project_id: Google Cloud project ID
         dataset: BigQuery dataset name
         table: BigQuery table name
+        day_offset: Days ago to use for day comparison
+        week_offset: Weeks ago to use for week comparison
+        month_offset: Months ago to use for month comparison
         
     Returns:
-        Tuple of DataFrames with day, week, and month comparisons
+        Tuple containing:
+        - DataFrame with day comparisons
+        - DataFrame with week comparisons
+        - DataFrame with month comparisons
+        - Dictionary with date strings for the template
     """
     today = datetime.now().date()
-    yesterday = today - timedelta(days=1)
-    day_before = today - timedelta(days=2)
     
-    # Day-to-day comparison (4 days ago vs 5 days ago)
-    day4 = today - timedelta(days=4)
-    day5 = today - timedelta(days=5)
+    # Day-to-day comparison based on configured offset
+    day_current = today - timedelta(days=day_offset)
+    day_previous = today - timedelta(days=day_offset+1)
     
-    day_query = f"""
-    WITH day4 AS (
-        SELECT
-            CASE 
-                WHEN environment LIKE '%PROD%' THEN 'PROD'
-                ELSE 'NON-PROD'
-            END AS environment_type,
-            SUM(cost) AS total_cost
-        FROM `{project_id}.{dataset}.{table}`
-        WHERE date = '{day4}'
-        GROUP BY environment_type
-    ),
-    day5 AS (
-        SELECT
-            CASE 
-                WHEN environment LIKE '%PROD%' THEN 'PROD'
-                ELSE 'NON-PROD'
-            END AS environment_type,
-            SUM(cost) AS total_cost
-        FROM `{project_id}.{dataset}.{table}`
-        WHERE date = '{day5}'
-        GROUP BY environment_type
-    )
-    SELECT
-        d4.environment_type,
-        d4.total_cost AS day4_cost,
-        d5.total_cost AS day5_cost,
-        (d4.total_cost - d5.total_cost) / NULLIF(d5.total_cost, 0) * 100 AS percent_change
-    FROM day4 d4
-    JOIN day5 d5 ON d4.environment_type = d5.environment_type
-    """
+    day_query = load_sql_query("day_comparison", 
+                              project_id=project_id, 
+                              dataset=dataset, 
+                              table=table, 
+                              day_current=day_current.strftime('%Y-%m-%d'),
+                              day_previous=day_previous.strftime('%Y-%m-%d'))
+    
     day_comparison = run_query(client, day_query)
     
-    # Week-to-week comparison
-    this_week_start = today - timedelta(days=today.weekday() + 7)  # Last week's start
+    # Week-to-week comparison based on configured offset
+    weeks_offset = 7 * week_offset
+    this_week_start = today - timedelta(days=today.weekday() + weeks_offset)
     this_week_end = this_week_start + timedelta(days=6)
     prev_week_start = this_week_start - timedelta(days=7)
     prev_week_end = prev_week_start + timedelta(days=6)
     
-    week_query = f"""
-    WITH this_week AS (
-        SELECT
-            CASE 
-                WHEN environment LIKE '%PROD%' THEN 'PROD'
-                ELSE 'NON-PROD'
-            END AS environment_type,
-            SUM(cost) AS total_cost
-        FROM `{project_id}.{dataset}.{table}`
-        WHERE date BETWEEN '{this_week_start}' AND '{this_week_end}'
-        GROUP BY environment_type
-    ),
-    prev_week AS (
-        SELECT
-            CASE 
-                WHEN environment LIKE '%PROD%' THEN 'PROD'
-                ELSE 'NON-PROD'
-            END AS environment_type,
-            SUM(cost) AS total_cost
-        FROM `{project_id}.{dataset}.{table}`
-        WHERE date BETWEEN '{prev_week_start}' AND '{prev_week_end}'
-        GROUP BY environment_type
-    )
-    SELECT
-        tw.environment_type,
-        tw.total_cost AS this_week_cost,
-        pw.total_cost AS prev_week_cost,
-        (tw.total_cost - pw.total_cost) / NULLIF(pw.total_cost, 0) * 100 AS percent_change
-    FROM this_week tw
-    JOIN prev_week pw ON tw.environment_type = pw.environment_type
-    """
+    week_query = load_sql_query("week_comparison", 
+                               project_id=project_id, 
+                               dataset=dataset, 
+                               table=table,
+                               this_week_start=this_week_start.strftime('%Y-%m-%d'),
+                               this_week_end=this_week_end.strftime('%Y-%m-%d'),
+                               prev_week_start=prev_week_start.strftime('%Y-%m-%d'),
+                               prev_week_end=prev_week_end.strftime('%Y-%m-%d'))
+    
     week_comparison = run_query(client, week_query)
     
-    # Month-to-month comparison
-    this_month = today.replace(day=1)
-    prev_month = (this_month.replace(day=1) - timedelta(days=1)).replace(day=1)
-    this_month_end = today
-    days_in_prev_month = (this_month - timedelta(days=1)).day
-    prev_month_end = prev_month.replace(day=min(this_month_end.day, days_in_prev_month))
+    # Month-to-month comparison based on configured offset
+    months_to_subtract = month_offset
+    # Get the current month minus offset
+    if today.month <= months_to_subtract:
+        this_month_year = today.year - 1
+        this_month_month = today.month + 12 - months_to_subtract
+    else:
+        this_month_year = today.year
+        this_month_month = today.month - months_to_subtract
+        
+    this_month = today.replace(year=this_month_year, month=this_month_month, day=1)
     
-    month_query = f"""
-    WITH this_month AS (
-        SELECT
-            CASE 
-                WHEN environment LIKE '%PROD%' THEN 'PROD'
-                ELSE 'NON-PROD'
-            END AS environment_type,
-            SUM(cost) AS total_cost
-        FROM `{project_id}.{dataset}.{table}`
-        WHERE date BETWEEN '{this_month}' AND '{this_month_end}'
-        GROUP BY environment_type
-    ),
-    prev_month AS (
-        SELECT
-            CASE 
-                WHEN environment LIKE '%PROD%' THEN 'PROD'
-                ELSE 'NON-PROD'
-            END AS environment_type,
-            SUM(cost) AS total_cost
-        FROM `{project_id}.{dataset}.{table}`
-        WHERE date BETWEEN '{prev_month}' AND '{prev_month_end}'
-        GROUP BY environment_type
-    )
-    SELECT
-        tm.environment_type,
-        tm.total_cost AS this_month_cost,
-        pm.total_cost AS prev_month_cost,
-        (tm.total_cost - pm.total_cost) / NULLIF(pm.total_cost, 0) * 100 AS percent_change
-    FROM this_month tm
-    JOIN prev_month pm ON tm.environment_type = pm.environment_type
-    """
+    # Get the previous month
+    if this_month.month == 1:
+        prev_month = this_month.replace(year=this_month.year-1, month=12, day=1)
+    else:
+        prev_month = this_month.replace(month=this_month.month-1, day=1)
+        
+    # Set end dates
+    this_month_end = (prev_month.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    this_month_end = min(this_month_end, today)  # Don't go past today
+    days_in_prev_month = (prev_month.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    prev_month_end = prev_month.replace(day=min(this_month_end.day, days_in_prev_month.day))
+    
+    month_query = load_sql_query("month_comparison", 
+                                project_id=project_id, 
+                                dataset=dataset, 
+                                table=table,
+                                this_month_start=this_month.strftime('%Y-%m-%d'),
+                                this_month_end=this_month_end.strftime('%Y-%m-%d'),
+                                prev_month_start=prev_month.strftime('%Y-%m-%d'),
+                                prev_month_end=prev_month_end.strftime('%Y-%m-%d'))
+    
     month_comparison = run_query(client, month_query)
     
-    return day_comparison, week_comparison, month_comparison
+    # Create a dictionary with date information for the template
+    date_info = {
+        'day_current_date': day_current.strftime('%Y-%m-%d'),
+        'day_previous_date': day_previous.strftime('%Y-%m-%d'),
+        'week_current_date_range': f"{this_week_start.strftime('%b %d')} - {this_week_end.strftime('%b %d, %Y')}",
+        'week_previous_date_range': f"{prev_week_start.strftime('%b %d')} - {prev_week_end.strftime('%b %d, %Y')}",
+        'month_current_date_range': f"{this_month.strftime('%b %Y')}",
+        'month_previous_date_range': f"{prev_month.strftime('%b %Y')}"
+    }
+    
+    return day_comparison, week_comparison, month_comparison, date_info
 
-def get_product_costs(client: bigquery.Client, project_id: str, dataset: str, table: str) -> pd.DataFrame:
+def get_product_costs(client: bigquery.Client, project_id: str, dataset: str, table: str, 
+                  top_n: int = 10, nonprod_pct_threshold: int = 30) -> pd.DataFrame:
     """
     Get costs by product ID with prod/nonprod breakdown.
     
@@ -237,70 +171,18 @@ def get_product_costs(client: bigquery.Client, project_id: str, dataset: str, ta
         project_id: Google Cloud project ID
         dataset: BigQuery dataset name
         table: BigQuery table name
+        top_n: Number of top products to return
+        nonprod_pct_threshold: Threshold for nonprod percentage to highlight
         
     Returns:
         DataFrame with product costs
     """
-    query = f"""
-    WITH product_costs AS (
-        SELECT
-            tr_product_id AS product_id,
-            tr_product AS product_name,
-            tr_product_pillar_team AS pillar_team,
-            CASE 
-                WHEN environment LIKE '%PROD%' THEN 'PROD'
-                ELSE 'NON-PROD'
-            END AS environment,
-            SUM(cost) AS ytd_cost
-        FROM `{project_id}.{dataset}.{table}`
-        WHERE date BETWEEN '2025-02-01' AND CURRENT_DATE() - 3
-        GROUP BY product_id, product_name, pillar_team, environment
-    ),
-    prod_costs AS (
-        SELECT
-            product_id,
-            product_name,
-            pillar_team,
-            ytd_cost AS prod_ytd_cost
-        FROM product_costs
-        WHERE environment = 'PROD'
-    ),
-    nonprod_costs AS (
-        SELECT
-            product_id,
-            product_name,
-            pillar_team,
-            ytd_cost AS nonprod_ytd_cost
-        FROM product_costs
-        WHERE environment = 'NON-PROD'
-    ),
-    combined_costs AS (
-        SELECT
-            COALESCE(p.product_id, np.product_id) AS product_id,
-            COALESCE(p.product_name, np.product_name) AS product_name,
-            COALESCE(p.pillar_team, np.pillar_team) AS pillar_team,
-            COALESCE(p.prod_ytd_cost, 0) AS prod_ytd_cost,
-            COALESCE(np.nonprod_ytd_cost, 0) AS nonprod_ytd_cost,
-            COALESCE(p.prod_ytd_cost, 0) + COALESCE(np.nonprod_ytd_cost, 0) AS total_ytd_cost
-        FROM prod_costs p
-        FULL OUTER JOIN nonprod_costs np ON p.product_id = np.product_id
-    )
-    SELECT
-        product_id,
-        product_name,
-        pillar_team,
-        prod_ytd_cost,
-        nonprod_ytd_cost,
-        total_ytd_cost,
-        CASE 
-            WHEN total_ytd_cost > 0 THEN (nonprod_ytd_cost / total_ytd_cost) * 100
-            ELSE 0
-        END AS nonprod_percentage
-    FROM combined_costs
-    WHERE total_ytd_cost > 0
-    ORDER BY total_ytd_cost DESC
-    LIMIT 50
-    """
+    query = load_sql_query("product_costs", 
+                          project_id=project_id, 
+                          dataset=dataset, 
+                          table=table,
+                          top_n=top_n)
+    
     return run_query(client, query)
 
 def get_daily_trend_data(client: bigquery.Client, project_id: str, dataset: str, avg_table: str, days: int = 90) -> pd.DataFrame:
@@ -320,16 +202,11 @@ def get_daily_trend_data(client: bigquery.Client, project_id: str, dataset: str,
     end_date = datetime.now().date() - timedelta(days=3)  # Latest available data
     start_date = end_date - timedelta(days=days)
     
-    query = f"""
-    SELECT
-        date,
-        environment_type,
-        daily_cost,
-        fy25_avg_daily_spend,
-        fy26_ytd_avg_daily_spend,
-        fy26_forecasted_avg_daily_spend
-    FROM `{project_id}.{dataset}.{avg_table}`
-    WHERE date BETWEEN '{start_date}' AND '{end_date}'
-    ORDER BY date
-    """
+    query = load_sql_query("daily_trend_data", 
+                          project_id=project_id, 
+                          dataset=dataset, 
+                          avg_table=avg_table,
+                          start_date=start_date.strftime('%Y-%m-%d'),
+                          end_date=end_date.strftime('%Y-%m-%d'))
+    
     return run_query(client, query)

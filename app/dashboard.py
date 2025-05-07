@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional, Union, List, Tuple
 import pandas as pd
 from google.cloud import bigquery
 
-from app.utils.config import FinOpsConfig
+from app.utils.config import FinOpsConfig, load_config
 from app.utils.charts import (
     create_daily_trend_chart,
     create_forecast_chart,
@@ -88,13 +88,34 @@ def generate_html_report(
         Path to the generated HTML report
     """
     try:
+        # Load config settings for data display
+        config = load_config("config.yaml")
+        data_config = config.get('data', {})
+        
+        # Get configured comparison settings
+        day_offset = data_config.get('day_comparison_offset', 4)
+        week_offset = data_config.get('week_comparison_offset', 1)
+        month_offset = data_config.get('month_comparison_offset', 1)
+        top_products = data_config.get('top_products_count', 10)
+        nonprod_threshold = data_config.get('nonprod_percentage_threshold', 30)
+        display_millions = data_config.get('display_millions', True)
+        
         try:
             # Get data from BigQuery
             ytd_costs = get_ytd_costs(client, project_id, dataset, cost_table)
             fy26_costs = get_fy26_costs(client, project_id, dataset, cost_table)
             fy25_costs = get_fy25_costs(client, project_id, dataset, cost_table)
-            day_comparison, week_comparison, month_comparison = get_recent_comparisons(client, project_id, dataset, cost_table)
-            product_costs = get_product_costs(client, project_id, dataset, cost_table)
+            day_comparison, week_comparison, month_comparison, date_info = get_recent_comparisons(
+                client, project_id, dataset, cost_table, 
+                day_offset=day_offset, 
+                week_offset=week_offset, 
+                month_offset=month_offset
+            )
+            product_costs = get_product_costs(
+                client, project_id, dataset, cost_table,
+                top_n=top_products,
+                nonprod_pct_threshold=nonprod_threshold
+            )
             daily_trend_data = get_daily_trend_data(client, project_id, dataset, avg_table)
             logger.info("Successfully retrieved data from BigQuery")
         except Exception as e:
@@ -110,6 +131,7 @@ def generate_html_report(
             month_comparison = create_sample_month_comparison()
             product_costs = create_sample_product_costs()
             daily_trend_data = create_sample_daily_trend_data()
+            date_info = create_sample_date_info()
         
         # Extract and process data (same regardless of source)
         prod_ytd = ytd_costs[ytd_costs['environment_type'] == 'PROD'] if not ytd_costs.empty and 'PROD' in ytd_costs['environment_type'].values else pd.DataFrame()
@@ -216,6 +238,25 @@ def generate_html_report(
             'month_nonprod_cost': month_comparison[month_comparison['environment_type'] == 'NON-PROD']['this_month_cost'].iloc[0] if not month_comparison.empty and 'NON-PROD' in month_comparison['environment_type'].values and 'this_month_cost' in month_comparison.columns else 0,
             'month_prod_percent': month_comparison[month_comparison['environment_type'] == 'PROD']['percent_change'].iloc[0] if not month_comparison.empty and 'PROD' in month_comparison['environment_type'].values and 'percent_change' in month_comparison.columns else 0,
             'month_nonprod_percent': month_comparison[month_comparison['environment_type'] == 'NON-PROD']['percent_change'].iloc[0] if not month_comparison.empty and 'NON-PROD' in month_comparison['environment_type'].values and 'percent_change' in month_comparison.columns else 0,
+            
+            # Previous costs for comparison
+            'day_prod_previous_cost': day_comparison[day_comparison['environment_type'] == 'PROD']['day_previous_cost'].iloc[0] if not day_comparison.empty and 'PROD' in day_comparison['environment_type'].values and 'day_previous_cost' in day_comparison.columns else 0,
+            'day_nonprod_previous_cost': day_comparison[day_comparison['environment_type'] == 'NON-PROD']['day_previous_cost'].iloc[0] if not day_comparison.empty and 'NON-PROD' in day_comparison['environment_type'].values and 'day_previous_cost' in day_comparison.columns else 0,
+            'week_prod_previous_cost': week_comparison[week_comparison['environment_type'] == 'PROD']['prev_week_cost'].iloc[0] if not week_comparison.empty and 'PROD' in week_comparison['environment_type'].values and 'prev_week_cost' in week_comparison.columns else 0,
+            'week_nonprod_previous_cost': week_comparison[week_comparison['environment_type'] == 'NON-PROD']['prev_week_cost'].iloc[0] if not week_comparison.empty and 'NON-PROD' in week_comparison['environment_type'].values and 'prev_week_cost' in week_comparison.columns else 0,
+            'month_prod_previous_cost': month_comparison[month_comparison['environment_type'] == 'PROD']['prev_month_cost'].iloc[0] if not month_comparison.empty and 'PROD' in month_comparison['environment_type'].values and 'prev_month_cost' in month_comparison.columns else 0,
+            'month_nonprod_previous_cost': month_comparison[month_comparison['environment_type'] == 'NON-PROD']['prev_month_cost'].iloc[0] if not month_comparison.empty and 'NON-PROD' in month_comparison['environment_type'].values and 'prev_month_cost' in month_comparison.columns else 0,
+            
+            # Date information for comparison section
+            'day_current_date': date_info.get('day_current_date', ''),
+            'day_previous_date': date_info.get('day_previous_date', ''),
+            'week_current_date_range': date_info.get('week_current_date_range', ''),
+            'week_previous_date_range': date_info.get('week_previous_date_range', ''),
+            'month_current_date_range': date_info.get('month_current_date_range', ''),
+            'month_previous_date_range': date_info.get('month_previous_date_range', ''),
+            
+            # Display in millions flag
+            'display_in_millions': display_millions,
             
             # Static charts 
             'daily_trend_chart': daily_trend_chart,

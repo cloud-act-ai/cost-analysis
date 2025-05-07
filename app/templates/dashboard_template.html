@@ -184,10 +184,26 @@
             font-size: 16px;
             color: #7f8c8d;
         }
+        .date-label {
+            font-size: 12px;
+            font-weight: normal;
+            color: #95a5a6;
+            white-space: nowrap;
+        }
         .comparison-item .value {
             font-size: 20px;
             font-weight: bold;
             margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 5px;
+        }
+        .previous-value {
+            font-size: 14px;
+            font-weight: normal;
+            color: #95a5a6;
+            margin-left: 6px;
         }
         
         /* Table Section */
@@ -295,21 +311,33 @@
         <div class="scorecard-section">
             <div class="scorecard prod">
                 <h3>Production YTD Cost</h3>
+                {% if display_in_millions %}
+                <div class="value">${{ "{:,.2f}M".format(prod_ytd_cost / 1000000) }}</div>
+                {% else %}
                 <div class="value">${{ "{:,.2f}".format(prod_ytd_cost) }}</div>
+                {% endif %}
                 <div class="change {% if prod_ytd_percent > 0 %}positive-change{% elif prod_ytd_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
                     {{ "{:+.2f}%".format(prod_ytd_percent) }} vs Last Year
                 </div>
             </div>
             <div class="scorecard non-prod">
                 <h3>Non-Production YTD Cost</h3>
+                {% if display_in_millions %}
+                <div class="value">${{ "{:,.2f}M".format(nonprod_ytd_cost / 1000000) }}</div>
+                {% else %}
                 <div class="value">${{ "{:,.2f}".format(nonprod_ytd_cost) }}</div>
+                {% endif %}
                 <div class="change {% if nonprod_ytd_percent > 0 %}positive-change{% elif nonprod_ytd_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
                     {{ "{:+.2f}%".format(nonprod_ytd_percent) }} vs Last Year
                 </div>
             </div>
             <div class="scorecard">
                 <h3>Total FY26 Projected Cost</h3>
+                {% if display_in_millions %}
+                <div class="value">${{ "{:,.2f}M".format(total_fy26_cost / 1000000) }}</div>
+                {% else %}
                 <div class="value">${{ "{:,.2f}".format(total_fy26_cost) }}</div>
+                {% endif %}
                 <div class="change {% if fy26_percent > 0 %}positive-change{% elif fy26_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
                     {{ "{:+.2f}%".format(fy26_percent) }} vs FY25
                 </div>
@@ -327,34 +355,46 @@
             <h2>Recent Comparisons</h2>
             <div class="comparison-grid">
                 <div class="comparison-item">
-                    <h3>Day-to-Day Change</h3>
-                    <div class="value prod">${{ "{:,.2f}".format(day_prod_cost) }} (Prod)</div>
+                    <h3>Day-to-Day Change <span class="date-label">({{ day_current_date|default('Current') }} vs {{ day_previous_date|default('Previous') }})</span></h3>
+                    <div class="value prod">${{ "{:,.2f}".format(day_prod_cost) }} (Prod)
+                        <span class="previous-value">vs ${{ "{:,.2f}".format(day_prod_previous_cost|default(0)) }}</span>
+                    </div>
                     <div class="change {% if day_prod_percent > 0 %}positive-change{% elif day_prod_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
                         {{ "{:+.2f}%".format(day_prod_percent) }}
                     </div>
-                    <div class="value non-prod">${{ "{:,.2f}".format(day_nonprod_cost) }} (Non-Prod)</div>
+                    <div class="value non-prod">${{ "{:,.2f}".format(day_nonprod_cost) }} (Non-Prod)
+                        <span class="previous-value">vs ${{ "{:,.2f}".format(day_nonprod_previous_cost|default(0)) }}</span>
+                    </div>
                     <div class="change {% if day_nonprod_percent > 0 %}positive-change{% elif day_nonprod_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
                         {{ "{:+.2f}%".format(day_nonprod_percent) }}
                     </div>
                 </div>
                 <div class="comparison-item">
-                    <h3>Week-to-Week Change</h3>
-                    <div class="value prod">${{ "{:,.2f}".format(week_prod_cost) }} (Prod)</div>
+                    <h3>Week-to-Week Change <span class="date-label">({{ week_current_date_range|default('Current week') }} vs {{ week_previous_date_range|default('Previous week') }})</span></h3>
+                    <div class="value prod">${{ "{:,.2f}".format(week_prod_cost) }} (Prod)
+                        <span class="previous-value">vs ${{ "{:,.2f}".format(week_prod_previous_cost|default(0)) }}</span>
+                    </div>
                     <div class="change {% if week_prod_percent > 0 %}positive-change{% elif week_prod_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
                         {{ "{:+.2f}%".format(week_prod_percent) }}
                     </div>
-                    <div class="value non-prod">${{ "{:,.2f}".format(week_nonprod_cost) }} (Non-Prod)</div>
+                    <div class="value non-prod">${{ "{:,.2f}".format(week_nonprod_cost) }} (Non-Prod)
+                        <span class="previous-value">vs ${{ "{:,.2f}".format(week_nonprod_previous_cost|default(0)) }}</span>
+                    </div>
                     <div class="change {% if week_nonprod_percent > 0 %}positive-change{% elif week_nonprod_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
                         {{ "{:+.2f}%".format(week_nonprod_percent) }}
                     </div>
                 </div>
                 <div class="comparison-item">
-                    <h3>Month-to-Month Change</h3>
-                    <div class="value prod">${{ "{:,.2f}".format(month_prod_cost) }} (Prod)</div>
+                    <h3>Month-to-Month Change <span class="date-label">({{ month_current_date_range|default('Current month') }} vs {{ month_previous_date_range|default('Previous month') }})</span></h3>
+                    <div class="value prod">${{ "{:,.2f}".format(month_prod_cost) }} (Prod)
+                        <span class="previous-value">vs ${{ "{:,.2f}".format(month_prod_previous_cost|default(0)) }}</span>
+                    </div>
                     <div class="change {% if month_prod_percent > 0 %}positive-change{% elif month_prod_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
                         {{ "{:+.2f}%".format(month_prod_percent) }}
                     </div>
-                    <div class="value non-prod">${{ "{:,.2f}".format(month_nonprod_cost) }} (Non-Prod)</div>
+                    <div class="value non-prod">${{ "{:,.2f}".format(month_nonprod_cost) }} (Non-Prod)
+                        <span class="previous-value">vs ${{ "{:,.2f}".format(month_nonprod_previous_cost|default(0)) }}</span>
+                    </div>
                     <div class="change {% if month_nonprod_percent > 0 %}positive-change{% elif month_nonprod_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
                         {{ "{:+.2f}%".format(month_nonprod_percent) }}
                     </div>
@@ -364,7 +404,7 @@
         
         <div class="chart-section">
             <div class="chart-container full-width">
-                <h2>Daily Cost Analysis for PROD and NON-PROD Environments</h2>
+                <!-- Chart title is removed since it's already included in the plot -->
                 
                 {% if use_interactive_charts is defined and use_interactive_charts %}
                 <div id="daily-trend-interactive" style="width: 100%; height: 500px;"></div>
@@ -430,47 +470,6 @@
             </table>
         </div>
         
-        <div class="table-section">
-            <h2>Source Configuration</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Setting</th>
-                        <th>Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Data Source</td>
-                        <td>BigQuery</td>
-                    </tr>
-                    {% if project_id is defined %}
-                    <tr>
-                        <td>Project ID</td>
-                        <td>{{ project_id }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if dataset is defined %}
-                    <tr>
-                        <td>Dataset</td>
-                        <td>{{ dataset }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if cost_table is defined %}
-                    <tr>
-                        <td>Cost Table</td>
-                        <td>{{ cost_table }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if avg_table is defined %}
-                    <tr>
-                        <td>Avg Cost Table</td>
-                        <td>{{ avg_table }}</td>
-                    </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
         
         <footer>
             <p>Generated on {{ report_generation_date }} | FinOps360 Cost Analysis Tool</p>

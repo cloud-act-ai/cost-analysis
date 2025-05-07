@@ -156,48 +156,72 @@ def create_interactive_daily_trend_chart(df: pd.DataFrame) -> str:
             legend_title_font_size=10
         )
         
-        # Add interactive features
+        # Add chart filter buttons in a more accessible layout
+        button_layer_1_height = 1.12
+        
         fig.update_layout(
+            # Create a row of buttons for environment filtering
             updatemenus=[
                 dict(
                     type="buttons",
                     direction="right",
-                    x=0.01,
-                    y=1.15,
+                    x=0.5,
+                    y=button_layer_1_height,
+                    xanchor="center",
+                    yanchor="top",
                     buttons=[
                         dict(
-                            label="All",
+                            label="👁️ Show All",
                             method="update",
                             args=[{"visible": [True] * len(fig.data)}]
                         ),
                         dict(
-                            label="PROD Only",
+                            label="🔵 PROD Only",
                             method="update",
                             args=[{"visible": [True if "PROD" in trace.name and "NON-PROD" not in trace.name else False 
                                                for trace in fig.data]}]
                         ),
                         dict(
-                            label="NON-PROD Only",
+                            label="🟢 NON-PROD Only",
                             method="update",
                             args=[{"visible": [True if "NON-PROD" in trace.name else False 
                                                for trace in fig.data]}]
-                        ),
+                        )
+                    ]
+                ),
+                # Create a row of buttons for data type filtering
+                dict(
+                    type="buttons",
+                    direction="right",
+                    x=0.5,
+                    y=button_layer_1_height - 0.08,
+                    xanchor="center",
+                    yanchor="top",
+                    buttons=[
                         dict(
-                            label="Actual Only",
+                            label="📊 Actual Only",
                             method="update",
                             args=[{"visible": [True if "Forecasted" not in trace.name and "Avg" not in trace.name else False 
                                                for trace in fig.data]}]
                         ),
                         dict(
-                            label="With Forecasts",
+                            label="📈 With Forecasts",
                             method="update",
                             args=[{"visible": [True if "Avg" not in trace.name else False 
                                                for trace in fig.data]}]
+                        ),
+                        dict(
+                            label="📉 Show Averages",
+                            method="update",
+                            args=[{"visible": [True] * len(fig.data)}]
                         )
                     ]
                 )
             ]
         )
+        
+        # Add extra margin at the top for the buttons
+        fig.update_layout(margin=dict(t=120))
         
         # Convert to JSON
         plotly_json = json.dumps(fig, cls=PlotlyJSONEncoder)
