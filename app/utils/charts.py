@@ -3,11 +3,15 @@ Chart generation utilities for FinOps360 cost analysis dashboard.
 """
 import logging
 import base64
+import json
 from io import BytesIO
 from typing import Dict, List, Optional, Tuple, Any
 
 import pandas as pd
 import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
@@ -33,7 +37,7 @@ def encode_figure_to_base64(fig: plt.Figure) -> str:
 
 def create_daily_trend_chart(df: pd.DataFrame) -> str:
     """
-    Create a daily trend chart with both actual and average costs.
+    Create a daily trend chart with both actual and forecasted costs.
     
     Args:
         df: DataFrame with daily cost data
@@ -46,66 +50,101 @@ def create_daily_trend_chart(df: pd.DataFrame) -> str:
         if df.empty:
             # Create empty chart with message
             plt.style.use('ggplot')
-            fig, ax = plt.subplots(figsize=(10, 6))
+            fig, ax = plt.subplots(figsize=(12, 6))
             ax.text(0.5, 0.5, 'No data available for trend chart', 
                    ha='center', va='center', fontsize=14)
-            ax.set_title('Daily Cost vs. Average Baselines', fontsize=14)
+            ax.set_title('Daily Cost Analysis for PROD and NON-PROD Environments', fontsize=14)
             plt.tight_layout()
             return encode_figure_to_base64(fig)
             
-        plt.style.use('ggplot')
-        fig, ax = plt.subplots(figsize=(10, 6))
+        # Use a cleaner style for the plot
+        plt.style.use('seaborn-v0_8-whitegrid')
+        fig, ax = plt.subplots(figsize=(12, 6))
+        
+        # Define colors
+        prod_color = '#3366cc'  # Blue for PROD
+        nonprod_color = '#33aa33'  # Green for NON-PROD
+        avg_color = '#666666'  # Gray for averages
+        forecast_prod_color = '#9966ff'  # Purple for PROD forecast
+        forecast_nonprod_color = '#ff6666'  # Red for NON-PROD forecast
+        
+        # Set title at the top
+        fig.suptitle('FY26 Daily Cost for PROD and NON-PROD (Including Forecast)', fontsize=14, y=0.98)
+        
+        # Plot each environment type
         legend_handles = []
         legend_labels = []
         
         # Plot each environment type
         for env, group in df.groupby('environment_type'):
+            color = prod_color if env == 'PROD' else nonprod_color
+            forecast_color = forecast_prod_color if env == 'PROD' else forecast_nonprod_color
+            
             # Plot actual daily cost
             line1, = ax.plot(
                 group['date'], 
                 group['daily_cost'], 
-                marker='o',
-                markersize=4,
-                linewidth=2
+                linewidth=1.5,
+                color=color,
+                alpha=0.9
             )
             legend_handles.append(line1)
-            legend_labels.append(f"{env} Actual")
+            legend_labels.append(f"{env} Daily Cost (FY26)")
             
-            # Plot FY25 average (historical baseline)
+            # Add FY25 average (historical baseline)
             line2, = ax.plot(
                 group['date'], 
                 group['fy25_avg_daily_spend'], 
                 linestyle='--',
-                linewidth=1.5,
-                color='gray' if env == 'PROD' else 'lightgreen'
+                linewidth=1,
+                color='#999999',
+                alpha=0.7
             )
             legend_handles.append(line2)
-            legend_labels.append(f"{env} FY25 Avg")
+            legend_labels.append("FY25 Avg Daily Spend")
             
-            # Plot YTD average (current baseline)
+            # Add FY26 YTD average
             line3, = ax.plot(
                 group['date'], 
                 group['fy26_ytd_avg_daily_spend'], 
                 linestyle='-.',
-                linewidth=1.5,
-                color='blue' if env == 'PROD' else 'green'
+                linewidth=1,
+                color=avg_color,
+                alpha=0.8
             )
             legend_handles.append(line3)
-            legend_labels.append(f"{env} FY26 YTD Avg")
+            legend_labels.append("FY26 Avg Daily Spend")
+            
+            # Add forecasted line
+            line4, = ax.plot(
+                group['date'], 
+                group['fy26_forecasted_avg_daily_spend'], 
+                linestyle=':',
+                linewidth=2,
+                color=forecast_color,
+                alpha=0.9
+            )
+            legend_handles.append(line4)
+            legend_labels.append(f"{env} Forecasted Daily Cost (FY26)")
                 
         # Format the plot
-        ax.set_title('Daily Cost vs. Average Baselines', fontsize=14)
         ax.set_xlabel('Date', fontsize=12)
         ax.set_ylabel('Cost ($)', fontsize=12)
-        ax.grid(True, alpha=0.3)
+        
+        # Add gridlines
+        ax.grid(True, linestyle='--', alpha=0.6)
         
         # Format date labels
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
-        fig.autofmt_xdate()
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
+        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
+        fig.autofmt_xdate(rotation=45)
         
-        # Add legend manually
-        if legend_handles:
-            ax.legend(legend_handles, legend_labels)
+        # Add legend in a good position
+        ax.legend(handles=legend_handles, labels=legend_labels, loc='upper right', 
+                 bbox_to_anchor=(1.01, 1), fontsize=10)
+        
+        # Show y-axis in dollar format
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'${x:,.0f}'))
         
         plt.tight_layout()
         return encode_figure_to_base64(fig)

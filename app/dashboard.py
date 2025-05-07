@@ -150,11 +150,8 @@ def generate_html_report(
                 'nonprod_percentage': row['nonprod_percentage'] if 'nonprod_percentage' in row else 0
             })
         
-        # Create charts
+        # Create chart - only keep daily cost chart
         daily_trend_chart = create_daily_trend_chart(daily_trend_data)
-        forecast_chart = create_forecast_chart(daily_trend_data)
-        env_breakdown_chart = create_environment_breakdown_chart(prod_ytd, nonprod_ytd)
-        product_breakdown_chart = create_product_breakdown_chart(product_costs)
         
         # Load Jinja2 template
         template_dir = os.path.dirname(template_path)
@@ -194,11 +191,8 @@ def generate_html_report(
             'month_prod_percent': month_comparison[month_comparison['environment_type'] == 'PROD']['percent_change'].iloc[0] if not month_comparison.empty and 'PROD' in month_comparison['environment_type'].values and 'percent_change' in month_comparison.columns else 0,
             'month_nonprod_percent': month_comparison[month_comparison['environment_type'] == 'NON-PROD']['percent_change'].iloc[0] if not month_comparison.empty and 'NON-PROD' in month_comparison['environment_type'].values and 'percent_change' in month_comparison.columns else 0,
             
-            # Charts
+            # Charts - only keep daily cost chart 
             'daily_trend_chart': daily_trend_chart,
-            'forecast_chart': forecast_chart,
-            'env_breakdown_chart': env_breakdown_chart,
-            'product_breakdown_chart': product_breakdown_chart,
             
             # Tables
             'product_cost_table': product_cost_table

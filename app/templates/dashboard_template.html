@@ -106,16 +106,21 @@
             flex: 1;
             min-width: 45%;
         }
+        .chart-container.full-width {
+            width: 100%;
+            flex-basis: 100%;
+        }
         .chart-container h2 {
             margin-top: 0;
             font-size: 18px;
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
+            text-align: center;
         }
         .chart {
             width: 100%;
             height: auto;
-            max-height: 400px;
+            max-height: 500px;
         }
         
         /* Comparison Section */
@@ -325,24 +330,9 @@
         </div>
         
         <div class="chart-section">
-            <div class="chart-container">
-                <h2>Daily Cost Trend</h2>
-                <img src="data:image/png;base64,{{ daily_trend_chart }}" alt="Daily Cost Trend" class="chart">
-            </div>
-            <div class="chart-container">
-                <h2>Cost Forecast</h2>
-                <img src="data:image/png;base64,{{ forecast_chart }}" alt="Cost Forecast" class="chart">
-            </div>
-        </div>
-        
-        <div class="chart-section">
-            <div class="chart-container">
-                <h2>Environment Cost Breakdown</h2>
-                <img src="data:image/png;base64,{{ env_breakdown_chart }}" alt="Environment Cost Breakdown" class="chart">
-            </div>
-            <div class="chart-container">
-                <h2>Top Product Costs</h2>
-                <img src="data:image/png;base64,{{ product_breakdown_chart }}" alt="Product Cost Breakdown" class="chart">
+            <div class="chart-container full-width">
+                <h2>Daily Cost Analysis for PROD and NON-PROD Environments</h2>
+                <img src="data:image/png;base64,{{ daily_trend_chart }}" alt="Daily Cost Analysis" class="chart">
             </div>
         </div>
         

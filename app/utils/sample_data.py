@@ -98,46 +98,71 @@ def create_sample_product_costs() -> pd.DataFrame:
 
 
 def create_sample_daily_trend_data() -> pd.DataFrame:
-    """Create sample daily trend data."""
-    # Generate 90 days of data
-    end_date = datetime.datetime.now().date() - datetime.timedelta(days=3)
-    start_date = end_date - datetime.timedelta(days=90)
+    """Create sample daily trend data that resembles the image pattern."""
+    # Generate a full year of data (FY26)
+    start_date = datetime.datetime(2025, 2, 1).date()  # Start of FY26
+    end_date = datetime.datetime(2026, 1, 31).date()  # End of FY26
     
-    dates = [start_date + datetime.timedelta(days=i) for i in range(91)]
+    days_total = (end_date - start_date).days + 1
+    dates = [start_date + datetime.timedelta(days=i) for i in range(days_total)]
     
     # Create data arrays
     daily_data = []
     
-    # Base values
-    prod_daily_base = 10000
-    nonprod_daily_base = 3500
+    # Base values (designed to match the image)
+    prod_daily_base = 250000
+    nonprod_daily_base = 50000
     
-    # FY25 averages
-    prod_fy25_avg = 9500
-    nonprod_fy25_avg = 3000
+    # FY25 averages (historical)
+    prod_fy25_avg = 200000
+    nonprod_fy25_avg = 45000
     
     # FY26 YTD averages
-    prod_fy26_ytd_avg = 10200
-    nonprod_fy26_ytd_avg = 3600
+    prod_fy26_ytd_avg = 240000
+    nonprod_fy26_ytd_avg = 48000
     
     # FY26 forecasted averages
-    prod_fy26_forecast_avg = 11000
-    nonprod_fy26_forecast_avg = 3800
+    prod_fy26_forecast_avg = 245000
+    nonprod_fy26_forecast_avg = 50000
     
-    # Generate data with some randomness
-    for date in dates:
-        # Add some seasonality (weekly pattern)
-        day_factor = 1.0 + 0.1 * ((date.weekday() % 7) / 10)
+    # Generate data with characteristic spikes and patterns
+    for i, date in enumerate(dates):
+        # Add some seasonality 
+        month_factor = 1.0 + 0.05 * np.sin(i / 30 * np.pi)  # Monthly cycle
         
-        # Add some random variation
-        random_factor_prod = np.random.normal(1.0, 0.05)
-        random_factor_nonprod = np.random.normal(1.0, 0.08)  # More variability in non-prod
+        # Add spikes in the first few months to match the image
+        spike_factor = 1.0
+        if i < 90:
+            # Random spikes in the first 3 months (similar to image)
+            if i % 14 == 0 or i % 23 == 0:
+                spike_factor = np.random.choice([1.2, 1.3, 1.4, 1.5])
+            
+            # Add a few major spikes
+            if i in [15, 35, 50, 65]:
+                spike_factor = np.random.uniform(1.3, 1.6)
+        
+        # Add some random variation (higher variance in early months)
+        random_var = 0.02 if i > 90 else 0.05
+        random_factor_prod = np.random.normal(1.0, random_var)
+        random_factor_nonprod = np.random.normal(1.0, random_var)
+        
+        # Gradually normalize the pattern after first three months to match the image
+        if i >= 90:
+            # More stable pattern in later months, matching the image
+            day_factor = 1.0 + 0.03 * np.sin(i / 7 * np.pi)  # Weekly pattern
+            spike_factor = 1.0 + 0.02 * np.sin(i / 15 * np.pi)  # Bi-weekly pattern
+        else:
+            day_factor = 1.0 + 0.08 * ((date.weekday() % 7) / 10)
+        
+        # Compute final cost with all factors
+        prod_cost = prod_daily_base * day_factor * month_factor * spike_factor * random_factor_prod
+        nonprod_cost = nonprod_daily_base * day_factor * month_factor * spike_factor * random_factor_nonprod
         
         # Production data
         daily_data.append({
             'date': date,
             'environment_type': 'PROD',
-            'daily_cost': round(prod_daily_base * day_factor * random_factor_prod, 2),
+            'daily_cost': round(prod_cost, 2),
             'fy25_avg_daily_spend': prod_fy25_avg,
             'fy26_ytd_avg_daily_spend': prod_fy26_ytd_avg,
             'fy26_forecasted_avg_daily_spend': prod_fy26_forecast_avg
@@ -147,7 +172,7 @@ def create_sample_daily_trend_data() -> pd.DataFrame:
         daily_data.append({
             'date': date,
             'environment_type': 'NON-PROD',
-            'daily_cost': round(nonprod_daily_base * day_factor * random_factor_nonprod, 2),
+            'daily_cost': round(nonprod_cost, 2),
             'fy25_avg_daily_spend': nonprod_fy25_avg,
             'fy26_ytd_avg_daily_spend': nonprod_fy26_ytd_avg,
             'fy26_forecasted_avg_daily_spend': nonprod_fy26_forecast_avg
