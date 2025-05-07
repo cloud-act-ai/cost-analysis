@@ -74,6 +74,10 @@ def parse_arguments():
         action="store_true",
         help="Disable BigQuery DataFrames and use pandas_gbq instead (less efficient for large datasets)"
     )
+    parser.add_argument(
+        "--select-columns",
+        help="Comma-separated list of columns to fetch from BigQuery (reduces data transfer). Example: 'cost,month,environment,fy'"
+    )
     
     return parser.parse_args()
 
@@ -103,23 +107,49 @@ def main():
         if args.year:
             env_args.extend(["--year", args.year])
         
-        # Add BigQuery arguments if enabled
+        # Check for BigQuery command-line arguments
         if args.use_bigquery:
             env_args.append("--use-bigquery")
             
-            if not args.project_id or not args.dataset or not args.table:
-                raise ValueError("When using BigQuery, project-id, dataset, and table are required")
-                
-            env_args.extend(["--project-id", args.project_id])
-            env_args.extend(["--dataset", args.dataset])
-            env_args.extend(["--table", args.table])
+            # Only require these if they're not configured in the config file
+            # We need to check the config file for these values
+            config_file = args.config
             
+            try:
+                # Load just the config file to check if BigQuery settings are there
+                with open(config_file, 'r') as f:
+                    import yaml
+                    config_data = yaml.safe_load(f)
+                    
+                has_bq_config = 'bigquery' in config_data and config_data['bigquery'].get('use_bigquery', False)
+                has_project_id = args.project_id or (has_bq_config and config_data['bigquery'].get('project_id'))
+                has_dataset = args.dataset or (has_bq_config and config_data['bigquery'].get('dataset'))
+                has_table = args.table or (has_bq_config and config_data['bigquery'].get('table'))
+                
+                if not (has_project_id and has_dataset and has_table):
+                    raise ValueError("When using BigQuery, project-id, dataset, and table are required (either via command line or config.yaml)")
+            except (FileNotFoundError, yaml.YAMLError):
+                # If can't read config, fall back to requiring command line args
+                if not args.project_id or not args.dataset or not args.table:
+                    raise ValueError("When using BigQuery, project-id, dataset, and table are required")
+            
+            # Pass command-line arguments if provided
+            if args.project_id:
+                env_args.extend(["--project-id", args.project_id])
+            if args.dataset:
+                env_args.extend(["--dataset", args.dataset])
+            if args.table:
+                env_args.extend(["--table", args.table])
             if args.credentials:
                 env_args.extend(["--credentials", args.credentials])
-                
+            
             # Pass BigQuery DataFrames flag if specified
             if args.disable_bqdf:
                 env_args.append("--disable-bqdf")
+            
+            # Pass column selection if specified
+            if args.select_columns:
+                env_args.extend(["--select-columns", args.select_columns])
         
         # Update sys.argv for the environment analyzer
         sys.argv = [sys.argv[0]] + env_args

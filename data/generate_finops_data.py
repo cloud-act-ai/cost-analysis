@@ -1,24 +1,15 @@
 import csv
 import random
 import datetime
+import calendar
 
-def generate_random_date_2024():
+def generate_date_range(start_date, end_date):
     """
-    Returns a random date in 2024 as YYYY-MM-DD format.
+    Generate all dates between start_date and end_date.
+    Returns a list of date objects.
     """
-    start = datetime.date(2023, 1, 1)
-    end = datetime.date(2025, 4, 30)
-    delta = end - start
-    random_day = random.randrange(delta.days + 1)
-    date = start + datetime.timedelta(days=random_day)
-    return date.isoformat()  # Format: YYYY-MM-DD
-
-def get_week_number(date_obj):
-    """
-    Get the week number in the year from a date.
-    """
-    dt = datetime.datetime.strptime(date_obj, "%Y-%m-%d").date()
-    return dt.isocalendar()[1]
+    delta = end_date - start_date
+    return [start_date + datetime.timedelta(days=i) for i in range(delta.days + 1)]
 
 def get_quarter(month):
     """
@@ -33,195 +24,217 @@ def get_quarter(month):
     else:
         return 4
 
-def get_month_name(month):
+def get_fiscal_year(date_obj):
     """
-    Convert numeric month to short name (e.g. 1 -> 'Jan')
+    Calculate fiscal year based on a date.
+    Assuming fiscal year runs July through June.
     """
-    return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][month - 1]
+    if 1 <= date_obj.month <= 6:
+        return f"FY{date_obj.year - 1}"
+    else:
+        return f"FY{date_obj.year}"
 
-def generate_finops_data(num_rows=100000):
+def generate_finops_data(start_date="2024-01-01", end_date="2026-12-31"):
     """
-    Generate a list of dictionaries with the new schema.
+    Generate FinOps data matching the new schema for all days between start_date and end_date.
     """
+    # Parse input dates
+    start = datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
+    end = datetime.datetime.strptime(end_date, "%Y-%m-%d").date()
+    
+    # Generate all dates in the range
+    all_dates = generate_date_range(start, end)
+    
+    # Define seed entities based on new schema
+    
     # CTOs/Tech leadership
     ctos = ["Michael Chen", "Sarah Johnson", "David Rodriguez", "Emma Williams", "James Smith"]
     
-    # VPs under each CTO
-    vps_by_cto = {
-        "Michael Chen": ["Bob Jenkins", "Alice Taylor"],
-        "Sarah Johnson": ["Charlie Adams", "Diana Miller"],
-        "David Rodriguez": ["Emily Parker", "Frank Thomas"],
-        "Emma Williams": ["George Wilson", "Hannah Davis"],
-        "James Smith": ["Isabel Martinez", "Jack Brown"]
-    }
+    # Product Pillar Teams
+    product_pillars = [
+        "Core Platform",
+        "Data Analytics", 
+        "Enterprise Solutions",
+        "User Experience",
+        "Infrastructure Services"
+    ]
     
-    # Pillar teams
-    pillar_teams = ["Retail", "Finance", "Marketing", "Operations", "Engineering"]
-    
-    # Subpillars for each pillar team
-    subpillars = {
-        "Retail": [(1, "E-commerce"), (2, "Store Operations"), (3, "Supply Chain")],
-        "Finance": [(4, "Accounting"), (5, "Financial Planning"), (6, "Audit")],
-        "Marketing": [(7, "Digital Marketing"), (8, "Brand Management"), (9, "Analytics")],
-        "Operations": [(10, "Logistics"), (11, "Customer Service"), (12, "Process Optimization")],
-        "Engineering": [(13, "Infrastructure"), (14, "Development"), (15, "Quality Assurance")]
-    }
-    
-    # Products by subpillar
+    # Products by pillar
     products = {
-        1: [(101, "Checkout System"), (102, "Product Catalog")],
-        2: [(103, "Inventory Management"), (104, "POS System")],
-        3: [(105, "Warehouse Control"), (106, "Shipping Automation")],
-        4: [(107, "GL System"), (108, "Billing Platform")],
-        5: [(109, "Budget Forecasting"), (110, "Financial Reporting")],
-        6: [(111, "Compliance Tracking"), (112, "Risk Assessment")],
-        7: [(113, "Campaign Management"), (114, "Social Media Analytics")],
-        8: [(115, "Asset Management"), (116, "Brand Portal")],
-        9: [(117, "Customer Analytics"), (118, "Market Research")],
-        10: [(119, "Fleet Management"), (120, "Routing Optimization")],
-        11: [(121, "CRM System"), (122, "Support Ticketing")],
-        12: [(123, "Workflow Automation"), (124, "Performance Monitoring")],
-        13: [(125, "Cloud Platform"), (126, "Network Management")],
-        14: [(127, "Development Tools"), (128, "CI/CD Pipeline")],
-        15: [(129, "Test Automation"), (130, "Bug Tracking")]
+        "Core Platform": [
+            "API Gateway", 
+            "Authentication Services", 
+            "Message Queue",
+            "Payment Processing"
+        ],
+        "Data Analytics": [
+            "Data Lake", 
+            "Reporting Dashboard", 
+            "Prediction Engine",
+            "Customer Insights"
+        ],
+        "Enterprise Solutions": [
+            "ERP System", 
+            "CRM Platform", 
+            "Business Intelligence",
+            "Workflow Management"
+        ],
+        "User Experience": [
+            "Web Frontend", 
+            "Mobile App", 
+            "Design System",
+            "Content Delivery"
+        ],
+        "Infrastructure Services": [
+            "Database Service", 
+            "Compute Platform", 
+            "Storage Service",
+            "Identity Management"
+        ]
     }
     
-    # Application names
-    applications = ["MainApp", "SupportApp", "AdminPortal", "DataProcessor", "APIGateway", 
-                    "FrontendUI", "BackendService", "MobileApp", "AnalyticsDashboard", "IntegrationHub"]
-    
-    # Service names
-    services = {
-        "AWS": ["EC2", "S3", "RDS", "Lambda", "DynamoDB", "Redshift", "CloudFront"],
-        "Azure": ["VM", "Blob Storage", "SQL Database", "Functions", "Cosmos DB", "Synapse", "CDN"],
-        "GCP": ["Compute Engine", "Cloud Storage", "Cloud SQL", "Cloud Functions", "Bigtable", "BigQuery", "Cloud CDN"]
+    # Managed Services
+    managed_services = {
+        "AWS": [
+            "EC2", "S3", "RDS", "Lambda", "DynamoDB", 
+            "Redshift", "CloudFront", "EKS", "ECS", "SQS"
+        ],
+        "Azure": [
+            "VM", "Blob Storage", "SQL Database", "Functions", 
+            "Cosmos DB", "Synapse", "CDN", "AKS", "Container Registry", "Service Bus"
+        ],
+        "GCP": [
+            "Compute Engine", "Cloud Storage", "Cloud SQL", "Cloud Functions", 
+            "Bigtable", "BigQuery", "Cloud CDN", "GKE", "Cloud Run", "Pub/Sub"
+        ]
     }
     
-    # Environments with probabilities to ensure more realistic distribution
-    envs = ["Prod", "Stage", "Dev", "Test", "QA"]
-    env_weights = [0.35, 0.15, 0.3, 0.1, 0.1]  # 35% Prod, 15% Stage, 30% Dev, etc.
-    
-    # Clouds with regions
+    # Clouds
     clouds = ["AWS", "Azure", "GCP"]
-    regions = {
-        "AWS": ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1", "sa-east-1"],
-        "Azure": ["eastus", "westus2", "northeurope", "southeastasia", "brazilsouth"],
-        "GCP": ["us-central1", "us-west1", "europe-west1", "asia-southeast1", "southamerica-east1"]
-    }
     
-    # Project IDs by cloud
-    project_patterns = {
-        "AWS": ["aws-acct-{}", "aws-proj-{}", "aws-{}-platform"],
-        "Azure": ["azure-sub-{}", "azure-res-{}", "az-{}-infra"],
-        "GCP": ["gcp-proj-{}", "gcp-{}-app", "g-cloud-{}"]
+    # Environments with probabilities for more realistic distribution
+    environments = {
+        "p": 0.40,    # Production
+        "np": 0.60    # Non-Production
     }
     
     data_rows = []
-
-    for _ in range(num_rows):
-        # Generate date and derived time fields
-        date_str = generate_random_date_2024()
-        dt_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
-        year = dt_obj.year
-        month_num = dt_obj.month
-        month_name = get_month_name(month_num)
-        quarter = get_quarter(month_num)
-        week = get_week_number(date_str)
-        
-        # Generate fiscal year - assume FY runs July-June
-        # If current month is Jan-Jun, FY is the previous year
-        # If current month is Jul-Dec, FY is the current year
-        if 1 <= month_num <= 6:
-            fy = f"FY{year - 1}"
-        else:
-            fy = f"FY{year}"
-        
-        # Generate organizational hierarchy
-        cto = random.choice(ctos)
-        vp = random.choice(vps_by_cto[cto])
-        pillar = random.choice(pillar_teams)
-        subpillar_id, subpillar_name = random.choice(subpillars[pillar])
-        product_id, product = random.choice(products[subpillar_id])
-        
-        # Generate application and owner
-        application = random.choice(applications)
-        owner = f"{random.choice(['dev', 'admin', 'svc', 'app'])}.{application.lower()}@example.com"
-        
-        # Generate cloud details
-        cloud = random.choice(clouds)
-        region = random.choice(regions[cloud])
-        service = random.choice(services[cloud])
-        
-        # Generate environment with weighted selection
-        environment = random.choices(envs, weights=env_weights, k=1)[0]
-        
-        # Generate project ID
-        pattern = random.choice(project_patterns[cloud])
-        project_id = pattern.format(random.randint(1000, 9999))
-        
-        # Generate cost - larger range for production environments
-        if environment == "Prod":
-            cost = round(random.uniform(1000, 25000), 2)
-        else:
-            cost = round(random.uniform(100, 8000), 2)
-
-        row = {
-            "date": date_str,
-            "year": year,
-            "cloud": cloud,
-            "cto": cto,
-            "vp": vp,
-            "tr_product_pillar_team": pillar,
-            "tr_subpillar_id": subpillar_id,
-            "tr_subpillar_name": subpillar_name,
-            "tr_product": product,
-            "tr_product_id": product_id,
-            "owner": owner,
-            "application": application,
-            "service_name": service,
-            "environment": environment,
-            "region": region,
-            "project_id": project_id,
-            "cost": cost,
-            "fy": fy,
-            "qtr": quarter,
-            "week": week,
-            # Add fields needed for the environment cost analysis
-            "Month": month_name,
-            "ORG": application,  # Use application as the organization for compatibility
-            "PILLAR": pillar,
-            "Application_Name": application,
-            "Env": environment,  # Map environment to Env
-            "WM_WEEK": f"Week {week:02d}"
-        }
-
-        data_rows.append(row)
-
+    
+    # Generate one record per cloud per product per day
+    # This approach creates a consistent dataset across the time range
+    for date_obj in all_dates:
+        for cloud in clouds:
+            for pillar in product_pillars:
+                for product in products[pillar]:
+                    # Assign a fixed CTO for each product (for consistency)
+                    cto = ctos[hash(product) % len(ctos)]
+                    
+                    # Generate both production and non-production entries
+                    for env, env_prob in environments.items():
+                        # Skip some entries based on probability
+                        if random.random() > env_prob:
+                            continue
+                            
+                        # Select managed service
+                        managed_service = random.choice(managed_services[cloud])
+                        
+                        # Generate cost with some randomness but consistent trends
+                        # Base cost depends on the environment (prod costs more)
+                        base_cost = 500 if env == "p" else 200
+                        
+                        # Add product-specific component (some products cost more)
+                        product_factor = 1.0 + (hash(product) % 5) / 10.0  # 1.0 to 1.4
+                        
+                        # Add time-based growth (costs increase over time)
+                        days_from_start = (date_obj - start).days
+                        growth_factor = 1.0 + (days_from_start / 365) * 0.15  # 15% annual growth
+                        
+                        # Add some daily variance
+                        daily_variance = random.uniform(0.8, 1.2)
+                        
+                        # Calculate final cost
+                        cost = round(base_cost * product_factor * growth_factor * daily_variance, 2)
+                        
+                        # Build the data row matching the new schema
+                        row = {
+                            "year": date_obj.year,
+                            "fy": get_fiscal_year(date_obj),
+                            "qtr": get_quarter(date_obj.month),
+                            "month": date_obj.month,
+                            "cloud": cloud,
+                            "cto": cto,
+                            "tr_product_pillar_team": pillar,
+                            "tr_product": product,
+                            "managed_service": managed_service,
+                            "environment": env,
+                            "cost": cost
+                        }
+                        
+                        data_rows.append(row)
+    
     return data_rows
 
-def write_csv(filename="finops_data.csv", num_rows=10000):
+def write_csv(filename="finops_data.csv", start_date="2024-01-01", end_date="2026-12-31"):
     """
     Generate the data and write out to a CSV.
     """
     fieldnames = [
-        "date", "year", "cloud", "cto", "vp", "tr_product_pillar_team", 
-        "tr_subpillar_id", "tr_subpillar_name", "tr_product", "tr_product_id", 
-        "owner", "application", "service_name", "environment", "region", 
-        "project_id", "cost", "fy", "qtr", "week",
-        # Additional fields for backward compatibility with environment analysis
-        "Month", "ORG", "PILLAR", "Application_Name", "Env", "WM_WEEK", "Cloud"
+        "year", "fy", "qtr", "month", "cloud", 
+        "cto", "tr_product_pillar_team", "tr_product",
+        "managed_service", "environment", "cost"
     ]
     
-    data = generate_finops_data(num_rows)
-
+    print(f"Generating data from {start_date} to {end_date}...")
+    data = generate_finops_data(start_date, end_date)
+    
+    print(f"Writing {len(data)} rows to {filename}...")
     with open(filename, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
+        # We write the header for human readability, but the BigQuery loader will skip it
         writer.writeheader()
         for row in data:
-            # Ensure Cloud field is populated for backward compatibility
-            row["Cloud"] = row["cloud"]
             writer.writerow(row)
+    
+    # Also create a headerless version for direct BigQuery loading
+    headerless_filename = filename.replace(".csv", "_noheader.csv")
+    with open(headerless_filename, mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        # No header row
+        for row in data:
+            writer.writerow(row)
+    
+    print(f"CSV file '{filename}' with {len(data)} rows has been generated!")
+    print(f"Headerless version also created as '{headerless_filename}' for direct BigQuery loading")
+
+def write_bigquery_schema_json(filename="finops_schema.json"):
+    """
+    Generate a BigQuery schema JSON file.
+    """
+    schema = [
+        {"name": "year", "type": "INTEGER", "mode": "NULLABLE", "description": "Calendar year"},
+        {"name": "fy", "type": "STRING", "mode": "NULLABLE", "description": "Fiscal year (FYxxxx format)"},
+        {"name": "qtr", "type": "INTEGER", "mode": "NULLABLE", "description": "Quarter (1-4)"},
+        {"name": "month", "type": "INTEGER", "mode": "NULLABLE", "description": "Month (1-12)"},
+        {"name": "cloud", "type": "STRING", "mode": "NULLABLE", "description": "Cloud provider (AWS, Azure, GCP)"},
+        {"name": "cto", "type": "STRING", "mode": "NULLABLE", "description": "CTO/Tech leadership"},
+        {"name": "tr_product_pillar_team", "type": "STRING", "mode": "NULLABLE", "description": "Product pillar team"},
+        {"name": "tr_product", "type": "STRING", "mode": "NULLABLE", "description": "Product name"},
+        {"name": "managed_service", "type": "STRING", "mode": "NULLABLE", "description": "Cloud managed service"},
+        {"name": "environment", "type": "STRING", "mode": "NULLABLE", "description": "Environment (p=prod, np=non-prod)"},
+        {"name": "cost", "type": "FLOAT", "mode": "NULLABLE", "description": "Daily cost in USD"}
+    ]
+    
+    import json
+    with open(filename, 'w') as f:
+        json.dump(schema, f, indent=2)
+    
+    print(f"BigQuery schema file '{filename}' has been generated!")
 
 if __name__ == "__main__":
-    write_csv("finops_data.csv", 10000)
-    print("CSV file 'finops_data.csv' with 100,000 rows has been generated!")
+    # Generate a full dataset from 2024 to 2026
+    write_csv("finops_data.csv", "2024-01-01", "2026-12-31")
+    
+    # Also generate a BigQuery schema file
+    write_bigquery_schema_json("finops_schema.json")
+    
+    print("Done!")

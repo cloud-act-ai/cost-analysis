@@ -1279,7 +1279,7 @@ def generate_env_report_html(config, env_analysis):
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 9v2m0 4h.01m-6.99 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        Applications with High Non-Production Costs (>= {{ nonprod_threshold }}%)
+        {{ grouping_column }}s with High Non-Production Costs (>= {{ nonprod_threshold }}%)
     </div>
     <table>
         <thead>
@@ -1324,16 +1324,17 @@ def generate_env_report_html(config, env_analysis):
 </html>
     """
     
-    # Extract high non-prod applications for the warning section
+    # Extract high non-prod items for the lowest level in the hierarchy
     high_nonprod_data = []
-    application_level = hierarchy[-1] if hierarchy else None
+    lowest_level = hierarchy[-1] if hierarchy and hierarchy else None
     
-    if application_level and application_level in hierarchy_levels:
-        level_analysis = hierarchy_levels[application_level]
+    # Check if we have hierarchy analysis data
+    if lowest_level and hierarchy_levels and lowest_level in hierarchy_levels:
+        level_analysis = hierarchy_levels[lowest_level]
         if 'high_nonprod_groups' in level_analysis and not level_analysis['high_nonprod_groups'].empty:
             for _, row in level_analysis['high_nonprod_groups'].iterrows():
                 high_nonprod_data.append({
-                    'name': row[application_level],
+                    'name': row[lowest_level],
                     'total_cost': format_currency(row['Total_Cost']),
                     'prod_percentage': format_percent(row.get('Production', 0), False),
                     'nonprod_percentage': format_percent(row.get('Non-Production', 0), False),
@@ -1354,7 +1355,7 @@ def generate_env_report_html(config, env_analysis):
         hierarchy_data=hierarchy_data,
         nonprod_threshold=hierarchical.get('nonprod_threshold', 20),
         high_nonprod=high_nonprod_data,
-        grouping_column=application_level.replace('_', ' ').title() if application_level else "Application",
+        grouping_column=lowest_level.replace('_', ' ').title() if lowest_level else "Entity",
         timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
     

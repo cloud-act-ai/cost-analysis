@@ -2,27 +2,57 @@
 # Example showing how to use the analyzer with BigQuery and BigQuery DataFrames
 # BigQuery DataFrames provide more efficient handling of large datasets
 
+##########################################
+# METHOD 1: Using Command Line Arguments #
+##########################################
+
 # Set the BigQuery parameters
 PROJECT_ID="finops360-dev-2025"
 DATASET="test"
 TABLE="cost_analysis_test"
 CREDENTIALS="path/to/your/service-account-key.json"  # Optional, if using default credentials
 
-# Run the analyzer with BigQuery as the data source using BigQuery DataFrames
-# BigQuery DataFrames are enabled by default for better performance with large results
+# Run the analyzer with BigQuery as the data source using command line arguments
 python ../finops_analyzer.py \
   --config ../config.yaml \
   --use-bigquery \
   --project-id "$PROJECT_ID" \
   --dataset "$DATASET" \
   --table "$TABLE" \
-  --nonprod-threshold 5.0
+  --nonprod-threshold 5.0 \
+  --select-columns "cost,environment,month,fy,date,application_name"
 
 # Note: If you need to use service account credentials, add:
 # --credentials "$CREDENTIALS"
 
 # To disable BigQuery DataFrames and use traditional pandas_gbq:
 # --disable-bqdf
+
+##################################
+# METHOD 2: Using config.yaml    #
+##################################
+
+# Alternatively, you can configure BigQuery in config.yaml:
+#
+# bigquery:
+#   project_id: finops360-dev-2025
+#   dataset: test
+#   table: cost_analysis_test
+#   use_bigquery: true  # Set to true to enable BigQuery as data source
+#   use_bqdf: true      # Set to false to disable BigQuery DataFrames
+#   selected_columns:   # List of columns to fetch (reduces data transfer)
+#     - cost
+#     - environment 
+#     - month
+#     - fy
+#     - date
+#
+# And then simply run:
+python ../finops_analyzer.py --config ../config.yaml
+
+# Command line arguments will override config.yaml settings
+# For example, this would override the project_id:
+# python ../finops_analyzer.py --config ../config.yaml --use-bigquery --project-id "other-project-id"
 
 # Run with period filtering
 # This pushes filtering to BigQuery server for better performance

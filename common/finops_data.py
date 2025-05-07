@@ -432,17 +432,27 @@ def get_period_display_name(period_type, period_value, year=None):
         return str(period_value)
 
 
-def aggregate_by_application(df, grouping_col="Application_Name"):
-    """Aggregate costs by application name or other grouping column."""
+def aggregate_by_application(df, grouping_col="tr_product"):
+    """Aggregate costs by product name or other grouping column."""
     if df.empty:
         return pd.DataFrame(columns=[grouping_col, 'Total_Cost'])
     
-    agg_df = df.groupby(grouping_col)['Cost'].sum().reset_index()
-    agg_df.rename(columns={'Cost': 'Total_Cost'}, inplace=True)
+    # Use cost column or fall back to Cost (for compatibility)
+    cost_col = 'cost' if 'cost' in df.columns else 'Cost'
+    
+    # If the grouping column doesn't exist, use a reasonable default
+    if grouping_col not in df.columns:
+        for col in ['tr_product', 'managed_service', 'environment']:
+            if col in df.columns:
+                grouping_col = col
+                break
+    
+    agg_df = df.groupby(grouping_col)[cost_col].sum().reset_index()
+    agg_df.rename(columns={cost_col: 'Total_Cost'}, inplace=True)
     return agg_df
 
 
-def analyze_cost_changes(current_df, previous_df, grouping_col="Application_Name", top_n=10):
+def analyze_cost_changes(current_df, previous_df, grouping_col="tr_product", top_n=10):
     """Analyze cost changes between current and previous periods."""
     if current_df.empty and previous_df.empty:
         return {
@@ -547,11 +557,12 @@ def get_env_distribution(df, envs=None):
     
     # Default environment mapping if not provided
     if envs is None:
-        prod_envs = ['Prod']
-        nonprod_envs = ['Dev', 'Stage', 'Test', 'QA']
+        # For the new schema, adapt to expected environment values
+        prod_envs = ['Prod', 'p', 'production', 'prd']
+        nonprod_envs = ['Dev', 'Stage', 'Test', 'QA', 'np', 'n', 'nonprod', 'non-prod']
     else:
-        prod_envs = envs.get('prod', ['Prod'])
-        nonprod_envs = envs.get('nonprod', ['Dev', 'Stage', 'Test', 'QA'])
+        prod_envs = envs.get('prod', ['Prod', 'p', 'production', 'prd'])
+        nonprod_envs = envs.get('nonprod', ['Dev', 'Stage', 'Test', 'QA', 'np', 'n', 'nonprod', 'non-prod'])
     
     # Use 'Env' for backward compatibility, or 'environment' for new schema
     env_column = 'Env' if 'Env' in df.columns else 'environment'
@@ -599,12 +610,13 @@ def analyze_env_by_grouping(df, grouping_col, top_n=10, nonprod_threshold=20):
     
     # Check if grouping column exists in the dataframe
     if grouping_col not in df.columns:
-        # Try to map new schema columns to old schema columns
+        # Try to map columns between schemas
         column_mapping = {
-            'ORG': 'application',
-            'VP': 'vp',
+            'ORG': 'managed_service',
+            'VP': 'cto',
             'PILLAR': 'tr_product_pillar_team',
-            'Application_Name': 'application'
+            'Application_Name': 'tr_product',
+            'CTO': 'cto'
         }
         if grouping_col in column_mapping and column_mapping[grouping_col] in df.columns:
             # Create a copy of the grouping column with the old name

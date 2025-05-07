@@ -79,6 +79,10 @@ def parse_arguments():
         action="store_true",
         help="Disable BigQuery DataFrames and use pandas_gbq instead (less efficient for large datasets)"
     )
+    parser.add_argument(
+        "--select-columns",
+        help="Comma-separated list of columns to fetch from BigQuery (reduces data transfer). Example: 'cost,month,environment,fy'"
+    )
     return parser.parse_args()
 
 
@@ -101,17 +105,32 @@ def main():
         if args.nonprod_threshold:
             config.nonprod_threshold = args.nonprod_threshold
             
-        # Add BigQuery parameters to config
+        # Command line args override config file settings
         if args.use_bigquery:
+            # Override config settings with command line args
             config.use_bigquery = True
-            config.bigquery_project_id = args.project_id
-            config.bigquery_dataset = args.dataset
-            config.bigquery_table = args.table
-            config.bigquery_credentials = args.credentials
-            config.use_bqdf = not args.disable_bqdf
+            if args.project_id:
+                config.bigquery_project_id = args.project_id
+            if args.dataset:
+                config.bigquery_dataset = args.dataset
+            if args.table:
+                config.bigquery_table = args.table
+            if args.credentials:
+                config.bigquery_credentials = args.credentials
+            if args.disable_bqdf:
+                config.use_bqdf = False
+            if args.select_columns:
+                config.selected_columns = [col.strip() for col in args.select_columns.split(',')]
+        
+        # Check if we should use BigQuery from the config file
+        elif config.use_bigquery:
+            # Keep existing settings from config file
+            pass
         else:
+            # Disable BigQuery if neither command line nor config file specify it
             config.use_bigquery = False
             config.use_bqdf = False
+            config.selected_columns = None
         
         # Create output directory if it doesn't exist
         os.makedirs(config.output_dir, exist_ok=True)
@@ -130,7 +149,8 @@ def main():
                 config.bigquery_dataset,
                 config.bigquery_table,
                 config.bigquery_credentials,
-                use_bqdf=config.use_bqdf
+                use_bqdf=config.use_bqdf,
+                columns=config.selected_columns
             )
         else:
             print(f"Loading data from {config.file_path}...")
@@ -171,7 +191,8 @@ def main():
                 period_value,  # Use original value as function handles 'last'
                 year,          # Use original value as function handles 'current'
                 credentials_path=config.bigquery_credentials,
-                use_bqdf=config.use_bqdf
+                use_bqdf=config.use_bqdf,
+                columns=config.selected_columns
             )
         else:
             # Otherwise, use the full dataframe and filter it
@@ -192,28 +213,38 @@ def main():
         print("Analyzing environment distribution (Prod vs Non-Prod)...")
         env_distribution = get_env_distribution(period_df)
         
-        # Perform hierarchical analysis using the configured hierarchy
-        print("Performing hierarchical environment analysis...")
+        # Initialize hierarchical_analysis
+        hierarchical_analysis = {
+            'hierarchy_levels': {},
+            'summary': {}
+        }
         
-        # Use level-specific top_n values if available
-        top_n_values = {}
-        if config.top_n_by_level:
-            for level in config.hierarchy:
-                if level in config.top_n_by_level:
-                    top_n_values[level] = config.top_n_by_level[level]
-                else:
-                    top_n_values[level] = config.top_n
+        # Check if we should skip hierarchy analysis
+        if hasattr(config, 'skip_hierarchy_analysis') and config.skip_hierarchy_analysis:
+            print("Skipping hierarchical environment analysis due to missing columns.")
         else:
-            # Use the same top_n for all levels
-            for level in config.hierarchy:
-                top_n_values[level] = config.top_n
-        
-        hierarchical_analysis = analyze_hierarchical_env(
-            period_df, 
-            config.hierarchy, 
-            top_n_values, 
-            config.nonprod_threshold
-        )
+            # Perform hierarchical analysis using the configured hierarchy
+            print("Performing hierarchical environment analysis...")
+            
+            # Use level-specific top_n values if available
+            top_n_values = {}
+            if config.top_n_by_level:
+                for level in config.hierarchy:
+                    if level in config.top_n_by_level:
+                        top_n_values[level] = config.top_n_by_level[level]
+                    else:
+                        top_n_values[level] = config.top_n
+            else:
+                # Use the same top_n for all levels
+                for level in config.hierarchy:
+                    top_n_values[level] = config.top_n
+            
+            hierarchical_analysis = analyze_hierarchical_env(
+                period_df, 
+                config.hierarchy, 
+                top_n_values, 
+                config.nonprod_threshold
+            )
         
         # Combine analyses
         env_analysis = {
@@ -227,8 +258,27 @@ def main():
             'display_columns': config.display_columns
         }
         
-        # Generate HTML report
-        if config.generate_html:
+        # Generate report
+        if hasattr(config, 'skip_hierarchy_analysis') and config.skip_hierarchy_analysis:
+            # Generate simple text report when hierarchy analysis is skipped
+            print("Generating simple text report due to missing hierarchy columns...")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            period_info = f"{env_analysis['period_type']}_{env_analysis['period_value']}_{env_analysis['year']}"
+            output_file = f"{config.output_dir}/env_analysis_report_{period_info.replace(' ', '_')}_{timestamp}.txt"
+            
+            with open(output_file, 'w') as f:
+                f.write("========================================================\n")
+                f.write(f"Environment Cost Analysis Report - {period_info}\n")
+                f.write("========================================================\n\n")
+                f.write(f"Total Cost: ${env_distribution['total_cost']:,.2f}\n")
+                f.write(f"Production: ${env_distribution['prod_cost']:,.2f} ({env_distribution['prod_percentage']:.2f}%)\n")
+                f.write(f"Non-Production: ${env_distribution['nonprod_cost']:,.2f} ({env_distribution['nonprod_percentage']:.2f}%)\n")
+                f.write(f"Other: ${env_distribution['other_cost']:,.2f} ({env_distribution['other_percentage']:.2f}%)\n\n")
+                f.write("Generated on " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n")
+            
+            print(f"Text report generated: {output_file}")
+        elif config.generate_html:
+            # Generate full HTML report when hierarchy analysis is available
             print("Generating HTML report...")
             output_file = generate_env_report_html(
                 config, 
@@ -244,16 +294,13 @@ def main():
         print(f"Production: ${env_distribution['prod_cost']:,.2f} ({env_distribution['prod_percentage']:.2f}%)")
         print(f"Non-Production: ${env_distribution['nonprod_cost']:,.2f} ({env_distribution['nonprod_percentage']:.2f}%)")
         
-        # Count high non-prod applications
-        application_level = None
-        for level in config.hierarchy:
-            if level == 'application':
-                application_level = level
-                break
+        # Count high non-prod items for the lowest level in the hierarchy
+        lowest_level = config.hierarchy[-1] if config.hierarchy else None
         
-        if application_level and application_level in hierarchical_analysis['hierarchy_levels']:
-            high_nonprod_count = len(hierarchical_analysis['hierarchy_levels'][application_level]['high_nonprod_groups'])
-            print(f"Applications with high non-prod costs (>={config.nonprod_threshold}%): {high_nonprod_count}")
+        if lowest_level and lowest_level in hierarchical_analysis['hierarchy_levels']:
+            high_nonprod_count = len(hierarchical_analysis['hierarchy_levels'][lowest_level]['high_nonprod_groups'])
+            entity_type = lowest_level.replace('_', ' ').title()
+            print(f"{entity_type}s with high non-prod costs (>={config.nonprod_threshold}%): {high_nonprod_count}")
         
         print("="*70)
         

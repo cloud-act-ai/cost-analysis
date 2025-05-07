@@ -1,161 +1,215 @@
-# FinOps360 Environment Analysis Tool
+# FinOps360 Cost Analysis Dashboard
 
-A tool for analyzing cloud environment costs (Production vs Non-Production) and generating reports.
+A comprehensive cloud cost analysis tool with environment cost breakdowns, trend analysis, and forecasting capabilities. The system analyzes both Production and Non-Production costs with percentage breakdowns and provides detailed visualizations.
 
-## Overview
+## Features
 
-The Environment Analysis Tool helps organizations understand and optimize their cloud spending across different environments. It provides insights into:
+- **Unified Environment Dashboard**: View PROD and NON-PROD costs together with percentage calculations
+- **Trend Analysis**: Track daily and monthly cost trends with historical comparisons
+- **Fiscal Year Comparisons**: Compare costs across different fiscal years (FY24, FY25, FY26)
+- **Forecasting**: Predict future costs based on historical patterns and growth trends
+- **Product Analysis**: View costs by product ID with Production/Non-Production breakdown
+- **Average Daily Cost Metrics**: Analyze cost data using average daily spend rather than raw totals
+- **Interactive HTML Reports**: Generate detailed HTML reports with interactive charts and tables
 
-- Overall Production vs Non-Production cost distribution
-- Environment breakdown by Organization, VP, and Pillar
-- Applications with high non-production costs
+## Quick Start
 
-## Requirements
+Run the entire system with a single command:
 
-- Python 3.8+
-- Required packages:
-  - pandas>=2.0.0
-  - jinja2>=3.0.0
-  - pyyaml>=6.0.0
-  - google-cloud-bigquery>=3.0.0 (for BigQuery support)
-  - pandas-gbq>=0.19.0 (for BigQuery support)
-  - pyarrow>=12.0.0 (for BigQuery support)
+```bash
+bash run.sh
+```
 
-Install requirements:
+This script will:
+1. Check if required data exists, generating it if needed
+2. Check for BigQuery availability and authenticate if possible
+3. Load data to BigQuery tables if available
+4. Create necessary BigQuery views
+5. Generate the HTML dashboard
 
+## Setup
+
+1. Install required packages:
 ```bash
 pip install -r requirements.txt
 ```
 
+2. Configure your BigQuery settings in `config.yaml`:
+```yaml
+bigquery:
+  project_id: your-project-id
+  dataset: your-dataset
+  table: cost_analysis_new
+  avg_table: avg_daily_cost_table
+  use_bigquery: true
+```
+
+3. Set up your BigQuery credentials (if needed):
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
+```
+
+## Data Structure
+
+### Primary Tables
+
+1. **cost_analysis_new**: Raw cost data with the following schema:
+   - date: Date of the cost entry
+   - cto: CTO/Tech leadership organization
+   - cloud: Cloud provider (AWS, Azure, GCP)
+   - tr_product_pillar_team: Product pillar team
+   - tr_subpillar_name: Sub-pillar name
+   - tr_product_id: Product ID
+   - tr_product: Product name
+   - managed_service: Cloud managed service
+   - environment: Environment (PROD, NON-PROD)
+   - cost: Daily cost in USD
+
+2. **avg_daily_cost_table**: Average cost data with the following schema:
+   - date: Date of the cost entry
+   - environment_type: Environment type (PROD, NON-PROD)
+   - cto: CTO/Tech leadership organization
+   - fy24_avg_daily_spend: FY24 average daily spend
+   - fy25_avg_daily_spend: FY25 average daily spend
+   - fy26_ytd_avg_daily_spend: FY26 year-to-date average daily spend
+   - fy26_forecasted_avg_daily_spend: FY26 forecasted average daily spend
+   - fy26_avg_daily_spend: FY26 total average daily spend
+   - daily_cost: Current daily cost
+
+## Fiscal Year Definitions
+
+The system uses the following fiscal year date ranges:
+
+- **FY24**: 2023-02-01 to 2024-01-31
+- **FY25**: 2024-02-01 to 2025-01-31
+- **FY26**: 2025-02-01 to 2026-01-31
+
+## Key Calculations
+
+- **YTD Costs**: Sum of costs from the beginning of the current fiscal year to present
+- **Average Daily Spend**: Total cost divided by number of days, providing a normalized metric for comparison
+- **NON-PROD Percentage**: Percentage of NON-PROD costs relative to total costs, showing efficiency of development environments
+- **Day/Week/Month Comparisons**: Period-over-period comparisons showing cost trends with percentage changes
+
 ## Usage
 
-You can run the tool directly:
+### Generate HTML Dashboard
 
 ```bash
-python finops_analyzer.py --config config.yaml [OPTIONS]
+python create_html_report.py
 ```
 
-### Command-line Options
+Options:
+- `--output`: Output HTML file path (default: reports/finops_dashboard.html)
+- `--config`: Path to config file (default: config.yaml)
+- `--template`: Path to HTML template (default: templates/dashboard_template.html)
 
-#### General Options
-- `--config`: Path to configuration file (default: config.yaml)
-- `--parent-group`: Override parent_grouping in config (e.g. VP, PILLAR, ORG)
-- `--parent-value`: Override parent_grouping_value in config
-- `--nonprod-threshold`: Threshold percentage for highlighting high non-production costs (default: 20)
-- `--period`: Override period_type in config (month, quarter, week, year)
-- `--period-value`: Override period_value in config
-- `--year`: Override year in config
+### Load Data to BigQuery
 
-#### BigQuery Options
-- `--use-bigquery`: Use BigQuery as the data source instead of a CSV file
-- `--project-id`: Google Cloud project ID for BigQuery
-- `--dataset`: BigQuery dataset name
-- `--table`: BigQuery table name
-- `--credentials`: Path to Google Cloud service account credentials JSON file (optional)
-
-### Configuration File
-
-The `config.yaml` file contains settings for the analysis:
-
-```yaml
-# Data sources and paths
-data:
-  file_path: data/finops_data.csv
-  output_dir: output
-
-# Analysis settings
-analysis:
-  # Time period configuration
-  period_type: month  # Options: month, quarter, week, year
-  period_value: Mar   # Month name, quarter (Q1-Q4), week number, or year
-  year: 2024
-  
-  # Grouping configuration
-  parent_grouping: ORG  # Can be any column in dataset: ORG, VP, PILLAR, etc.
-  parent_grouping_value: Starling  # Default value for parent grouping
-  
-  # Child grouping for detailed analysis
-  child_grouping: Application_Name
-  top_n: 10
-  include_applications: true
-  
-  # Environment analysis settings
-  nonprod_threshold: 20  # Percentage threshold for highlighting high non-prod costs
-  
-  # Display columns (optional)
-  display_columns:
-    - Application_Name
-    - ORG
-    - VP
-    - PILLAR
-    - Cloud
-    - Env
-    - Cost
-
-# Report settings
-report:
-  generate_html: true
-  export_csv: true
-  page_title: Cloud Spend Management Report
-  company_name: FinOps
-  logo_path: ""
-```
-
-## Data Format
-
-### CSV Data Source
-The analysis expects a CSV file with at least the following columns:
-- `Env` or `environment`: Environment type (Prod, Dev, Stage, Test, QA)
-- `Cost` or `cost`: Numeric cost values
-- Grouping columns: `ORG`, `VP`, `PILLAR`, `Application_Name`, or equivalent new schema columns
-- Time columns: `Month`, `QTR`/`qtr`, `WM_WEEK`/`week`, `FY`/`fy`
-
-Sample data is available in `data/finops_data.csv`.
-
-### BigQuery Data Source
-When using BigQuery, the table should have a similar schema:
-- `environment`: Environment type (Prod, Dev, Stage, Test, QA)
-- `cost`: Numeric cost values
-- Grouping columns: `cto`, `vp`, `tr_product_pillar_team`, `tr_subpillar_name`, `tr_product`, `application`
-- Time columns: `date`, `Month`, `qtr`, `week`, `fy`
-
-Example BigQuery Schema:
-```
-field name               mode      type      description
-date                    NULLABLE   DATE    
-year                    NULLABLE   INTEGER    
-cloud                   NULLABLE   STRING    
-cto                     NULLABLE   STRING    
-vp                      NULLABLE   STRING    
-tr_product_pillar_team  NULLABLE   STRING    
-tr_subpillar_id         NULLABLE   INTEGER    
-tr_subpillar_name       NULLABLE   STRING    
-tr_product              NULLABLE   STRING    
-tr_product_id           NULLABLE   INTEGER    
-owner                   NULLABLE   STRING    
-application             NULLABLE   STRING    
-service_name            NULLABLE   STRING    
-environment             NULLABLE   STRING    
-region                  NULLABLE   STRING    
-project_id              NULLABLE   STRING    
-cost                    NULLABLE   FLOAT    
-fy                      NULLABLE   STRING    
-qtr                     NULLABLE   INTEGER    
-week                    NULLABLE   INTEGER    
-Month                   NULLABLE   STRING
-```
-
-Example of running with BigQuery:
 ```bash
-python finops_analyzer.py --config config.yaml --use-bigquery \
-  --project-id "finops360-dev-2025" --dataset "test" \
-  --table "cost_analysis_test" --nonprod-threshold 5.0
+bash data/load_to_bigquery.sh
 ```
 
-## Output
+### Create BigQuery Views
 
-The tool generates HTML reports in the output directory specified in the configuration. Reports include:
-- Overall environment distribution
-- Environment breakdown by type
-- Environment distribution by organization, VP, and pillar
-- Applications with high non-production costs
+```bash
+bash data/run_bigquery_views.sh
+```
+
+### Generate Sample Data
+
+```bash
+python data/generate_updated_data.py --no-header
+```
+
+### Clean Up Unnecessary Files
+
+```bash
+bash cleanup.sh
+```
+
+## Directory Structure
+
+- `analysis/`: Core analysis modules for cost calculations and visualizations
+- `common/`: Shared utilities and BigQuery integration services
+- `data/`: Data files, schemas, and loading scripts
+- `templates/`: HTML templates for dashboard reports
+- `reports/`: Generated HTML reports
+- `output/`: Output files including charts and comparison reports
+
+## BigQuery Views
+
+The system creates the following BigQuery views:
+
+1. **avg_daily_cost_table**: Main view for average daily costs by environment with fiscal year comparisons
+2. **environment_breakdown**: Environment-level cost breakdown (PROD vs NON-PROD)
+3. **cto_cost_trends**: CTO-level cost trends and growth rates
+4. **monthly_forecasts**: Monthly forecast data based on historical growth patterns
+5. **year_over_year_comparison**: YoY cost comparison with change categories
+6. **detailed_cost_categories**: Detailed cost breakdown by cloud, product, etc.
+
+## Example SQL for avg_daily_cost_table
+
+This view is created using the following logic:
+
+```sql
+WITH fiscal_year_averages AS (
+    SELECT 
+        CASE 
+            WHEN environment LIKE '%PROD%' THEN 'PROD'
+            ELSE 'NON-PROD'
+        END AS environment_type,
+        cto,
+        -- FY24 Average Daily Spend
+        ROUND(SUM(CASE WHEN date BETWEEN '2023-02-01' AND '2024-01-31' THEN cost ELSE 0 END) / 
+              NULLIF(COUNT(DISTINCT CASE WHEN date BETWEEN '2023-02-01' AND '2024-01-31' THEN date ELSE NULL END), 0), 2) AS fy24_avg_daily_spend,
+        -- FY25 Average Daily Spend
+        ROUND(SUM(CASE WHEN date BETWEEN '2024-02-01' AND '2025-01-31' THEN cost ELSE 0 END) / 
+              NULLIF(COUNT(DISTINCT CASE WHEN date BETWEEN '2024-02-01' AND '2025-01-31' THEN date ELSE NULL END), 0), 2) AS fy25_avg_daily_spend,
+        -- FY26 YTD Average Daily Spend
+        ROUND(SUM(CASE WHEN date BETWEEN '2025-02-01' AND CURRENT_DATE() - 3 THEN cost ELSE 0 END) / 
+              NULLIF(COUNT(DISTINCT CASE WHEN date BETWEEN '2025-02-01' AND CURRENT_DATE() - 3 THEN date ELSE NULL END), 0), 2) AS fy26_ytd_avg_daily_spend,
+        -- FY26 Forecasted Average Daily Spend
+        ROUND(
+            (SUM(CASE WHEN date BETWEEN '2025-02-01' AND CURRENT_DATE() - 3 THEN cost ELSE 0 END) / 
+            NULLIF(COUNT(DISTINCT CASE WHEN date BETWEEN '2025-02-01' AND CURRENT_DATE() - 3 THEN date ELSE NULL END), 0)) * 1.15, 
+            2) AS fy26_forecasted_avg_daily_spend,
+        -- FY26 Total Average Daily Spend
+        ROUND(SUM(CASE WHEN date BETWEEN '2025-02-01' AND '2026-01-31' THEN cost ELSE 0 END) / 
+              NULLIF(COUNT(DISTINCT CASE WHEN date BETWEEN '2025-02-01' AND '2026-01-31' THEN date ELSE NULL END), 0), 2) AS fy26_avg_daily_spend
+    FROM cost_analysis_new
+    WHERE date BETWEEN '2023-02-01' AND '2026-01-31'
+    GROUP BY environment_type, cto
+),
+daily_costs AS (
+    SELECT 
+        date,
+        CASE 
+            WHEN environment LIKE '%PROD%' THEN 'PROD'
+            ELSE 'NON-PROD'
+        END AS environment_type,
+        cto,
+        ROUND(SUM(cost), 2) AS daily_cost
+    FROM cost_analysis_new
+    WHERE date BETWEEN '2023-02-01' AND '2026-01-31'
+    GROUP BY date, environment_type, cto
+)
+SELECT 
+    d.date,
+    d.environment_type,
+    d.cto,
+    f.fy24_avg_daily_spend,
+    f.fy25_avg_daily_spend,
+    f.fy26_avg_daily_spend,
+    f.fy26_ytd_avg_daily_spend,
+    f.fy26_forecasted_avg_daily_spend,
+    d.daily_cost
+FROM daily_costs d
+JOIN fiscal_year_averages f
+ON d.environment_type = f.environment_type AND d.cto = f.cto
+ORDER BY d.date, d.environment_type, d.cto;
+```
+
+## License
+
+© 2025 FinOps360

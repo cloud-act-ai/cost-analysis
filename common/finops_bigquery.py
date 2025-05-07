@@ -6,7 +6,7 @@ from datetime import datetime
 from google.cloud.bigquery import Client, QueryJobConfig
 from google.cloud.bigquery_storage import BigQueryReadClient
 
-def load_data_from_bigquery(project_id, dataset, table, credentials_path=None, use_bqdf=True):
+def load_data_from_bigquery(project_id, dataset, table, credentials_path=None, use_bqdf=True, columns=None):
     """
     Load FinOps data from a BigQuery table.
     
@@ -16,6 +16,8 @@ def load_data_from_bigquery(project_id, dataset, table, credentials_path=None, u
         table: BigQuery table name
         credentials_path: Optional path to service account credentials JSON file
         use_bqdf: Use BigQuery DataFrames for better performance with large datasets
+        columns: List of columns to include (None for all columns)
+                 Example: ['cost', 'environment', 'date', 'month', 'fy']
     
     Returns:
         DataFrame with the FinOps data
@@ -24,9 +26,14 @@ def load_data_from_bigquery(project_id, dataset, table, credentials_path=None, u
     if credentials_path:
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_path
     
-    # Create the query to fetch all data from the table
+    # Determine column selection
+    column_selection = "*"
+    if columns:
+        column_selection = ", ".join(columns)
+    
+    # Create the query to fetch data from the table
     query = f"""
-    SELECT * 
+    SELECT {column_selection}
     FROM `{project_id}.{dataset}.{table}`
     """
     
@@ -35,13 +42,13 @@ def load_data_from_bigquery(project_id, dataset, table, credentials_path=None, u
             # Initialize BigQuery client for optimal performance
             bq_client = Client(project=project_id)
             
-            # Create reference to BigQuery table
-            table_ref = f"{project_id}.{dataset}.{table}"
-            
-            # Use the bigquery_storage_client parameter to enable faster downloads
-            df = bq_client.list_rows(table_ref).to_dataframe(
-                create_bqstorage_client=True
-            )
+            if columns:
+                # Use query with column selection when specific columns are requested
+                df = bq_client.query(query).to_dataframe(create_bqstorage_client=True)
+            else:
+                # Use list_rows for full table (may be more efficient for full table)
+                table_ref = f"{project_id}.{dataset}.{table}"
+                df = bq_client.list_rows(table_ref).to_dataframe(create_bqstorage_client=True)
         else:
             # Use pandas_gbq to execute the query and load into a DataFrame
             df = pandas_gbq.read_gbq(query, project_id=project_id)
@@ -57,32 +64,29 @@ def load_data_from_bigquery(project_id, dataset, table, credentials_path=None, u
         cost_column = 'Cost' if 'Cost' in df.columns else 'cost'
         df[cost_column] = pd.to_numeric(df[cost_column])
         
-        # Convert date to datetime if it exists
-        date_column = 'DATE' if 'DATE' in df.columns else 'date'
-        if date_column in df.columns:
-            if not pd.api.types.is_datetime64_any_dtype(df[date_column]):
-                df[date_column] = pd.to_datetime(df[date_column])
+        # Date handling - if no date column exists, we create one from year and month
+        if 'date' not in df.columns and 'DATE' not in df.columns:
+            if 'year' in df.columns and 'month' in df.columns:
+                # Create date from year and month (use 1st day of month)
+                df['date'] = pd.to_datetime(df['year'].astype(str) + '-' + df['month'].astype(str) + '-01')
         
         # Ensure required fields are available for the environment analyzer
-        # Map new schema columns to old schema columns if needed
+        # Map schema columns for compatibility with existing code
+        # Environment field
         if 'environment' in df.columns and 'Env' not in df.columns:
             df['Env'] = df['environment']
         
+        # Cost field
         if 'Cost' not in df.columns and 'cost' in df.columns:
             df['Cost'] = df['cost']
-        
-        # Handle organizational structure columns
+            
+        # Handle organizational structure columns for the new schema
         if 'tr_product_pillar_team' in df.columns and 'PILLAR' not in df.columns:
             df['PILLAR'] = df['tr_product_pillar_team']
-        
-        if 'vp' in df.columns and 'VP' not in df.columns:
-            df['VP'] = df['vp']
-        
-        if 'application' in df.columns:
-            if 'ORG' not in df.columns:
-                df['ORG'] = df['application']
-            if 'Application_Name' not in df.columns:
-                df['Application_Name'] = df['application']
+            
+        # Map managed_service to service_name if needed
+        if 'managed_service' in df.columns and 'service_name' not in df.columns:
+            df['service_name'] = df['managed_service']
         
         return df
     
@@ -91,7 +95,8 @@ def load_data_from_bigquery(project_id, dataset, table, credentials_path=None, u
         raise
 
 def load_period_data_from_bigquery(project_id, dataset, table, period_type, period_value, year, 
-                                  filter_column=None, filter_value=None, credentials_path=None, use_bqdf=True):
+                                  filter_column=None, filter_value=None, credentials_path=None, use_bqdf=True,
+                                  columns=None):
     """
     Load FinOps data for a specific period from BigQuery.
     
@@ -106,6 +111,8 @@ def load_period_data_from_bigquery(project_id, dataset, table, period_type, peri
         filter_value: Value for the filter column
         credentials_path: Optional path to service account credentials JSON file
         use_bqdf: Use BigQuery DataFrames for better performance with large datasets
+        columns: List of columns to include (None for all columns)
+                 Example: ['cost', 'environment', 'date', 'month', 'fy']
     
     Returns:
         DataFrame with the filtered FinOps data
@@ -116,7 +123,7 @@ def load_period_data_from_bigquery(project_id, dataset, table, period_type, peri
     
     # Map period_type to corresponding column names
     period_columns = {
-        'month': 'Month',
+        'month': 'month',  # Using numeric month column in new schema
         'quarter': 'qtr',
         'week': 'week',
         'year': 'fy'
@@ -149,7 +156,23 @@ def load_period_data_from_bigquery(project_id, dataset, table, period_type, peri
     if period_col and period_value:
         # Special handling for different period formats
         if period_type == 'month':
-            where_clauses.append(f"Month = '{period_value}'")
+            # For the new schema, month is a numeric column
+            try:
+                # Convert month names to numbers if needed
+                month_names = {
+                    'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+                    'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+                }
+                
+                if period_value in month_names:
+                    month_num = month_names[period_value]
+                    where_clauses.append(f"month = {month_num}")
+                else:
+                    # Try to use the value directly if it's numeric
+                    where_clauses.append(f"month = {period_value}")
+            except Exception:
+                # If all else fails, try string comparison
+                where_clauses.append(f"month = '{period_value}'")
         elif period_type == 'quarter':
             # Handle 'Q1' format
             if isinstance(period_value, str) and period_value.startswith('Q'):
@@ -197,10 +220,15 @@ def load_period_data_from_bigquery(project_id, dataset, table, period_type, peri
             # Initialize BigQuery client
             bq_client = Client(project=project_id)
             
+            # Determine column selection
+            column_selection = "*"
+            if columns:
+                column_selection = ", ".join(columns)
+            
             # Create the query with filter applied directly
             table_id = f"{project_id}.{dataset}.{table}"
             query = f"""
-            SELECT * 
+            SELECT {column_selection} 
             FROM `{table_id}`
             WHERE {where_clause}
             """
@@ -212,9 +240,14 @@ def load_period_data_from_bigquery(project_id, dataset, table, period_type, peri
             query_job = bq_client.query(query, job_config=job_config)
             df = query_job.to_dataframe(create_bqstorage_client=True)
         else:
+            # Determine column selection
+            column_selection = "*"
+            if columns:
+                column_selection = ", ".join(columns)
+                
             # Create the query
             query = f"""
-            SELECT * 
+            SELECT {column_selection} 
             FROM `{project_id}.{dataset}.{table}`
             WHERE {where_clause}
             """
@@ -227,24 +260,28 @@ def load_period_data_from_bigquery(project_id, dataset, table, period_type, peri
         cost_column = 'Cost' if 'Cost' in df.columns else 'cost'
         df[cost_column] = pd.to_numeric(df[cost_column])
         
-        # Map columns for compatibility
+        # Date handling - if no date column exists, we create one from year and month
+        if 'date' not in df.columns and 'DATE' not in df.columns:
+            if 'year' in df.columns and 'month' in df.columns:
+                # Create date from year and month (use 1st day of month)
+                df['date'] = pd.to_datetime(df['year'].astype(str) + '-' + df['month'].astype(str) + '-01')
+        
+        # Map schema columns for compatibility with existing code
+        # Environment field
         if 'environment' in df.columns and 'Env' not in df.columns:
             df['Env'] = df['environment']
         
+        # Cost field
         if 'Cost' not in df.columns and 'cost' in df.columns:
             df['Cost'] = df['cost']
-        
+            
+        # Handle organizational structure columns for the new schema
         if 'tr_product_pillar_team' in df.columns and 'PILLAR' not in df.columns:
             df['PILLAR'] = df['tr_product_pillar_team']
-        
-        if 'vp' in df.columns and 'VP' not in df.columns:
-            df['VP'] = df['vp']
-        
-        if 'application' in df.columns:
-            if 'ORG' not in df.columns:
-                df['ORG'] = df['application']
-            if 'Application_Name' not in df.columns:
-                df['Application_Name'] = df['application']
+            
+        # Map managed_service to service_name if needed
+        if 'managed_service' in df.columns and 'service_name' not in df.columns:
+            df['service_name'] = df['managed_service']
         
         return df
     
