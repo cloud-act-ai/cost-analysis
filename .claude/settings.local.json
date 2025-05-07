@@ -21,7 +21,8 @@
       "Bash(grep:*)",
       "Bash(bash:*)",
       "Bash(bash:*)",
-      "Bash(./run.sh:*)"
+      "Bash(./run.sh:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
