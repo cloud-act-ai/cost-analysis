@@ -282,13 +282,13 @@ def create_interactive_product_breakdown_chart(product_df: pd.DataFrame, top_n: 
         # Sort products by total cost
         sorted_products = top_products.sort_values('total_ytd_cost', ascending=True)
         
-        # Create stacked horizontal bar chart
+        # Create horizontal bar chart for PROD costs only
         fig = go.Figure()
         
         # Use display_id field if available, otherwise fall back to product_name
         display_field = 'display_id' if 'display_id' in sorted_products.columns else 'product_name'
         
-        # Add production costs
+        # Add production costs only
         fig.add_trace(go.Bar(
             y=sorted_products[display_field],
             x=sorted_products['prod_ytd_cost'],
@@ -298,22 +298,12 @@ def create_interactive_product_breakdown_chart(product_df: pd.DataFrame, top_n: 
             hovertemplate='<b>%{y}</b><br>PROD: $%{x:,.2f}<extra></extra>'
         ))
         
-        # Add non-production costs
-        fig.add_trace(go.Bar(
-            y=sorted_products[display_field],
-            x=sorted_products['nonprod_ytd_cost'],
-            name='NON-PROD',
-            orientation='h',
-            marker=dict(color='#33aa33'),
-            hovertemplate='<b>%{y}</b><br>NON-PROD: $%{x:,.2f}<extra></extra>'
-        ))
-        
         # Update layout
         fig.update_layout(
-            title="Top Products by Cost",
+            title="Top Products by Cost (PROD Only)",
             title_x=0.5,
             xaxis_title="Cost ($)",
-            barmode='stack',
+            barmode='group',
             height=max(400, 100 + (30 * len(sorted_products))),  # Adjust height based on number of products
             margin=dict(l=200, r=50, t=100, b=50),
             legend=dict(
@@ -339,21 +329,13 @@ def create_interactive_product_breakdown_chart(product_df: pd.DataFrame, top_n: 
             )
         )
         
-        # Add a text annotation showing percentage for each product
+        # Add product cost annotation
         for i, row in enumerate(sorted_products.itertuples()):
-            nonprod_pct = getattr(row, 'nonprod_percentage', 0)
-            if pd.isna(nonprod_pct):
-                nonprod_pct = 0
-                
-            if not hasattr(row, 'nonprod_percentage'):
-                total = row.prod_ytd_cost + row.nonprod_ytd_cost
-                nonprod_pct = (row.nonprod_ytd_cost / total * 100) if total > 0 else 0
-                
             # Add text at the end of the bar
             fig.add_annotation(
-                x=row.prod_ytd_cost + row.nonprod_ytd_cost,
+                x=row.prod_ytd_cost,
                 y=row.product_name,
-                text=f" {nonprod_pct:.1f}% non-prod",
+                text=f" ${row.prod_ytd_cost:,.2f}",
                 showarrow=False,
                 xshift=10,
                 font=dict(size=10),
@@ -431,10 +413,10 @@ def create_interactive_cto_breakdown_chart(cto_df: pd.DataFrame, top_n: int = 10
         # Sort CTOs by total cost
         sorted_ctos = top_ctos.sort_values('total_ytd_cost', ascending=True)
         
-        # Create stacked horizontal bar chart
+        # Create horizontal bar chart for only PROD costs
         fig = go.Figure()
         
-        # Add production costs
+        # Add production costs only
         fig.add_trace(go.Bar(
             y=sorted_ctos['cto_org'],
             x=sorted_ctos['prod_ytd_cost'],
@@ -444,22 +426,12 @@ def create_interactive_cto_breakdown_chart(cto_df: pd.DataFrame, top_n: int = 10
             hovertemplate='<b>%{y}</b><br>PROD: $%{x:,.2f}<extra></extra>'
         ))
         
-        # Add non-production costs
-        fig.add_trace(go.Bar(
-            y=sorted_ctos['cto_org'],
-            x=sorted_ctos['nonprod_ytd_cost'],
-            name='NON-PROD',
-            orientation='h',
-            marker=dict(color='#34A853'),
-            hovertemplate='<b>%{y}</b><br>NON-PROD: $%{x:,.2f}<extra></extra>'
-        ))
-        
         # Update layout
         fig.update_layout(
-            title="CTO Organization Costs",
+            title="CTO Organization Costs (PROD Only)",
             title_x=0.5,
             xaxis_title="Cost ($)",
-            barmode='stack',
+            barmode='group',
             height=max(400, 100 + (30 * len(sorted_ctos))),
             margin=dict(l=200, r=50, t=100, b=50),
             legend=dict(
@@ -485,21 +457,13 @@ def create_interactive_cto_breakdown_chart(cto_df: pd.DataFrame, top_n: int = 10
             )
         )
         
-        # Add a text annotation showing percentage for each CTO
+        # Add CTO cost annotation
         for i, row in enumerate(sorted_ctos.itertuples()):
-            nonprod_pct = getattr(row, 'nonprod_percentage', 0)
-            if pd.isna(nonprod_pct):
-                nonprod_pct = 0
-                
-            if not hasattr(row, 'nonprod_percentage'):
-                total = row.prod_ytd_cost + row.nonprod_ytd_cost
-                nonprod_pct = (row.nonprod_ytd_cost / total * 100) if total > 0 else 0
-                
             # Add text at the end of the bar
             fig.add_annotation(
-                x=row.prod_ytd_cost + row.nonprod_ytd_cost,
+                x=row.prod_ytd_cost,
                 y=row.cto_org,
-                text=f" {nonprod_pct:.1f}% non-prod",
+                text=f" ${row.prod_ytd_cost:,.2f}",
                 showarrow=False,
                 xshift=10,
                 font=dict(size=10),
@@ -574,10 +538,10 @@ def create_interactive_pillar_breakdown_chart(pillar_df: pd.DataFrame, top_n: in
         # Sort pillars by total cost
         sorted_pillars = top_pillars.sort_values('total_ytd_cost', ascending=True)
         
-        # Create stacked horizontal bar chart
+        # Create horizontal bar chart for PROD costs only
         fig = go.Figure()
         
-        # Add production costs
+        # Add production costs only
         fig.add_trace(go.Bar(
             y=sorted_pillars['pillar_name'],
             x=sorted_pillars['prod_ytd_cost'],
@@ -587,22 +551,12 @@ def create_interactive_pillar_breakdown_chart(pillar_df: pd.DataFrame, top_n: in
             hovertemplate='<b>%{y}</b><br>PROD: $%{x:,.2f}<extra></extra>'
         ))
         
-        # Add non-production costs
-        fig.add_trace(go.Bar(
-            y=sorted_pillars['pillar_name'],
-            x=sorted_pillars['nonprod_ytd_cost'],
-            name='NON-PROD',
-            orientation='h',
-            marker=dict(color='#34A853'),
-            hovertemplate='<b>%{y}</b><br>NON-PROD: $%{x:,.2f}<extra></extra>'
-        ))
-        
         # Update layout
         fig.update_layout(
-            title="Product Pillar Team Costs",
+            title="Product Pillar Team Costs (PROD Only)",
             title_x=0.5,
             xaxis_title="Cost ($)",
-            barmode='stack',
+            barmode='group',
             height=max(400, 100 + (30 * len(sorted_pillars))),
             margin=dict(l=200, r=50, t=100, b=50),
             legend=dict(
@@ -628,7 +582,7 @@ def create_interactive_pillar_breakdown_chart(pillar_df: pd.DataFrame, top_n: in
             )
         )
         
-        # Add a text annotation showing product count for each pillar
+        # Add pillar cost annotation
         for i, row in enumerate(sorted_pillars.itertuples()):
             product_count = getattr(row, 'product_count', 0)
             if pd.isna(product_count):
@@ -636,9 +590,9 @@ def create_interactive_pillar_breakdown_chart(pillar_df: pd.DataFrame, top_n: in
                 
             # Add text at the end of the bar
             fig.add_annotation(
-                x=row.prod_ytd_cost + row.nonprod_ytd_cost,
+                x=row.prod_ytd_cost,
                 y=row.pillar_name,
-                text=f" {product_count} products",
+                text=f" ${row.prod_ytd_cost:,.2f} ({product_count} products)",
                 showarrow=False,
                 xshift=10,
                 font=dict(size=10),

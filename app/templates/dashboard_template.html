@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinOps360 Cost Analysis Dashboard</title>
-    <!-- Plotly.js for interactive charts -->
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- No charts, only tables -->
     <style>
         /* Base Styles */
         body {
@@ -394,58 +393,14 @@
             </div>
         </div>
         
-        <div class="chart-section">
-            <div class="chart-container full-width">
-                <!-- Chart title is removed since it's already included in the plot -->
-                
-                {% if use_interactive_charts is defined and use_interactive_charts %}
-                <div id="daily-trend-interactive" style="width: 100%; height: 500px;"></div>
-                
-                <script>
-                    // Parse the interactive chart data from the template
-                    var dailyTrendData = {{ daily_trend_chart_json|safe }};
-                    
-                    // Create the interactive chart with responsive layout
-                    Plotly.newPlot('daily-trend-interactive', dailyTrendData.data, dailyTrendData.layout, {responsive: true});
-                    
-                    // Make chart responsive to window resize
-                    window.addEventListener('resize', function() {
-                        Plotly.relayout('daily-trend-interactive', {
-                            'autosize': true
-                        });
-                    });
-                </script>
-                {% else %}
-                <img src="data:image/png;base64,{{ daily_trend_chart }}" alt="Daily Cost Analysis" class="chart">
-                {% endif %}
-            </div>
-        </div>
+        <!-- Charts section removed, keeping only tables -->
         
         
         <!-- CTO Cost Table -->
         <div class="table-section">
             <h2>CTO Organization Cost Details</h2>
             
-            {% if use_interactive_charts is defined and use_interactive_charts %}
-            <div class="chart-container" style="margin-bottom: 20px;">
-                <div id="cto-chart-interactive" style="width: 100%; height: 500px;"></div>
-                
-                <script>
-                    // Parse the interactive CTO chart data from the template
-                    var ctoChartData = {{ cto_chart_json|safe }};
-                    
-                    // Create the interactive chart with responsive layout
-                    Plotly.newPlot('cto-chart-interactive', ctoChartData.data, ctoChartData.layout, {responsive: true});
-                    
-                    // Make chart responsive to window resize
-                    window.addEventListener('resize', function() {
-                        Plotly.relayout('cto-chart-interactive', {
-                            'autosize': true
-                        });
-                    });
-                </script>
-            </div>
-            {% endif %}
+            <!-- CTO chart removed -->
             
             <table>
                 <thead>
@@ -477,26 +432,7 @@
         <div class="table-section">
             <h2>Product Pillar Team Cost Details</h2>
             
-            {% if use_interactive_charts is defined and use_interactive_charts %}
-            <div class="chart-container" style="margin-bottom: 20px;">
-                <div id="pillar-chart-interactive" style="width: 100%; height: 500px;"></div>
-                
-                <script>
-                    // Parse the interactive pillar chart data from the template
-                    var pillarChartData = {{ pillar_chart_json|safe }};
-                    
-                    // Create the interactive chart with responsive layout
-                    Plotly.newPlot('pillar-chart-interactive', pillarChartData.data, pillarChartData.layout, {responsive: true});
-                    
-                    // Make chart responsive to window resize
-                    window.addEventListener('resize', function() {
-                        Plotly.relayout('pillar-chart-interactive', {
-                            'autosize': true
-                        });
-                    });
-                </script>
-            </div>
-            {% endif %}
+            <!-- Pillar chart removed -->
             
             <table>
                 <thead>
@@ -528,26 +464,7 @@
         <div class="table-section">
             <h2>Product ID Cost Details</h2>
             
-            {% if use_interactive_charts is defined and use_interactive_charts %}
-            <div class="chart-container" style="margin-bottom: 20px;">
-                <div id="product-chart-interactive" style="width: 100%; height: 500px;"></div>
-                
-                <script>
-                    // Parse the interactive product chart data from the template
-                    var productChartData = {{ product_chart_json|safe }};
-                    
-                    // Create the interactive chart with responsive layout
-                    Plotly.newPlot('product-chart-interactive', productChartData.data, productChartData.layout, {responsive: true});
-                    
-                    // Make chart responsive to window resize
-                    window.addEventListener('resize', function() {
-                        Plotly.relayout('product-chart-interactive', {
-                            'autosize': true
-                        });
-                    });
-                </script>
-            </div>
-            {% endif %}
+            <!-- Product chart removed -->
             
             <table>
                 <thead>
@@ -582,9 +499,7 @@
         
         <footer>
             <p>Generated on {{ report_generation_date }} | FinOps360 Cost Analysis Tool</p>
-            {% if use_interactive_charts is defined and use_interactive_charts %}
-            <p><small>Interactive charts powered by Plotly.js</small></p>
-            {% endif %}
+            <!-- No charts used -->
         </footer>
     </div>
 </body>

@@ -11,39 +11,11 @@ from typing import Dict, Any, Optional, Union, List, Tuple
 from google.cloud import bigquery
 
 from app.utils.config import FinOpsConfig, load_config
-from app.utils.charts import (
-    create_daily_trend_chart,
-    create_forecast_chart,
-    create_environment_breakdown_chart,
-    create_product_breakdown_chart
-)
+# Charts removed
+# Only using tables for display
 
-# Try to import interactive charts, but don't fail if plotly is not installed
-try:
-    from app.utils.interactive_charts import (
-        create_interactive_daily_trend_chart,
-        create_interactive_product_breakdown_chart,
-        create_interactive_cto_breakdown_chart,
-        create_interactive_pillar_breakdown_chart,
-        create_interactive_environment_breakdown_chart,
-        get_project_dataset_config
-    )
-    has_interactive_charts = True
-except ImportError:
-    # Create dummy functions if plotly is not available
-    def create_interactive_daily_trend_chart(*args, **kwargs):
-        return "{}"
-    def create_interactive_product_breakdown_chart(*args, **kwargs):
-        return "{}"
-    def create_interactive_cto_breakdown_chart(*args, **kwargs):
-        return "{}"
-    def create_interactive_pillar_breakdown_chart(*args, **kwargs):
-        return "{}"
-    def create_interactive_environment_breakdown_chart(*args, **kwargs):
-        return "{}"
-    def get_project_dataset_config(*args, **kwargs):
-        return {}
-    has_interactive_charts = False
+# Interactive charts removed
+has_interactive_charts = False
 from app.data_access import (
     get_ytd_costs,
     get_fy26_costs,
@@ -324,8 +296,8 @@ def generate_html_report(
             cto_cost_table = []
             pillar_cost_table = []
         
-        # Create static chart
-        daily_trend_chart = create_daily_trend_chart(daily_trend_data)
+        # Charts removed
+        daily_trend_chart = ""
         
         # Load Jinja2 template
         template_dir = os.path.dirname(template_path)
@@ -402,24 +374,8 @@ def generate_html_report(
             'pillar_cost_table': pillar_cost_table
         }
         
-        # Add interactive charts data if enabled and plotly is available
-        if use_interactive_charts and has_interactive_charts:
-            # Create interactive charts
-            daily_trend_chart_json = create_interactive_daily_trend_chart(daily_trend_data)
-            cto_chart_json = create_interactive_cto_breakdown_chart(cto_costs)
-            pillar_chart_json = create_interactive_pillar_breakdown_chart(pillar_costs)
-            product_chart_json = create_interactive_product_breakdown_chart(product_costs)
-            env_chart_json = create_interactive_environment_breakdown_chart(ytd_costs)
-            
-            # Add to template data
-            template_data['daily_trend_chart_json'] = daily_trend_chart_json
-            template_data['cto_chart_json'] = cto_chart_json
-            template_data['pillar_chart_json'] = pillar_chart_json
-            template_data['product_chart_json'] = product_chart_json
-            template_data['env_chart_json'] = env_chart_json
-        else:
-            # Disable interactive charts if plotly is not available
-            template_data['use_interactive_charts'] = False
+        # Charts removed
+        template_data['use_interactive_charts'] = False
         
         # Debug template data
         print(f"Template data product_cost_table length: {len(template_data.get('product_cost_table', []))}")
