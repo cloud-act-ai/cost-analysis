@@ -91,7 +91,7 @@ CREATE OR REPLACE VIEW `your-project-id.your-dataset.avg_daily_cost_table` AS
 WITH fiscal_year_averages AS (
     SELECT 
         CASE 
-            WHEN environment LIKE '%PROD%' THEN 'PROD'
+            WHEN environment LIKE 'PROD%' THEN 'PROD'
             ELSE 'NON-PROD'
         END AS environment_type,
         cto,
@@ -120,7 +120,7 @@ daily_costs AS (
     SELECT 
         date,
         CASE 
-            WHEN environment LIKE '%PROD%' THEN 'PROD'
+            WHEN environment LIKE 'PROD%' THEN 'PROD'
             ELSE 'NON-PROD'
         END AS environment_type,
         cto,

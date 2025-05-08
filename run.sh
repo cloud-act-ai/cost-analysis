@@ -26,8 +26,8 @@ fi
 echo ""
 echo "Generating HTML dashboard..."
 
-# Run the application
-python3 -m app.main
+# Run the application with debug mode
+python3 -m app.main --debug
 
 echo ""
 echo "✓ Dashboard generation complete!"

@@ -43,9 +43,9 @@ def create_interactive_daily_trend_chart(df: pd.DataFrame) -> str:
         # Create the figure
         fig = go.Figure()
         
-        # Define colors
-        prod_color = '#3366cc'  # Blue for PROD
-        nonprod_color = '#33aa33'  # Green for NON-PROD
+        # Define colors - enhanced for better contrast and visual appeal
+        prod_color = '#4285F4'  # Bright blue for PROD
+        nonprod_color = '#34A853'  # Bright green for NON-PROD
         avg_color = '#666666'  # Gray for averages
         forecast_prod_color = '#9966ff'  # Purple for PROD forecast
         forecast_nonprod_color = '#ff6666'  # Red for NON-PROD forecast
@@ -67,43 +67,13 @@ def create_interactive_daily_trend_chart(df: pd.DataFrame) -> str:
                 y=env_data['daily_cost'],
                 mode='lines',
                 name=f"{env} Daily Cost (FY26)",
-                line=dict(color=color, width=2),
+                line=dict(color=color, width=2.5, shape='spline', smoothing=0.3),
                 hovertemplate='%{x|%b %d, %Y}: $%{y:,.2f}<extra></extra>'
-            ))
-            
-            # Add FY25 average line (dashed)
-            fig.add_trace(go.Scatter(
-                x=env_data['date'],
-                y=env_data['fy25_avg_daily_spend'],
-                mode='lines',
-                name="FY25 Avg Daily Spend",
-                line=dict(color='#999999', width=1, dash='dash'),
-                hovertemplate='FY25 Avg: $%{y:,.2f}<extra></extra>'
-            ))
-            
-            # Add FY26 YTD average line (dash-dot)
-            fig.add_trace(go.Scatter(
-                x=env_data['date'],
-                y=env_data['fy26_ytd_avg_daily_spend'],
-                mode='lines',
-                name="FY26 Avg Daily Spend",
-                line=dict(color=avg_color, width=1, dash='dashdot'),
-                hovertemplate='FY26 Avg: $%{y:,.2f}<extra></extra>'
-            ))
-            
-            # Add forecasted line (dotted)
-            fig.add_trace(go.Scatter(
-                x=env_data['date'],
-                y=env_data['fy26_forecasted_avg_daily_spend'],
-                mode='lines',
-                name=f"{env} Forecasted Daily Cost (FY26)",
-                line=dict(color=forecast_color, width=2, dash='dot'),
-                hovertemplate='Forecast: $%{y:,.2f}<extra></extra>'
             ))
         
         # Update layout
         fig.update_layout(
-            title="FY26 Daily Cost for PROD and NON-PROD (Including Forecast)",
+            title="FY26 Daily Cost Trend",
             title_x=0.5,
             xaxis_title="Date",
             yaxis_title="Cost ($)",
@@ -119,11 +89,29 @@ def create_interactive_daily_trend_chart(df: pd.DataFrame) -> str:
             height=500,
             yaxis=dict(
                 tickprefix="$",
-                separatethousands=True
+                separatethousands=True,
+                range=[0, None],  # Start y-axis from 0
+                nticks=10,  # Specify approximate number of ticks
+                tickmode='auto',
+                showgrid=True,
+                gridcolor='rgba(211,211,211,0.5)',
+                gridwidth=1,
+                mirror=True,
+                showline=True,
+                linecolor='rgba(211,211,211,1)',
+                linewidth=1
             ),
             xaxis=dict(
                 tickformat="%b %Y",
-                tickangle=-45
+                tickangle=-45,
+                showgrid=True,
+                gridcolor='rgba(211,211,211,0.5)',
+                gridwidth=1,
+                mirror=True,
+                showline=True,
+                linecolor='rgba(211,211,211,1)',
+                linewidth=1,
+                nticks=12  # Show approximately one tick per month
             ),
             plot_bgcolor='rgba(245,247,249,0.8)',
             paper_bgcolor='rgba(245,247,249,0.8)',
@@ -137,17 +125,7 @@ def create_interactive_daily_trend_chart(df: pd.DataFrame) -> str:
             )
         )
         
-        # Add grid lines
-        fig.update_xaxes(
-            showgrid=True,
-            gridwidth=1,
-            gridcolor='rgba(211,211,211,0.5)'
-        )
-        fig.update_yaxes(
-            showgrid=True,
-            gridwidth=1,
-            gridcolor='rgba(211,211,211,0.5)'
-        )
+        # We've moved grid line settings to the axis configuration
         
         # Make the figure responsive
         fig.update_layout(
@@ -186,34 +164,6 @@ def create_interactive_daily_trend_chart(df: pd.DataFrame) -> str:
                             method="update",
                             args=[{"visible": [True if "NON-PROD" in trace.name else False 
                                                for trace in fig.data]}]
-                        )
-                    ]
-                ),
-                # Create a row of buttons for data type filtering
-                dict(
-                    type="buttons",
-                    direction="right",
-                    x=0.5,
-                    y=button_layer_1_height - 0.08,
-                    xanchor="center",
-                    yanchor="top",
-                    buttons=[
-                        dict(
-                            label="📊 Actual Only",
-                            method="update",
-                            args=[{"visible": [True if "Forecasted" not in trace.name and "Avg" not in trace.name else False 
-                                               for trace in fig.data]}]
-                        ),
-                        dict(
-                            label="📈 With Forecasts",
-                            method="update",
-                            args=[{"visible": [True if "Avg" not in trace.name else False 
-                                               for trace in fig.data]}]
-                        ),
-                        dict(
-                            label="📉 Show Averages",
-                            method="update",
-                            args=[{"visible": [True] * len(fig.data)}]
                         )
                     ]
                 )
@@ -335,9 +285,12 @@ def create_interactive_product_breakdown_chart(product_df: pd.DataFrame, top_n: 
         # Create stacked horizontal bar chart
         fig = go.Figure()
         
+        # Use display_id field if available, otherwise fall back to product_name
+        display_field = 'display_id' if 'display_id' in sorted_products.columns else 'product_name'
+        
         # Add production costs
         fig.add_trace(go.Bar(
-            y=sorted_products['product_name'],
+            y=sorted_products[display_field],
             x=sorted_products['prod_ytd_cost'],
             name='PROD',
             orientation='h',
@@ -347,7 +300,7 @@ def create_interactive_product_breakdown_chart(product_df: pd.DataFrame, top_n: 
         
         # Add non-production costs
         fig.add_trace(go.Bar(
-            y=sorted_products['product_name'],
+            y=sorted_products[display_field],
             x=sorted_products['nonprod_ytd_cost'],
             name='NON-PROD',
             orientation='h',
@@ -415,6 +368,288 @@ def create_interactive_product_breakdown_chart(product_df: pd.DataFrame, top_n: 
         
     except Exception as e:
         logger.error(f"Error creating interactive product breakdown chart: {e}")
+        # Return a minimal valid JSON if there's an error
+        return json.dumps({"data": [], "layout": {"title": "Error creating chart"}})
+
+
+def create_interactive_cto_breakdown_chart(cto_df: pd.DataFrame, top_n: int = 10) -> str:
+    """
+    Create an interactive chart showing CTO organization costs.
+    
+    Args:
+        cto_df: DataFrame with CTO organization cost data
+        top_n: Number of top CTOs to display
+        
+    Returns:
+        JSON representation of the Plotly figure
+    """
+    try:
+        # Check for empty dataframe or missing columns
+        required_columns = ['cto_org', 'total_ytd_cost', 'prod_ytd_cost', 'nonprod_ytd_cost']
+        has_required_data = (not cto_df.empty and 
+                           'cto_org' in cto_df.columns and
+                           ('total_ytd_cost' in cto_df.columns or 'prod_ytd_cost' in cto_df.columns))
+        
+        if not has_required_data:
+            # Create empty chart with message
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No CTO organization cost data available",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=20)
+            )
+            fig.update_layout(
+                title="CTO Organization Costs",
+                title_x=0.5
+            )
+            return json.dumps(fig, cls=PlotlyJSONEncoder)
+        
+        # Ensure we have the necessary cost columns or create them
+        if 'total_ytd_cost' not in cto_df.columns and 'prod_ytd_cost' in cto_df.columns and 'nonprod_ytd_cost' in cto_df.columns:
+            cto_df['total_ytd_cost'] = cto_df['prod_ytd_cost'] + cto_df['nonprod_ytd_cost']
+        
+        # Get top N CTOs by total cost
+        sort_column = 'total_ytd_cost' if 'total_ytd_cost' in cto_df.columns else 'prod_ytd_cost'
+        top_ctos = cto_df.sort_values(sort_column, ascending=False).head(top_n)
+            
+        # Check if we have any CTO data
+        if top_ctos.empty:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No CTO organization cost data available",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=20)
+            )
+            fig.update_layout(
+                title="CTO Organization Costs",
+                title_x=0.5
+            )
+            return json.dumps(fig, cls=PlotlyJSONEncoder)
+        
+        # Sort CTOs by total cost
+        sorted_ctos = top_ctos.sort_values('total_ytd_cost', ascending=True)
+        
+        # Create stacked horizontal bar chart
+        fig = go.Figure()
+        
+        # Add production costs
+        fig.add_trace(go.Bar(
+            y=sorted_ctos['cto_org'],
+            x=sorted_ctos['prod_ytd_cost'],
+            name='PROD',
+            orientation='h',
+            marker=dict(color='#4285F4'),
+            hovertemplate='<b>%{y}</b><br>PROD: $%{x:,.2f}<extra></extra>'
+        ))
+        
+        # Add non-production costs
+        fig.add_trace(go.Bar(
+            y=sorted_ctos['cto_org'],
+            x=sorted_ctos['nonprod_ytd_cost'],
+            name='NON-PROD',
+            orientation='h',
+            marker=dict(color='#34A853'),
+            hovertemplate='<b>%{y}</b><br>NON-PROD: $%{x:,.2f}<extra></extra>'
+        ))
+        
+        # Update layout
+        fig.update_layout(
+            title="CTO Organization Costs",
+            title_x=0.5,
+            xaxis_title="Cost ($)",
+            barmode='stack',
+            height=max(400, 100 + (30 * len(sorted_ctos))),
+            margin=dict(l=200, r=50, t=100, b=50),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            xaxis=dict(
+                tickprefix="$",
+                separatethousands=True
+            ),
+            plot_bgcolor='rgba(245,247,249,0.8)',
+            paper_bgcolor='rgba(245,247,249,0.8)',
+            font=dict(
+                family="Segoe UI, Arial, sans-serif"
+            ),
+            hoverlabel=dict(
+                bgcolor="white",
+                font_size=12,
+                font_family="Segoe UI, Arial, sans-serif"
+            )
+        )
+        
+        # Add a text annotation showing percentage for each CTO
+        for i, row in enumerate(sorted_ctos.itertuples()):
+            nonprod_pct = getattr(row, 'nonprod_percentage', 0)
+            if pd.isna(nonprod_pct):
+                nonprod_pct = 0
+                
+            if not hasattr(row, 'nonprod_percentage'):
+                total = row.prod_ytd_cost + row.nonprod_ytd_cost
+                nonprod_pct = (row.nonprod_ytd_cost / total * 100) if total > 0 else 0
+                
+            # Add text at the end of the bar
+            fig.add_annotation(
+                x=row.prod_ytd_cost + row.nonprod_ytd_cost,
+                y=row.cto_org,
+                text=f" {nonprod_pct:.1f}% non-prod",
+                showarrow=False,
+                xshift=10,
+                font=dict(size=10),
+                xanchor="left"
+            )
+        
+        # Convert to JSON
+        return json.dumps(fig, cls=PlotlyJSONEncoder)
+        
+    except Exception as e:
+        logger.error(f"Error creating interactive CTO breakdown chart: {e}")
+        # Return a minimal valid JSON if there's an error
+        return json.dumps({"data": [], "layout": {"title": "Error creating chart"}})
+
+
+def create_interactive_pillar_breakdown_chart(pillar_df: pd.DataFrame, top_n: int = 10) -> str:
+    """
+    Create an interactive chart showing product pillar team costs.
+    
+    Args:
+        pillar_df: DataFrame with pillar team cost data
+        top_n: Number of top pillars to display
+        
+    Returns:
+        JSON representation of the Plotly figure
+    """
+    try:
+        # Check for empty dataframe or missing columns
+        required_columns = ['pillar_name', 'total_ytd_cost', 'prod_ytd_cost', 'nonprod_ytd_cost']
+        has_required_data = (not pillar_df.empty and 
+                           'pillar_name' in pillar_df.columns and
+                           ('total_ytd_cost' in pillar_df.columns or 'prod_ytd_cost' in pillar_df.columns))
+        
+        if not has_required_data:
+            # Create empty chart with message
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No pillar team cost data available",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=20)
+            )
+            fig.update_layout(
+                title="Product Pillar Team Costs",
+                title_x=0.5
+            )
+            return json.dumps(fig, cls=PlotlyJSONEncoder)
+        
+        # Ensure we have the necessary cost columns or create them
+        if 'total_ytd_cost' not in pillar_df.columns and 'prod_ytd_cost' in pillar_df.columns and 'nonprod_ytd_cost' in pillar_df.columns:
+            pillar_df['total_ytd_cost'] = pillar_df['prod_ytd_cost'] + pillar_df['nonprod_ytd_cost']
+        
+        # Get top N pillars by total cost
+        sort_column = 'total_ytd_cost' if 'total_ytd_cost' in pillar_df.columns else 'prod_ytd_cost'
+        top_pillars = pillar_df.sort_values(sort_column, ascending=False).head(top_n)
+            
+        # Check if we have any pillar data
+        if top_pillars.empty:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No pillar team cost data available",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=20)
+            )
+            fig.update_layout(
+                title="Product Pillar Team Costs",
+                title_x=0.5
+            )
+            return json.dumps(fig, cls=PlotlyJSONEncoder)
+        
+        # Sort pillars by total cost
+        sorted_pillars = top_pillars.sort_values('total_ytd_cost', ascending=True)
+        
+        # Create stacked horizontal bar chart
+        fig = go.Figure()
+        
+        # Add production costs
+        fig.add_trace(go.Bar(
+            y=sorted_pillars['pillar_name'],
+            x=sorted_pillars['prod_ytd_cost'],
+            name='PROD',
+            orientation='h',
+            marker=dict(color='#4285F4'),
+            hovertemplate='<b>%{y}</b><br>PROD: $%{x:,.2f}<extra></extra>'
+        ))
+        
+        # Add non-production costs
+        fig.add_trace(go.Bar(
+            y=sorted_pillars['pillar_name'],
+            x=sorted_pillars['nonprod_ytd_cost'],
+            name='NON-PROD',
+            orientation='h',
+            marker=dict(color='#34A853'),
+            hovertemplate='<b>%{y}</b><br>NON-PROD: $%{x:,.2f}<extra></extra>'
+        ))
+        
+        # Update layout
+        fig.update_layout(
+            title="Product Pillar Team Costs",
+            title_x=0.5,
+            xaxis_title="Cost ($)",
+            barmode='stack',
+            height=max(400, 100 + (30 * len(sorted_pillars))),
+            margin=dict(l=200, r=50, t=100, b=50),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            xaxis=dict(
+                tickprefix="$",
+                separatethousands=True
+            ),
+            plot_bgcolor='rgba(245,247,249,0.8)',
+            paper_bgcolor='rgba(245,247,249,0.8)',
+            font=dict(
+                family="Segoe UI, Arial, sans-serif"
+            ),
+            hoverlabel=dict(
+                bgcolor="white",
+                font_size=12,
+                font_family="Segoe UI, Arial, sans-serif"
+            )
+        )
+        
+        # Add a text annotation showing product count for each pillar
+        for i, row in enumerate(sorted_pillars.itertuples()):
+            product_count = getattr(row, 'product_count', 0)
+            if pd.isna(product_count):
+                product_count = 0
+                
+            # Add text at the end of the bar
+            fig.add_annotation(
+                x=row.prod_ytd_cost + row.nonprod_ytd_cost,
+                y=row.pillar_name,
+                text=f" {product_count} products",
+                showarrow=False,
+                xshift=10,
+                font=dict(size=10),
+                xanchor="left"
+            )
+        
+        # Convert to JSON
+        return json.dumps(fig, cls=PlotlyJSONEncoder)
+        
+    except Exception as e:
+        logger.error(f"Error creating interactive pillar breakdown chart: {e}")
         # Return a minimal valid JSON if there's an error
         return json.dumps({"data": [], "layout": {"title": "Error creating chart"}})
 

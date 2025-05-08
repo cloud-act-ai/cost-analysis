@@ -12,12 +12,23 @@ interactive_charts: true
 
 # Data settings
 data:
-  day_comparison_offset: 4  # Days ago to compare for day-to-day changes
-  week_comparison_offset: 1  # Weeks ago to compare for week-to-week changes
-  month_comparison_offset: 1  # Months ago to compare for month-to-month changes
-  top_products_count: 10     # Number of top products to display
+  # Fixed dates for comparisons
+  day_current_date: "2025-05-03"    # Current day for comparison
+  day_previous_date: "2025-05-02"   # Previous day for comparison
+  
+  # Fixed week periods
+  week_current_start: "2025-04-27"  # Current week start date
+  week_current_end: "2025-05-03"    # Current week end date
+  week_previous_start: "2025-04-20" # Previous week start date
+  week_previous_end: "2025-04-26"   # Previous week end date
+  
+  # Fixed month periods
+  month_current: "2025-04"          # Current month (YYYY-MM)
+  month_previous: "2025-03"         # Previous month (YYYY-MM)
+  
+  top_products_count: 10            # Number of top products to display
   nonprod_percentage_threshold: 30  # Highlight products with nonprod % above this threshold
-  display_millions: true      # Display costs in millions for scorecards
+  display_millions: false           # Display costs in raw values rather than millions
 
 # Output settings
 output_dir: reports

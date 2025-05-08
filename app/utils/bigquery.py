@@ -28,6 +28,15 @@ def load_sql_query(query_name: str, **kwargs) -> str:
     sql_file = os.path.join(sql_dir, f"{query_name}.sql")
     
     try:
+        # Log query loading
+        logger.info(f"Loading SQL query: {query_name}")
+        
+        # Log parameters
+        if kwargs:
+            logger.info(f"Query parameters:")
+            for key, value in kwargs.items():
+                logger.info(f"  {key}: {value}")
+        
         with open(sql_file, 'r') as f:
             query = f.read()
         
@@ -68,7 +77,25 @@ def run_query(client: bigquery.Client, query: str) -> pd.DataFrame:
         DataFrame with query results
     """
     try:
-        return client.query(query).to_dataframe(create_bqstorage_client=True)
+        # Log the query for debugging purposes
+        logger.info(f"Executing query: \n{query}\n")
+        
+        # Execute the query
+        job = client.query(query)
+        
+        # Log query execution details
+        logger.info(f"Query job ID: {job.job_id}")
+        logger.info(f"Query state: {job.state}")
+        
+        # Convert to dataframe
+        df = job.to_dataframe(create_bqstorage_client=True)
+        
+        # Log result summary
+        logger.info(f"Query returned {len(df)} rows")
+        if not df.empty:
+            logger.info(f"Columns: {df.columns.tolist()}")
+        
+        return df
     except Exception as e:
         logger.error(f"Error running query: {e}")
         logger.error(f"Query: {query}")

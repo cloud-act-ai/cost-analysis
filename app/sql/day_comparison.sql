@@ -1,31 +1,12 @@
-WITH current_day AS (
-    SELECT
-        CASE 
-            WHEN environment LIKE '%PROD%' THEN 'PROD'
-            ELSE 'NON-PROD'
-        END AS environment_type,
-        SUM(cost) AS total_cost,
-        '{day_current}' AS compare_date
-    FROM `{project_id}.{dataset}.{table}`
-    WHERE date = '{day_current}'
-    GROUP BY environment_type
-),
-previous_day AS (
-    SELECT
-        CASE 
-            WHEN environment LIKE '%PROD%' THEN 'PROD'
-            ELSE 'NON-PROD'
-        END AS environment_type,
-        SUM(cost) AS total_cost
-    FROM `{project_id}.{dataset}.{table}`
-    WHERE date = '{day_previous}'
-    GROUP BY environment_type
-)
+-- Basic day-to-day comparison query
 SELECT
-    current.environment_type,
-    current.total_cost AS day_current_cost,
-    prev.total_cost AS day_previous_cost,
-    current.compare_date AS compare_date,
-    (current.total_cost - prev.total_cost) / NULLIF(prev.total_cost, 0) * 100 AS percent_change
-FROM current_day current
-JOIN previous_day prev ON current.environment_type = prev.environment_type
+    CASE 
+        WHEN environment LIKE 'PROD%' THEN 'PROD'
+        WHEN environment LIKE '%NON-PROD%' THEN 'NON-PROD'
+        ELSE 'OTHER'
+    END AS environment_type,
+    SUM(CASE WHEN date = '{day_current}' THEN cost ELSE 0 END) AS day_current_cost,
+    SUM(CASE WHEN date = '{day_previous}' THEN cost ELSE 0 END) AS day_previous_cost
+FROM `{project_id}.{dataset}.{table}`
+WHERE date IN ('{day_current}', '{day_previous}')
+GROUP BY environment_type

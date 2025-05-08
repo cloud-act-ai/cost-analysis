@@ -13,9 +13,13 @@ from app.utils.config import load_config
 from app.dashboard import generate_html_report
 
 # Configure logging
-logging.basicConfig(level=logging.INFO,
+logging.basicConfig(level=logging.DEBUG,
                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Set specific logging levels
+logging.getLogger('app.utils.bigquery').setLevel(logging.DEBUG)
+logging.getLogger('app.data_access').setLevel(logging.DEBUG)
 
 def parse_args():
     """Parse command line arguments."""
@@ -29,12 +33,21 @@ def parse_args():
                        help="Path to HTML template (default: app/templates/dashboard_template.html)")
     parser.add_argument('--no-interactive', action='store_true',
                        help="Disable interactive charts")
+    parser.add_argument('--debug', action='store_true',
+                       help="Enable debug mode with verbose logging")
     
     return parser.parse_args()
 
 def main():
     """Main entry point."""
     args = parse_args()
+    
+    # Configure debug mode if requested
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger('app').setLevel(logging.DEBUG)
+        logger.info("Debug mode enabled with verbose logging")
     
     try:
         # Load configuration

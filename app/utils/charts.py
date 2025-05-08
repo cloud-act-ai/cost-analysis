@@ -71,7 +71,7 @@ def create_daily_trend_chart(df: pd.DataFrame) -> str:
         forecast_nonprod_color = '#ff6666'  # Red for NON-PROD forecast
         
         # Set title at the top
-        fig.suptitle('FY26 Daily Cost for PROD and NON-PROD (Including Forecast)', fontsize=14, y=0.98)
+        fig.suptitle('FY26 Daily Cost Trend', fontsize=14, y=0.98)
         
         # Plot each environment type
         legend_handles = []
@@ -93,41 +93,42 @@ def create_daily_trend_chart(df: pd.DataFrame) -> str:
             legend_handles.append(line1)
             legend_labels.append(f"{env} Daily Cost (FY26)")
             
-            # Add FY25 average (historical baseline)
-            line2, = ax.plot(
-                group['date'], 
-                group['fy25_avg_daily_spend'], 
-                linestyle='--',
-                linewidth=1,
-                color='#999999',
-                alpha=0.7
-            )
-            legend_handles.append(line2)
-            legend_labels.append("FY25 Avg Daily Spend")
+            # Check if optional columns exist and plot them only if they do
+            if 'fy25_avg_daily_spend' in group.columns:
+                line2, = ax.plot(
+                    group['date'], 
+                    group['fy25_avg_daily_spend'], 
+                    linestyle='--',
+                    linewidth=1,
+                    color='#999999',
+                    alpha=0.7
+                )
+                legend_handles.append(line2)
+                legend_labels.append("FY25 Avg Daily Spend")
             
-            # Add FY26 YTD average
-            line3, = ax.plot(
-                group['date'], 
-                group['fy26_ytd_avg_daily_spend'], 
-                linestyle='-.',
-                linewidth=1,
-                color=avg_color,
-                alpha=0.8
-            )
-            legend_handles.append(line3)
-            legend_labels.append("FY26 Avg Daily Spend")
+            if 'fy26_ytd_avg_daily_spend' in group.columns:
+                line3, = ax.plot(
+                    group['date'], 
+                    group['fy26_ytd_avg_daily_spend'], 
+                    linestyle='-.',
+                    linewidth=1,
+                    color=avg_color,
+                    alpha=0.8
+                )
+                legend_handles.append(line3)
+                legend_labels.append("FY26 Avg Daily Spend")
             
-            # Add forecasted line
-            line4, = ax.plot(
-                group['date'], 
-                group['fy26_forecasted_avg_daily_spend'], 
-                linestyle=':',
-                linewidth=2,
-                color=forecast_color,
-                alpha=0.9
-            )
-            legend_handles.append(line4)
-            legend_labels.append(f"{env} Forecasted Daily Cost (FY26)")
+            if 'fy26_forecasted_avg_daily_spend' in group.columns:
+                line4, = ax.plot(
+                    group['date'], 
+                    group['fy26_forecasted_avg_daily_spend'], 
+                    linestyle=':',
+                    linewidth=2,
+                    color=forecast_color,
+                    alpha=0.9
+                )
+                legend_handles.append(line4)
+                legend_labels.append(f"{env} Forecasted Daily Cost (FY26)")
                 
         # Format the plot
         ax.set_xlabel('Date', fontsize=12)

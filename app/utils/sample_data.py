@@ -39,13 +39,12 @@ def create_sample_fy25_costs() -> pd.DataFrame:
 
 
 def create_sample_day_comparison() -> pd.DataFrame:
-    """Create sample day-to-day comparison DataFrame."""
+    """Create sample day-to-day comparison DataFrame with specific dates."""
     data = {
         'environment_type': ['PROD', 'NON-PROD'],
         'day_current_cost': [10200.0, 3800.0],
         'day_previous_cost': [10000.0, 3700.0],
-        'percent_change': [2.0, 2.7],
-        'compare_date': [date.today() - timedelta(days=4), date.today() - timedelta(days=4)]
+        'percent_change': [2.0, 2.7]
     }
     return pd.DataFrame(data)
 
@@ -56,7 +55,11 @@ def create_sample_week_comparison() -> pd.DataFrame:
         'environment_type': ['PROD', 'NON-PROD'],
         'this_week_cost': [72000.0, 26000.0],
         'prev_week_cost': [70000.0, 24000.0],
-        'percent_change': [2.9, 8.3]
+        'percent_change': [2.9, 8.3],
+        'this_week_start': ['2025-04-27', '2025-04-27'],
+        'this_week_end': ['2025-05-03', '2025-05-03'],
+        'prev_week_start': ['2025-04-20', '2025-04-20'],
+        'prev_week_end': ['2025-04-26', '2025-04-26']
     }
     return pd.DataFrame(data)
 
@@ -67,42 +70,22 @@ def create_sample_month_comparison() -> pd.DataFrame:
         'environment_type': ['PROD', 'NON-PROD'],
         'this_month_cost': [310000.0, 110000.0],
         'prev_month_cost': [300000.0, 100000.0],
-        'percent_change': [3.3, 10.0]
+        'percent_change': [3.3, 10.0],
+        'this_month': ['Apr 2025', 'Apr 2025'],
+        'prev_month': ['Mar 2025', 'Mar 2025']
     }
     return pd.DataFrame(data)
 
 
 def create_sample_date_info() -> Dict[str, str]:
-    """Create sample date information for the template."""
-    today = date.today()
-    
-    # Calculate sample dates based on typical offsets
-    day_current = today - timedelta(days=4)
-    day_previous = today - timedelta(days=5)
-    
-    this_week_start = today - timedelta(days=today.weekday() + 7)
-    this_week_end = this_week_start + timedelta(days=6)
-    prev_week_start = this_week_start - timedelta(days=7)
-    prev_week_end = prev_week_start + timedelta(days=6)
-    
-    # Get current month and previous month
-    if today.month == 1:
-        this_month = date(today.year - 1, 12, 1)
-    else:
-        this_month = date(today.year, today.month - 1, 1)
-        
-    if this_month.month == 1:
-        prev_month = date(this_month.year - 1, 12, 1)
-    else:
-        prev_month = date(this_month.year, this_month.month - 1, 1)
-    
+    """Create sample date information for the template using fixed dates."""
     return {
-        'day_current_date': day_current.strftime('%Y-%m-%d'),
-        'day_previous_date': day_previous.strftime('%Y-%m-%d'),
-        'week_current_date_range': f"{this_week_start.strftime('%b %d')} - {this_week_end.strftime('%b %d, %Y')}",
-        'week_previous_date_range': f"{prev_week_start.strftime('%b %d')} - {prev_week_end.strftime('%b %d, %Y')}",
-        'month_current_date_range': f"{this_month.strftime('%b %Y')}",
-        'month_previous_date_range': f"{prev_month.strftime('%b %Y')}"
+        'day_current_date': '2025-05-03',
+        'day_previous_date': '2025-05-02',
+        'week_current_date_range': 'Apr 27 - May 03, 2025',
+        'week_previous_date_range': 'Apr 20 - Apr 26, 2025',
+        'month_current_date_range': 'Apr 2025',
+        'month_previous_date_range': 'Mar 2025'
     }
 
 
@@ -119,14 +102,62 @@ def create_sample_product_costs() -> pd.DataFrame:
     total_costs = [p + n for p, n in zip(prod_costs, nonprod_costs)]
     percentages = [(n / t) * 100 for n, t in zip(nonprod_costs, total_costs)]
     
+    # Create display_id field by combining pillar team and product ID
+    display_ids = [f"{team} - {product}" for team, product in zip(teams, products)]
+    
     data = {
         'product_id': products,
         'product_name': names,
         'pillar_team': teams,
+        'display_id': display_ids,
         'prod_ytd_cost': prod_costs,
         'nonprod_ytd_cost': nonprod_costs,
         'total_ytd_cost': total_costs,
         'nonprod_percentage': percentages
+    }
+    
+    return pd.DataFrame(data)
+
+
+def create_sample_cto_costs() -> pd.DataFrame:
+    """Create sample CTO costs DataFrame."""
+    # Create sample data for 5 CTO organizations
+    cto_orgs = ["Core Tech", "Digital", "Enterprise", "Platform", "Infrastructure"]
+    
+    # Calculate costs - higher for first CTOs
+    prod_costs = [320000, 280000, 240000, 200000, 180000]
+    nonprod_costs = [130000, 110000, 90000, 70000, 60000]
+    total_costs = [p + n for p, n in zip(prod_costs, nonprod_costs)]
+    percentages = [(n / t) * 100 for n, t in zip(nonprod_costs, total_costs)]
+    
+    data = {
+        'cto_org': cto_orgs,
+        'prod_ytd_cost': prod_costs,
+        'nonprod_ytd_cost': nonprod_costs,
+        'total_ytd_cost': total_costs,
+        'nonprod_percentage': percentages
+    }
+    
+    return pd.DataFrame(data)
+
+
+def create_sample_pillar_costs() -> pd.DataFrame:
+    """Create sample pillar costs DataFrame."""
+    # Create sample data for 5 pillar teams
+    pillar_names = ["Platform", "Customer", "Infrastructure", "Data", "Security"]
+    product_counts = [8, 12, 7, 10, 5]
+    
+    # Calculate costs - higher for first pillars
+    prod_costs = [280000, 230000, 190000, 160000, 120000]
+    nonprod_costs = [110000, 95000, 80000, 65000, 50000]
+    total_costs = [p + n for p, n in zip(prod_costs, nonprod_costs)]
+    
+    data = {
+        'pillar_name': pillar_names,
+        'product_count': product_counts,
+        'prod_ytd_cost': prod_costs,
+        'nonprod_ytd_cost': nonprod_costs,
+        'total_ytd_cost': total_costs
     }
     
     return pd.DataFrame(data)
@@ -151,14 +182,6 @@ def create_sample_daily_trend_data() -> pd.DataFrame:
     # FY25 averages (historical)
     prod_fy25_avg = 200000
     nonprod_fy25_avg = 45000
-    
-    # FY26 YTD averages
-    prod_fy26_ytd_avg = 240000
-    nonprod_fy26_ytd_avg = 48000
-    
-    # FY26 forecasted averages
-    prod_fy26_forecast_avg = 245000
-    nonprod_fy26_forecast_avg = 50000
     
     # Generate data with characteristic spikes and patterns
     for i, date in enumerate(dates):
@@ -193,24 +216,26 @@ def create_sample_daily_trend_data() -> pd.DataFrame:
         prod_cost = prod_daily_base * day_factor * month_factor * spike_factor * random_factor_prod
         nonprod_cost = nonprod_daily_base * day_factor * month_factor * spike_factor * random_factor_nonprod
         
+        # Make sure May 2nd and May 3rd 2025 have specific values for comparisons
+        if date == datetime.date(2025, 5, 3):
+            prod_cost = 12000.0
+            nonprod_cost = 3800.0
+        elif date == datetime.date(2025, 5, 2):
+            prod_cost = 11500.0
+            nonprod_cost = 3700.0
+            
         # Production data
         daily_data.append({
             'date': date,
             'environment_type': 'PROD',
-            'daily_cost': round(prod_cost, 2),
-            'fy25_avg_daily_spend': prod_fy25_avg,
-            'fy26_ytd_avg_daily_spend': prod_fy26_ytd_avg,
-            'fy26_forecasted_avg_daily_spend': prod_fy26_forecast_avg
+            'daily_cost': round(prod_cost, 2)
         })
         
         # Non-production data
         daily_data.append({
             'date': date,
             'environment_type': 'NON-PROD',
-            'daily_cost': round(nonprod_cost, 2),
-            'fy25_avg_daily_spend': nonprod_fy25_avg,
-            'fy26_ytd_avg_daily_spend': nonprod_fy26_ytd_avg,
-            'fy26_forecasted_avg_daily_spend': nonprod_fy26_forecast_avg
+            'daily_cost': round(nonprod_cost, 2)
         })
     
     return pd.DataFrame(daily_data)

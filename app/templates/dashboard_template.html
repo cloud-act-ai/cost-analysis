@@ -318,30 +318,30 @@
         <div class="scorecard-section">
             <div class="scorecard prod">
                 <h3>Production YTD Cost</h3>
-                <div class="value">${{ "{:,.2f}M".format(prod_ytd_cost / 1000000) }}</div>
-                <div class="change {% if prod_ytd_percent > 0 %}positive-change{% elif prod_ytd_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
-                    {{ "{:+.2f}%".format(prod_ytd_percent) }} vs Last Year
+                <div class="value">${{ "{:,.2f}".format(prod_ytd_cost) }}</div>
+                <div class="change neutral-change">
+                    
                 </div>
             </div>
             <div class="scorecard non-prod">
                 <h3>Non-Production YTD Cost</h3>
-                <div class="value">${{ "{:,.2f}M".format(nonprod_ytd_cost / 1000000) }}</div>
-                <div class="change {% if nonprod_ytd_percent > 0 %}positive-change{% elif nonprod_ytd_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
-                    {{ "{:+.2f}%".format(nonprod_ytd_percent) }} vs Last Year
+                <div class="value">${{ "{:,.2f}".format(nonprod_ytd_cost) }}</div>
+                <div class="change neutral-change">
+                    
                 </div>
             </div>
             <div class="scorecard">
                 <h3>Total FY26 Projected Cost</h3>
-                <div class="value">${{ "{:,.2f}M".format(total_fy26_cost / 1000000) }}</div>
-                <div class="change {% if fy26_percent > 0 %}positive-change{% elif fy26_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
-                    {{ "{:+.2f}%".format(fy26_percent) }} vs FY25
+                <div class="value">${{ "{:,.2f}".format(total_fy26_cost) }}</div>
+                <div class="change neutral-change">
+                    
                 </div>
             </div>
             <div class="scorecard">
                 <h3>Total FY25 Cost</h3>
-                <div class="value">${{ "{:,.2f}M".format(total_fy25_cost / 1000000) }}</div>
+                <div class="value">${{ "{:,.2f}".format(total_fy25_cost) }}</div>
                 <div class="change">
-                    Last fiscal year
+                    
                 </div>
             </div>
         </div>
@@ -352,43 +352,43 @@
                 <div class="comparison-item">
                     <h3>Day-to-Day Change</h3>
                     <span class="date-label">({{ day_current_date|default('Current') }} vs {{ day_previous_date|default('Previous') }})</span>
-                    <div class="value prod">${{ "{:,.2f}M".format(day_prod_cost / 1000000) }} (Prod)</div>
-                    <span class="previous-value">vs ${{ "{:,.2f}M".format(day_prod_previous_cost|default(0) / 1000000) }}</span>
-                    <div class="change {% if day_prod_percent > 0 %}positive-change{% elif day_prod_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
-                        {{ "{:+.2f}%".format(day_prod_percent) }}
+                    <div class="value prod">${{ "{:,.2f}".format(day_prod_cost) }} (Prod)</div>
+                    <span class="previous-value">vs ${{ "{:,.2f}".format(day_prod_previous_cost|default(0)) }}</span>
+                    <div class="change neutral-change">
+                        
                     </div>
-                    <div class="value non-prod">${{ "{:,.2f}M".format(day_nonprod_cost / 1000000) }} (Non-Prod)</div>
-                    <span class="previous-value">vs ${{ "{:,.2f}M".format(day_nonprod_previous_cost|default(0) / 1000000) }}</span>
-                    <div class="change {% if day_nonprod_percent > 0 %}positive-change{% elif day_nonprod_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
-                        {{ "{:+.2f}%".format(day_nonprod_percent) }}
+                    <div class="value non-prod">${{ "{:,.2f}".format(day_nonprod_cost) }} (Non-Prod)</div>
+                    <span class="previous-value">vs ${{ "{:,.2f}".format(day_nonprod_previous_cost|default(0)) }}</span>
+                    <div class="change neutral-change">
+                        
                     </div>
                 </div>
                 <div class="comparison-item">
                     <h3>Week-to-Week Change</h3>
                     <span class="date-label">({{ week_current_date_range|default('Current week') }} vs {{ week_previous_date_range|default('Previous week') }})</span>
-                    <div class="value prod">${{ "{:,.2f}M".format(week_prod_cost / 1000000) }} (Prod)</div>
-                    <span class="previous-value">vs ${{ "{:,.2f}M".format(week_prod_previous_cost|default(0) / 1000000) }}</span>
-                    <div class="change {% if week_prod_percent > 0 %}positive-change{% elif week_prod_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
-                        {{ "{:+.2f}%".format(week_prod_percent) }}
+                    <div class="value prod">${{ "{:,.2f}".format(week_prod_cost) }} (Prod)</div>
+                    <span class="previous-value">vs ${{ "{:,.2f}".format(week_prod_previous_cost|default(0)) }}</span>
+                    <div class="change neutral-change">
+                        
                     </div>
-                    <div class="value non-prod">${{ "{:,.2f}M".format(week_nonprod_cost / 1000000) }} (Non-Prod)</div>
-                    <span class="previous-value">vs ${{ "{:,.2f}M".format(week_nonprod_previous_cost|default(0) / 1000000) }}</span>
-                    <div class="change {% if week_nonprod_percent > 0 %}positive-change{% elif week_nonprod_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
-                        {{ "{:+.2f}%".format(week_nonprod_percent) }}
+                    <div class="value non-prod">${{ "{:,.2f}".format(week_nonprod_cost) }} (Non-Prod)</div>
+                    <span class="previous-value">vs ${{ "{:,.2f}".format(week_nonprod_previous_cost|default(0)) }}</span>
+                    <div class="change neutral-change">
+                        
                     </div>
                 </div>
                 <div class="comparison-item">
                     <h3>Month-to-Month Change</h3>
                     <span class="date-label">({{ month_current_date_range|default('Current month') }} vs {{ month_previous_date_range|default('Previous month') }})</span>
-                    <div class="value prod">${{ "{:,.2f}M".format(month_prod_cost / 1000000) }} (Prod)</div>
-                    <span class="previous-value">vs ${{ "{:,.2f}M".format(month_prod_previous_cost|default(0) / 1000000) }}</span>
-                    <div class="change {% if month_prod_percent > 0 %}positive-change{% elif month_prod_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
-                        {{ "{:+.2f}%".format(month_prod_percent) }}
+                    <div class="value prod">${{ "{:,.2f}".format(month_prod_cost) }} (Prod)</div>
+                    <span class="previous-value">vs ${{ "{:,.2f}".format(month_prod_previous_cost|default(0)) }}</span>
+                    <div class="change neutral-change">
+                        
                     </div>
-                    <div class="value non-prod">${{ "{:,.2f}M".format(month_nonprod_cost / 1000000) }} (Non-Prod)</div>
-                    <span class="previous-value">vs ${{ "{:,.2f}M".format(month_nonprod_previous_cost|default(0) / 1000000) }}</span>
-                    <div class="change {% if month_nonprod_percent > 0 %}positive-change{% elif month_nonprod_percent < 0 %}negative-change{% else %}neutral-change{% endif %}">
-                        {{ "{:+.2f}%".format(month_nonprod_percent) }}
+                    <div class="value non-prod">${{ "{:,.2f}".format(month_nonprod_cost) }} (Non-Prod)</div>
+                    <span class="previous-value">vs ${{ "{:,.2f}".format(month_nonprod_previous_cost|default(0)) }}</span>
+                    <div class="change neutral-change">
+                        
                     </div>
                 </div>
             </div>
@@ -405,8 +405,15 @@
                     // Parse the interactive chart data from the template
                     var dailyTrendData = {{ daily_trend_chart_json|safe }};
                     
-                    // Create the interactive chart
-                    Plotly.newPlot('daily-trend-interactive', dailyTrendData.data, dailyTrendData.layout);
+                    // Create the interactive chart with responsive layout
+                    Plotly.newPlot('daily-trend-interactive', dailyTrendData.data, dailyTrendData.layout, {responsive: true});
+                    
+                    // Make chart responsive to window resize
+                    window.addEventListener('resize', function() {
+                        Plotly.relayout('daily-trend-interactive', {
+                            'autosize': true
+                        });
+                    });
                 </script>
                 {% else %}
                 <img src="data:image/png;base64,{{ daily_trend_chart }}" alt="Daily Cost Analysis" class="chart">
@@ -415,6 +422,109 @@
         </div>
         
         
+        <!-- CTO Cost Table -->
+        <div class="table-section">
+            <h2>CTO Organization Cost Details</h2>
+            
+            {% if use_interactive_charts is defined and use_interactive_charts %}
+            <div class="chart-container" style="margin-bottom: 20px;">
+                <div id="cto-chart-interactive" style="width: 100%; height: 500px;"></div>
+                
+                <script>
+                    // Parse the interactive CTO chart data from the template
+                    var ctoChartData = {{ cto_chart_json|safe }};
+                    
+                    // Create the interactive chart with responsive layout
+                    Plotly.newPlot('cto-chart-interactive', ctoChartData.data, ctoChartData.layout, {responsive: true});
+                    
+                    // Make chart responsive to window resize
+                    window.addEventListener('resize', function() {
+                        Plotly.relayout('cto-chart-interactive', {
+                            'autosize': true
+                        });
+                    });
+                </script>
+            </div>
+            {% endif %}
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>CTO Organization</th>
+                        <th class="text-right">Prod YTD Cost</th>
+                        <th class="text-right">Non-Prod YTD Cost</th>
+                        <th class="text-right">Total YTD Cost</th>
+                        <th class="text-right">Non-Prod %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cto_cost_table %}
+                    <tr>
+                        <td>{{ item.cto_org }}</td>
+                        <td class="text-right prod">${{ "{:,.2f}".format(item.prod_ytd_cost) }}</td>
+                        <td class="text-right non-prod">${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}</td>
+                        <td class="text-right">${{ "{:,.2f}".format(item.total_ytd_cost) }}</td>
+                        <td class="text-right">
+                            {{ "{:.1f}%".format(item.nonprod_percentage) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pillar Cost Table -->
+        <div class="table-section">
+            <h2>Product Pillar Team Cost Details</h2>
+            
+            {% if use_interactive_charts is defined and use_interactive_charts %}
+            <div class="chart-container" style="margin-bottom: 20px;">
+                <div id="pillar-chart-interactive" style="width: 100%; height: 500px;"></div>
+                
+                <script>
+                    // Parse the interactive pillar chart data from the template
+                    var pillarChartData = {{ pillar_chart_json|safe }};
+                    
+                    // Create the interactive chart with responsive layout
+                    Plotly.newPlot('pillar-chart-interactive', pillarChartData.data, pillarChartData.layout, {responsive: true});
+                    
+                    // Make chart responsive to window resize
+                    window.addEventListener('resize', function() {
+                        Plotly.relayout('pillar-chart-interactive', {
+                            'autosize': true
+                        });
+                    });
+                </script>
+            </div>
+            {% endif %}
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pillar Name</th>
+                        <th class="text-right">Product Count</th>
+                        <th class="text-right">Prod YTD Cost</th>
+                        <th class="text-right">Non-Prod YTD Cost</th>
+                        <th class="text-right">Total YTD Cost</th>
+                        <th class="text-right">Non-Prod %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in pillar_cost_table %}
+                    <tr>
+                        <td>{{ item.pillar_name }}</td>
+                        <td class="text-right">{{ item.product_count }}</td>
+                        <td class="text-right prod">${{ "{:,.2f}".format(item.prod_ytd_cost) }}</td>
+                        <td class="text-right non-prod">${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}</td>
+                        <td class="text-right">${{ "{:,.2f}".format(item.total_ytd_cost) }}</td>
+                        <td class="text-right">{{ "{:.1f}%".format(item.nonprod_percentage) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Product Cost Table -->
         <div class="table-section">
             <h2>Product ID Cost Details</h2>
             
@@ -426,8 +536,15 @@
                     // Parse the interactive product chart data from the template
                     var productChartData = {{ product_chart_json|safe }};
                     
-                    // Create the interactive chart
-                    Plotly.newPlot('product-chart-interactive', productChartData.data, productChartData.layout);
+                    // Create the interactive chart with responsive layout
+                    Plotly.newPlot('product-chart-interactive', productChartData.data, productChartData.layout, {responsive: true});
+                    
+                    // Make chart responsive to window resize
+                    window.addEventListener('resize', function() {
+                        Plotly.relayout('product-chart-interactive', {
+                            'autosize': true
+                        });
+                    });
                 </script>
             </div>
             {% endif %}
@@ -450,10 +567,10 @@
                         <td>{{ item.product_id }}</td>
                         <td>{{ item.product_name }}</td>
                         <td>{{ item.pillar_team }}</td>
-                        <td class="text-right prod">${{ "{:,.2f}M".format(item.prod_ytd_cost / 1000000) }}</td>
-                        <td class="text-right non-prod">${{ "{:,.2f}M".format(item.nonprod_ytd_cost / 1000000) }}</td>
-                        <td class="text-right">${{ "{:,.2f}M".format(item.total_ytd_cost / 1000000) }}</td>
-                        <td class="text-right {% if item.nonprod_percentage > 30 %}positive-change{% elif item.nonprod_percentage < 20 %}negative-change{% else %}neutral-change{% endif %}">
+                        <td class="text-right prod">${{ "{:,.2f}".format(item.prod_ytd_cost) }}</td>
+                        <td class="text-right non-prod">${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}</td>
+                        <td class="text-right">${{ "{:,.2f}".format(item.total_ytd_cost) }}</td>
+                        <td class="text-right">
                             {{ "{:.1f}%".format(item.nonprod_percentage) }}
                         </td>
                     </tr>
