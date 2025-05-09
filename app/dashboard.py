@@ -165,14 +165,42 @@ def generate_html_report(
         prod_fy25 = fy25_costs[fy25_costs['environment_type'] == 'PROD'] if not fy25_costs.empty and 'PROD' in fy25_costs['environment_type'].values else pd.DataFrame()
         nonprod_fy25 = fy25_costs[fy25_costs['environment_type'] == 'NON-PROD'] if not fy25_costs.empty and 'NON-PROD' in fy25_costs['environment_type'].values else pd.DataFrame()
         
-        # Set YoY percentages to 0 (removed calculations)
-        prod_ytd_percent = 0
-        nonprod_ytd_percent = 0
+        # Get the YTD cost values first
+        prod_ytd_cost = prod_ytd['ytd_cost'].iloc[0] if not prod_ytd.empty and 'ytd_cost' in prod_ytd.columns else 0
+        nonprod_ytd_cost = nonprod_ytd['ytd_cost'].iloc[0] if not nonprod_ytd.empty and 'ytd_cost' in nonprod_ytd.columns else 0
+            
+        # Get FY25 costs for comparison - now directly from the ytd_cost column
+        prod_fy25_cost = 0
+        nonprod_fy25_cost = 0
+            
+        # Get FY25 YTD costs for direct comparison with current YTD
+        if not fy25_costs.empty and not prod_fy25.empty and 'ytd_cost' in prod_fy25.columns:
+            prod_fy25_cost = prod_fy25['ytd_cost'].iloc[0]
+            if prod_fy25_cost > 0:
+                prod_ytd_percent = ((prod_ytd_cost - prod_fy25_cost) / prod_fy25_cost) * 100
+            else:
+                prod_ytd_percent = 0
+        else:
+            prod_ytd_percent = 0
+            
+        if not fy25_costs.empty and not nonprod_fy25.empty and 'ytd_cost' in nonprod_fy25.columns:
+            nonprod_fy25_cost = nonprod_fy25['ytd_cost'].iloc[0]
+            if nonprod_fy25_cost > 0:
+                nonprod_ytd_percent = ((nonprod_ytd_cost - nonprod_fy25_cost) / nonprod_fy25_cost) * 100
+            else:
+                nonprod_ytd_percent = 0
+        else:
+            nonprod_ytd_percent = 0
         
-        # Calculate total FY26 cost (removed percentage calculations)
+        # Calculate total FY26 cost with percentage change vs FY25
         total_fy26_cost = fy26_costs['total_cost'].sum() if not fy26_costs.empty and 'total_cost' in fy26_costs.columns else 0
         total_fy25_cost = fy25_costs['total_cost'].sum() if not fy25_costs.empty and 'total_cost' in fy25_costs.columns else 0
-        fy26_percent = 0  # Setting to zero to simplify
+        
+        # Calculate percentage change
+        if total_fy25_cost > 0:
+            fy26_percent = ((total_fy26_cost - total_fy25_cost) / total_fy25_cost) * 100
+        else:
+            fy26_percent = 0
         
         # Calculate overall nonprod percentage
         total_ytd_cost = 0
@@ -321,8 +349,10 @@ def generate_html_report(
             'use_interactive_charts': use_interactive_charts,
             
             # Scorecard data
-            'prod_ytd_cost': prod_ytd['ytd_cost'].iloc[0] if not prod_ytd.empty and 'ytd_cost' in prod_ytd.columns else 0,
-            'nonprod_ytd_cost': nonprod_ytd['ytd_cost'].iloc[0] if not nonprod_ytd.empty and 'ytd_cost' in nonprod_ytd.columns else 0,
+            'prod_ytd_cost': prod_ytd_cost,
+            'nonprod_ytd_cost': nonprod_ytd_cost,
+            'prod_fy25_cost': prod_fy25_cost,
+            'nonprod_fy25_cost': nonprod_fy25_cost,
             'total_fy26_cost': total_fy26_cost,
             'total_fy25_cost': total_fy25_cost,
             'prod_ytd_percent': prod_ytd_percent,
@@ -376,6 +406,8 @@ def generate_html_report(
         
         # Charts removed
         template_data['use_interactive_charts'] = False
+        # Add the non-prod percentage threshold to template data
+        template_data['nonprod_percentage_threshold'] = nonprod_threshold
         
         # Debug template data
         print(f"Template data product_cost_table length: {len(template_data.get('product_cost_table', []))}")

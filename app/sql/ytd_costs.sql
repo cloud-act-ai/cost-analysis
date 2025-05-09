@@ -1,9 +1,8 @@
 -- Basic YTD costs query
 SELECT
     CASE 
-        WHEN environment LIKE 'PROD%' THEN 'PROD'
-        WHEN environment LIKE '%NON-PROD%' THEN 'NON-PROD'
-        ELSE 'OTHER'
+        WHEN environment = 'PROD' THEN 'PROD'
+        ELSE 'NON-PROD'
     END AS environment_type,
     SUM(cost) AS ytd_cost
 FROM `{project_id}.{dataset}.{table}`

@@ -13,7 +13,7 @@
             padding: 0;
             background-color: #f5f7f9;
             color: #333;
-            line-height: 1.6;
+            line-height: 1.4;
         }
         .container {
             max-width: 1400px;
@@ -54,29 +54,29 @@
         .scorecard-section {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 20px;
         }
         .scorecard {
             background-color: #fff;
             border-radius: 5px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             flex: 1;
-            min-width: 200px;
+            min-width: 180px;
             text-align: center;
         }
         .scorecard h3 {
             margin-top: 0;
             color: #7f8c8d;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: normal;
             text-transform: uppercase;
         }
         .scorecard .value {
-            font-size: 26px;
+            font-size: 22px;
             font-weight: bold;
-            margin: 10px 0;
+            margin: 8px 0;
             color: #2c3e50;
         }
         .scorecard .change {
@@ -159,7 +159,7 @@
         .comparison-section {
             background-color: #fff;
             border-radius: 5px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
@@ -180,7 +180,7 @@
         }
         .comparison-item h3 {
             margin-top: 0;
-            font-size: 16px;
+            font-size: 14px;
             color: #7f8c8d;
         }
         .date-label {
@@ -192,9 +192,9 @@
             margin-top: 5px;
         }
         .comparison-item .value {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
-            margin: 15px 0 5px 0;
+            margin: 10px 0 5px 0;
             display: flex;
             flex-wrap: wrap;
             align-items: baseline;
@@ -216,7 +216,7 @@
         .table-section {
             background-color: #fff;
             border-radius: 5px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             overflow-x: auto;
@@ -230,18 +230,20 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 15px;
+            font-size: 0.85em;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #f8f9fa;
             text-align: left;
-            padding: 12px;
+            padding: 8px;
             font-weight: 600;
-            border-bottom: 2px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            color: #495057;
         }
         td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #ddd;
+            padding: 6px 8px;
+            border-bottom: 1px solid #eee;
         }
         tr:hover {
             background-color: #f5f7f9;
@@ -256,6 +258,14 @@
         }
         .non-prod {
             border-left: 4px solid #2ecc71;
+        }
+        
+        /* Highlight high non-prod percentage only when exceeding threshold */
+        .highlight-warning {
+            color: #e67e22;
+        }
+        .highlight-danger {
+            color: #e74c3c;
         }
         
         /* Toggle buttons */
@@ -319,14 +329,14 @@
                 <h3>Production YTD Cost</h3>
                 <div class="value">$207,944.33</div>
                 <div class="change neutral-change">
-                    
+                    vs $198,157.19 FY25
                 </div>
             </div>
             <div class="scorecard non-prod">
                 <h3>Non-Production YTD Cost</h3>
                 <div class="value">$78,414.92</div>
                 <div class="change neutral-change">
-                    
+                    vs $293,598.55 FY25
                 </div>
             </div>
             <div class="scorecard">
@@ -419,7 +429,7 @@
                         <td class="text-right prod">$76,110.43</td>
                         <td class="text-right non-prod">$25,045.99</td>
                         <td class="text-right">$101,156.42</td>
-                        <td class="text-right">
+                        <td class="text-right ">
                             24.8%
                         </td>
                     </tr>
@@ -429,7 +439,7 @@
                         <td class="text-right prod">$70,247.54</td>
                         <td class="text-right non-prod">$25,360.75</td>
                         <td class="text-right">$95,608.29</td>
-                        <td class="text-right">
+                        <td class="text-right ">
                             26.5%
                         </td>
                     </tr>
@@ -439,7 +449,7 @@
                         <td class="text-right prod">$61,586.36</td>
                         <td class="text-right non-prod">$28,008.18</td>
                         <td class="text-right">$89,594.54</td>
-                        <td class="text-right">
+                        <td class="text-right highlight-danger">
                             31.3%
                         </td>
                     </tr>
@@ -473,7 +483,9 @@
                         <td class="text-right prod">$77,153.10</td>
                         <td class="text-right non-prod">$26,559.39</td>
                         <td class="text-right">$103,712.49</td>
-                        <td class="text-right">25.6%</td>
+                        <td class="text-right ">
+                            25.6%
+                        </td>
                     </tr>
                     
                     <tr>
@@ -482,7 +494,9 @@
                         <td class="text-right prod">$34,404.17</td>
                         <td class="text-right non-prod">$13,623.66</td>
                         <td class="text-right">$48,027.83</td>
-                        <td class="text-right">28.4%</td>
+                        <td class="text-right ">
+                            28.4%
+                        </td>
                     </tr>
                     
                     <tr>
@@ -491,7 +505,9 @@
                         <td class="text-right prod">$13,584.09</td>
                         <td class="text-right non-prod">$6,964.30</td>
                         <td class="text-right">$20,548.39</td>
-                        <td class="text-right">33.9%</td>
+                        <td class="text-right highlight-danger">
+                            33.9%
+                        </td>
                     </tr>
                     
                     <tr>
@@ -500,7 +516,9 @@
                         <td class="text-right prod">$16,443.90</td>
                         <td class="text-right non-prod">$6,875.62</td>
                         <td class="text-right">$23,319.52</td>
-                        <td class="text-right">29.5%</td>
+                        <td class="text-right ">
+                            29.5%
+                        </td>
                     </tr>
                     
                     <tr>
@@ -509,7 +527,9 @@
                         <td class="text-right prod">$16,277.43</td>
                         <td class="text-right non-prod">$6,565.20</td>
                         <td class="text-right">$22,842.63</td>
-                        <td class="text-right">28.7%</td>
+                        <td class="text-right ">
+                            28.7%
+                        </td>
                     </tr>
                     
                     <tr>
@@ -518,7 +538,9 @@
                         <td class="text-right prod">$18,370.89</td>
                         <td class="text-right non-prod">$6,190.66</td>
                         <td class="text-right">$24,561.55</td>
-                        <td class="text-right">25.2%</td>
+                        <td class="text-right ">
+                            25.2%
+                        </td>
                     </tr>
                     
                     <tr>
@@ -527,7 +549,9 @@
                         <td class="text-right prod">$17,808.15</td>
                         <td class="text-right non-prod">$6,025.48</td>
                         <td class="text-right">$23,833.63</td>
-                        <td class="text-right">25.3%</td>
+                        <td class="text-right ">
+                            25.3%
+                        </td>
                     </tr>
                     
                     <tr>
@@ -536,7 +560,9 @@
                         <td class="text-right prod">$13,902.60</td>
                         <td class="text-right non-prod">$5,610.61</td>
                         <td class="text-right">$19,513.21</td>
-                        <td class="text-right">28.8%</td>
+                        <td class="text-right ">
+                            28.8%
+                        </td>
                     </tr>
                     
                 </tbody>
@@ -570,7 +596,7 @@
                         <td class="text-right prod">$13,902.60</td>
                         <td class="text-right non-prod">$5,610.61</td>
                         <td class="text-right">$19,513.21</td>
-                        <td class="text-right">
+                        <td class="text-right ">
                             28.8%
                         </td>
                     </tr>
@@ -582,7 +608,7 @@
                         <td class="text-right prod">$17,808.15</td>
                         <td class="text-right non-prod">$6,025.48</td>
                         <td class="text-right">$23,833.63</td>
-                        <td class="text-right">
+                        <td class="text-right ">
                             25.3%
                         </td>
                     </tr>
@@ -594,7 +620,7 @@
                         <td class="text-right prod">$18,197.80</td>
                         <td class="text-right non-prod">$6,842.77</td>
                         <td class="text-right">$25,040.57</td>
-                        <td class="text-right">
+                        <td class="text-right ">
                             27.3%
                         </td>
                     </tr>
@@ -606,7 +632,7 @@
                         <td class="text-right prod">$16,206.37</td>
                         <td class="text-right non-prod">$6,780.89</td>
                         <td class="text-right">$22,987.26</td>
-                        <td class="text-right">
+                        <td class="text-right ">
                             29.5%
                         </td>
                     </tr>
@@ -618,7 +644,7 @@
                         <td class="text-right prod">$13,584.09</td>
                         <td class="text-right non-prod">$6,964.30</td>
                         <td class="text-right">$20,548.39</td>
-                        <td class="text-right">
+                        <td class="text-right highlight-danger">
                             33.9%
                         </td>
                     </tr>
@@ -630,7 +656,7 @@
                         <td class="text-right prod">$16,443.90</td>
                         <td class="text-right non-prod">$6,875.62</td>
                         <td class="text-right">$23,319.52</td>
-                        <td class="text-right">
+                        <td class="text-right ">
                             29.5%
                         </td>
                     </tr>
@@ -642,7 +668,7 @@
                         <td class="text-right prod">$16,277.43</td>
                         <td class="text-right non-prod">$6,565.20</td>
                         <td class="text-right">$22,842.63</td>
-                        <td class="text-right">
+                        <td class="text-right ">
                             28.7%
                         </td>
                     </tr>
@@ -654,7 +680,7 @@
                         <td class="text-right prod">$18,532.61</td>
                         <td class="text-right non-prod">$8,189.11</td>
                         <td class="text-right">$26,721.72</td>
-                        <td class="text-right">
+                        <td class="text-right highlight-danger">
                             30.6%
                         </td>
                     </tr>
@@ -666,7 +692,7 @@
                         <td class="text-right prod">$20,248.64</td>
                         <td class="text-right non-prod">$6,529.01</td>
                         <td class="text-right">$26,777.65</td>
-                        <td class="text-right">
+                        <td class="text-right ">
                             24.4%
                         </td>
                     </tr>
@@ -678,7 +704,7 @@
                         <td class="text-right prod">$17,909.84</td>
                         <td class="text-right non-prod">$6,214.69</td>
                         <td class="text-right">$24,124.53</td>
-                        <td class="text-right">
+                        <td class="text-right ">
                             25.8%
                         </td>
                     </tr>
@@ -687,9 +713,8 @@
             </table>
         </div>
         
-        
         <footer>
-            <p>Generated on 2025-05-08 11:11:50 | FinOps360 Cost Analysis Tool</p>
+            <p>Generated on 2025-05-08 17:36:11 | FinOps360 Cost Analysis Tool</p>
             <!-- No charts used -->
         </footer>
     </div>

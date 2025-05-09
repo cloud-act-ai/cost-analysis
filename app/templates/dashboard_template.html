@@ -13,7 +13,7 @@
             padding: 0;
             background-color: #f5f7f9;
             color: #333;
-            line-height: 1.6;
+            line-height: 1.4;
         }
         .container {
             max-width: 1400px;
@@ -54,29 +54,29 @@
         .scorecard-section {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 20px;
         }
         .scorecard {
             background-color: #fff;
             border-radius: 5px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             flex: 1;
-            min-width: 200px;
+            min-width: 180px;
             text-align: center;
         }
         .scorecard h3 {
             margin-top: 0;
             color: #7f8c8d;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: normal;
             text-transform: uppercase;
         }
         .scorecard .value {
-            font-size: 26px;
+            font-size: 22px;
             font-weight: bold;
-            margin: 10px 0;
+            margin: 8px 0;
             color: #2c3e50;
         }
         .scorecard .change {
@@ -159,7 +159,7 @@
         .comparison-section {
             background-color: #fff;
             border-radius: 5px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
@@ -180,7 +180,7 @@
         }
         .comparison-item h3 {
             margin-top: 0;
-            font-size: 16px;
+            font-size: 14px;
             color: #7f8c8d;
         }
         .date-label {
@@ -192,9 +192,9 @@
             margin-top: 5px;
         }
         .comparison-item .value {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
-            margin: 15px 0 5px 0;
+            margin: 10px 0 5px 0;
             display: flex;
             flex-wrap: wrap;
             align-items: baseline;
@@ -216,7 +216,7 @@
         .table-section {
             background-color: #fff;
             border-radius: 5px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             overflow-x: auto;
@@ -230,18 +230,20 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 15px;
+            font-size: 0.85em;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #f8f9fa;
             text-align: left;
-            padding: 12px;
+            padding: 8px;
             font-weight: 600;
-            border-bottom: 2px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            color: #495057;
         }
         td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #ddd;
+            padding: 6px 8px;
+            border-bottom: 1px solid #eee;
         }
         tr:hover {
             background-color: #f5f7f9;
@@ -256,6 +258,14 @@
         }
         .non-prod {
             border-left: 4px solid #2ecc71;
+        }
+        
+        /* Highlight high non-prod percentage only when exceeding threshold */
+        .highlight-warning {
+            color: #e67e22;
+        }
+        .highlight-danger {
+            color: #e74c3c;
         }
         
         /* Toggle buttons */
@@ -317,28 +327,28 @@
         <div class="scorecard-section">
             <div class="scorecard prod">
                 <h3>Production YTD Cost</h3>
-                <div class="value">${{ "{:,.2f}".format(prod_ytd_cost) }}</div>
+                <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(prod_ytd_cost) }}{% endif %}</div>
                 <div class="change neutral-change">
-                    
+                    vs ${% if display_in_millions %}{{ "{:,.2f}M".format(prod_fy25_cost/1000000) }}{% else %}{{ "{:,.2f}".format(prod_fy25_cost) }}{% endif %} FY25
                 </div>
             </div>
             <div class="scorecard non-prod">
                 <h3>Non-Production YTD Cost</h3>
-                <div class="value">${{ "{:,.2f}".format(nonprod_ytd_cost) }}</div>
+                <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(nonprod_ytd_cost) }}{% endif %}</div>
                 <div class="change neutral-change">
-                    
+                    vs ${% if display_in_millions %}{{ "{:,.2f}M".format(nonprod_fy25_cost/1000000) }}{% else %}{{ "{:,.2f}".format(nonprod_fy25_cost) }}{% endif %} FY25
                 </div>
             </div>
             <div class="scorecard">
                 <h3>Total FY26 Projected Cost</h3>
-                <div class="value">${{ "{:,.2f}".format(total_fy26_cost) }}</div>
+                <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(total_fy26_cost/1000000) }}{% else %}${{ "{:,.2f}".format(total_fy26_cost) }}{% endif %}</div>
                 <div class="change neutral-change">
                     
                 </div>
             </div>
             <div class="scorecard">
                 <h3>Total FY25 Cost</h3>
-                <div class="value">${{ "{:,.2f}".format(total_fy25_cost) }}</div>
+                <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(total_fy25_cost/1000000) }}{% else %}${{ "{:,.2f}".format(total_fy25_cost) }}{% endif %}</div>
                 <div class="change">
                     
                 </div>
@@ -351,13 +361,13 @@
                 <div class="comparison-item">
                     <h3>Day-to-Day Change</h3>
                     <span class="date-label">({{ day_current_date|default('Current') }} vs {{ day_previous_date|default('Previous') }})</span>
-                    <div class="value prod">${{ "{:,.2f}".format(day_prod_cost) }} (Prod)</div>
-                    <span class="previous-value">vs ${{ "{:,.2f}".format(day_prod_previous_cost|default(0)) }}</span>
+                    <div class="value prod">{% if display_in_millions %}${{ "{:,.2f}M".format(day_prod_cost/1000000) }}{% else %}${{ "{:,.2f}".format(day_prod_cost) }}{% endif %} (Prod)</div>
+                    <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format((day_prod_previous_cost|default(0))/1000000) }}{% else %}${{ "{:,.2f}".format(day_prod_previous_cost|default(0)) }}{% endif %}</span>
                     <div class="change neutral-change">
                         
                     </div>
-                    <div class="value non-prod">${{ "{:,.2f}".format(day_nonprod_cost) }} (Non-Prod)</div>
-                    <span class="previous-value">vs ${{ "{:,.2f}".format(day_nonprod_previous_cost|default(0)) }}</span>
+                    <div class="value non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(day_nonprod_cost/1000000) }}{% else %}${{ "{:,.2f}".format(day_nonprod_cost) }}{% endif %} (Non-Prod)</div>
+                    <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format((day_nonprod_previous_cost|default(0))/1000000) }}{% else %}${{ "{:,.2f}".format(day_nonprod_previous_cost|default(0)) }}{% endif %}</span>
                     <div class="change neutral-change">
                         
                     </div>
@@ -365,13 +375,13 @@
                 <div class="comparison-item">
                     <h3>Week-to-Week Change</h3>
                     <span class="date-label">({{ week_current_date_range|default('Current week') }} vs {{ week_previous_date_range|default('Previous week') }})</span>
-                    <div class="value prod">${{ "{:,.2f}".format(week_prod_cost) }} (Prod)</div>
-                    <span class="previous-value">vs ${{ "{:,.2f}".format(week_prod_previous_cost|default(0)) }}</span>
+                    <div class="value prod">{% if display_in_millions %}${{ "{:,.2f}M".format(week_prod_cost/1000000) }}{% else %}${{ "{:,.2f}".format(week_prod_cost) }}{% endif %} (Prod)</div>
+                    <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format((week_prod_previous_cost|default(0))/1000000) }}{% else %}${{ "{:,.2f}".format(week_prod_previous_cost|default(0)) }}{% endif %}</span>
                     <div class="change neutral-change">
                         
                     </div>
-                    <div class="value non-prod">${{ "{:,.2f}".format(week_nonprod_cost) }} (Non-Prod)</div>
-                    <span class="previous-value">vs ${{ "{:,.2f}".format(week_nonprod_previous_cost|default(0)) }}</span>
+                    <div class="value non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(week_nonprod_cost/1000000) }}{% else %}${{ "{:,.2f}".format(week_nonprod_cost) }}{% endif %} (Non-Prod)</div>
+                    <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format((week_nonprod_previous_cost|default(0))/1000000) }}{% else %}${{ "{:,.2f}".format(week_nonprod_previous_cost|default(0)) }}{% endif %}</span>
                     <div class="change neutral-change">
                         
                     </div>
@@ -379,13 +389,13 @@
                 <div class="comparison-item">
                     <h3>Month-to-Month Change</h3>
                     <span class="date-label">({{ month_current_date_range|default('Current month') }} vs {{ month_previous_date_range|default('Previous month') }})</span>
-                    <div class="value prod">${{ "{:,.2f}".format(month_prod_cost) }} (Prod)</div>
-                    <span class="previous-value">vs ${{ "{:,.2f}".format(month_prod_previous_cost|default(0)) }}</span>
+                    <div class="value prod">{% if display_in_millions %}${{ "{:,.2f}M".format(month_prod_cost/1000000) }}{% else %}${{ "{:,.2f}".format(month_prod_cost) }}{% endif %} (Prod)</div>
+                    <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format((month_prod_previous_cost|default(0))/1000000) }}{% else %}${{ "{:,.2f}".format(month_prod_previous_cost|default(0)) }}{% endif %}</span>
                     <div class="change neutral-change">
                         
                     </div>
-                    <div class="value non-prod">${{ "{:,.2f}".format(month_nonprod_cost) }} (Non-Prod)</div>
-                    <span class="previous-value">vs ${{ "{:,.2f}".format(month_nonprod_previous_cost|default(0)) }}</span>
+                    <div class="value non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(month_nonprod_cost/1000000) }}{% else %}${{ "{:,.2f}".format(month_nonprod_cost) }}{% endif %} (Non-Prod)</div>
+                    <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format((month_nonprod_previous_cost|default(0))/1000000) }}{% else %}${{ "{:,.2f}".format(month_nonprod_previous_cost|default(0)) }}{% endif %}</span>
                     <div class="change neutral-change">
                         
                     </div>
@@ -416,10 +426,10 @@
                     {% for item in cto_cost_table %}
                     <tr>
                         <td>{{ item.cto_org }}</td>
-                        <td class="text-right prod">${{ "{:,.2f}".format(item.prod_ytd_cost) }}</td>
-                        <td class="text-right non-prod">${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}</td>
-                        <td class="text-right">${{ "{:,.2f}".format(item.total_ytd_cost) }}</td>
-                        <td class="text-right">
+                        <td class="text-right prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.prod_ytd_cost) }}{% endif %}</td>
+                        <td class="text-right non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}{% endif %}</td>
+                        <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
+                        <td class="text-right {% if item.nonprod_percentage > nonprod_percentage_threshold %}highlight-danger{% endif %}">
                             {{ "{:.1f}%".format(item.nonprod_percentage) }}
                         </td>
                     </tr>
@@ -450,10 +460,12 @@
                     <tr>
                         <td>{{ item.pillar_name }}</td>
                         <td class="text-right">{{ item.product_count }}</td>
-                        <td class="text-right prod">${{ "{:,.2f}".format(item.prod_ytd_cost) }}</td>
-                        <td class="text-right non-prod">${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}</td>
-                        <td class="text-right">${{ "{:,.2f}".format(item.total_ytd_cost) }}</td>
-                        <td class="text-right">{{ "{:.1f}%".format(item.nonprod_percentage) }}</td>
+                        <td class="text-right prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.prod_ytd_cost) }}{% endif %}</td>
+                        <td class="text-right non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}{% endif %}</td>
+                        <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
+                        <td class="text-right {% if item.nonprod_percentage > nonprod_percentage_threshold %}highlight-danger{% endif %}">
+                            {{ "{:.1f}%".format(item.nonprod_percentage) }}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -484,10 +496,10 @@
                         <td>{{ item.product_id }}</td>
                         <td>{{ item.product_name }}</td>
                         <td>{{ item.pillar_team }}</td>
-                        <td class="text-right prod">${{ "{:,.2f}".format(item.prod_ytd_cost) }}</td>
-                        <td class="text-right non-prod">${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}</td>
-                        <td class="text-right">${{ "{:,.2f}".format(item.total_ytd_cost) }}</td>
-                        <td class="text-right">
+                        <td class="text-right prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.prod_ytd_cost) }}{% endif %}</td>
+                        <td class="text-right non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}{% endif %}</td>
+                        <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
+                        <td class="text-right {% if item.nonprod_percentage > nonprod_percentage_threshold %}highlight-danger{% endif %}">
                             {{ "{:.1f}%".format(item.nonprod_percentage) }}
                         </td>
                     </tr>
@@ -495,7 +507,6 @@
                 </tbody>
             </table>
         </div>
-        
         
         <footer>
             <p>Generated on {{ report_generation_date }} | FinOps360 Cost Analysis Tool</p>

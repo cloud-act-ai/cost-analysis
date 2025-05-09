@@ -1,9 +1,8 @@
 -- Basic month-to-month comparison query
 SELECT
     CASE 
-        WHEN environment LIKE 'PROD%' THEN 'PROD'
-        WHEN environment LIKE '%NON-PROD%' THEN 'NON-PROD'
-        ELSE 'OTHER'
+        WHEN environment = 'PROD' THEN 'PROD'
+        ELSE 'NON-PROD'
     END AS environment_type,
     SUM(CASE WHEN date BETWEEN '{this_month_start}' AND '{this_month_end}' THEN cost ELSE 0 END) AS this_month_cost,
     SUM(CASE WHEN date BETWEEN '{prev_month_start}' AND '{prev_month_end}' THEN cost ELSE 0 END) AS prev_month_cost
