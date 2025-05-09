@@ -395,29 +395,29 @@
             <div class="scorecard prod">
                 <h3>Production YTD Cost</h3>
                 <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(prod_ytd_cost) }}{% endif %}</div>
-                <div class="change neutral-change">
-                    vs ${% if display_in_millions %}{{ "{:,.2f}M".format(prod_fy25_cost/1000000) }}{% else %}{{ "{:,.2f}".format(prod_fy25_cost) }}{% endif %} FY25
+                <div class="change {{ prod_ytd_percent_class }}">
+                    {% if prod_ytd_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(prod_ytd_percent) }} vs ${% if display_in_millions %}{{ "{:,.2f}M".format(prod_fy25_cost/1000000) }}{% else %}{{ "{:,.2f}".format(prod_fy25_cost) }}{% endif %} FY25
                 </div>
             </div>
             <div class="scorecard non-prod">
                 <h3>Non-Production YTD Cost</h3>
                 <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(nonprod_ytd_cost) }}{% endif %}</div>
-                <div class="change neutral-change">
-                    vs ${% if display_in_millions %}{{ "{:,.2f}M".format(nonprod_fy25_cost/1000000) }}{% else %}{{ "{:,.2f}".format(nonprod_fy25_cost) }}{% endif %} FY25
+                <div class="change {{ nonprod_ytd_percent_class }}">
+                    {% if nonprod_ytd_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(nonprod_ytd_percent) }} vs ${% if display_in_millions %}{{ "{:,.2f}M".format(nonprod_fy25_cost/1000000) }}{% else %}{{ "{:,.2f}".format(nonprod_fy25_cost) }}{% endif %} FY25
                 </div>
             </div>
             <div class="scorecard">
                 <h3>Total FY26 Projected Cost</h3>
                 <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(total_fy26_cost/1000000) }}{% else %}${{ "{:,.2f}".format(total_fy26_cost) }}{% endif %}</div>
-                <div class="change neutral-change">
-                    
+                <div class="change {{ fy26_percent_class }}">
+                    {% if fy26_percent != 0 %}{% if fy26_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(fy26_percent) }} vs FY25{% endif %}
                 </div>
             </div>
             <div class="scorecard">
                 <h3>Total FY25 Cost</h3>
                 <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(total_fy25_cost/1000000) }}{% else %}${{ "{:,.2f}".format(total_fy25_cost) }}{% endif %}</div>
                 <div class="change">
-                    
+
                 </div>
             </div>
         </div>
@@ -430,13 +430,13 @@
                     <span class="date-label">({{ day_current_date|default('Current') }} vs {{ day_previous_date|default('Previous') }})</span>
                     <div class="value prod">{% if display_in_millions %}${{ "{:,.2f}M".format(day_prod_cost/1000000) }}{% else %}${{ "{:,.2f}".format(day_prod_cost) }}{% endif %} (Prod)</div>
                     <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format((day_prod_previous_cost|default(0))/1000000) }}{% else %}${{ "{:,.2f}".format(day_prod_previous_cost|default(0)) }}{% endif %}</span>
-                    <div class="change neutral-change">
-                        
+                    <div class="change {{ day_prod_percent_class }}">
+                        {% if day_prod_percent_calculated != 0 %}{% if day_prod_percent_calculated > 0 %}+{% endif %}{{ "{:.1f}%".format(day_prod_percent_calculated) }}{% endif %}
                     </div>
                     <div class="value non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(day_nonprod_cost/1000000) }}{% else %}${{ "{:,.2f}".format(day_nonprod_cost) }}{% endif %} (Non-Prod)</div>
                     <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format((day_nonprod_previous_cost|default(0))/1000000) }}{% else %}${{ "{:,.2f}".format(day_nonprod_previous_cost|default(0)) }}{% endif %}</span>
-                    <div class="change neutral-change">
-                        
+                    <div class="change {{ day_nonprod_percent_class }}">
+                        {% if day_nonprod_percent_calculated != 0 %}{% if day_nonprod_percent_calculated > 0 %}+{% endif %}{{ "{:.1f}%".format(day_nonprod_percent_calculated) }}{% endif %}
                     </div>
                 </div>
                 <div class="comparison-item">
@@ -444,13 +444,13 @@
                     <span class="date-label">({{ week_current_date_range|default('Current week') }} vs {{ week_previous_date_range|default('Previous week') }})</span>
                     <div class="value prod">{% if display_in_millions %}${{ "{:,.2f}M".format(week_prod_cost/1000000) }}{% else %}${{ "{:,.2f}".format(week_prod_cost) }}{% endif %} (Prod)</div>
                     <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format((week_prod_previous_cost|default(0))/1000000) }}{% else %}${{ "{:,.2f}".format(week_prod_previous_cost|default(0)) }}{% endif %}</span>
-                    <div class="change neutral-change">
-                        
+                    <div class="change {{ week_prod_percent_class }}">
+                        {% if week_prod_percent_calculated != 0 %}{% if week_prod_percent_calculated > 0 %}+{% endif %}{{ "{:.1f}%".format(week_prod_percent_calculated) }}{% endif %}
                     </div>
                     <div class="value non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(week_nonprod_cost/1000000) }}{% else %}${{ "{:,.2f}".format(week_nonprod_cost) }}{% endif %} (Non-Prod)</div>
                     <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format((week_nonprod_previous_cost|default(0))/1000000) }}{% else %}${{ "{:,.2f}".format(week_nonprod_previous_cost|default(0)) }}{% endif %}</span>
-                    <div class="change neutral-change">
-                        
+                    <div class="change {{ week_nonprod_percent_class }}">
+                        {% if week_nonprod_percent_calculated != 0 %}{% if week_nonprod_percent_calculated > 0 %}+{% endif %}{{ "{:.1f}%".format(week_nonprod_percent_calculated) }}{% endif %}
                     </div>
                 </div>
                 <div class="comparison-item">
@@ -458,13 +458,13 @@
                     <span class="date-label">({{ month_current_date_range|default('Current month') }} vs {{ month_previous_date_range|default('Previous month') }})</span>
                     <div class="value prod">{% if display_in_millions %}${{ "{:,.2f}M".format(month_prod_cost/1000000) }}{% else %}${{ "{:,.2f}".format(month_prod_cost) }}{% endif %} (Prod)</div>
                     <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format((month_prod_previous_cost|default(0))/1000000) }}{% else %}${{ "{:,.2f}".format(month_prod_previous_cost|default(0)) }}{% endif %}</span>
-                    <div class="change neutral-change">
-                        
+                    <div class="change {{ month_prod_percent_class }}">
+                        {% if month_prod_percent_calculated != 0 %}{% if month_prod_percent_calculated > 0 %}+{% endif %}{{ "{:.1f}%".format(month_prod_percent_calculated) }}{% endif %}
                     </div>
                     <div class="value non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(month_nonprod_cost/1000000) }}{% else %}${{ "{:,.2f}".format(month_nonprod_cost) }}{% endif %} (Non-Prod)</div>
                     <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format((month_nonprod_previous_cost|default(0))/1000000) }}{% else %}${{ "{:,.2f}".format(month_nonprod_previous_cost|default(0)) }}{% endif %}</span>
-                    <div class="change neutral-change">
-                        
+                    <div class="change {{ month_nonprod_percent_class }}">
+                        {% if month_nonprod_percent_calculated != 0 %}{% if month_nonprod_percent_calculated > 0 %}+{% endif %}{{ "{:.1f}%".format(month_nonprod_percent_calculated) }}{% endif %}
                     </div>
                 </div>
             </div>
