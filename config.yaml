@@ -28,7 +28,7 @@ data:
   
   top_products_count: 10            # Number of top products to display
   nonprod_percentage_threshold: 30  # Highlight products with nonprod % above this threshold
-  display_millions: false           # Display costs in raw values rather than millions
+  display_millions: true           # Display costs in raw values rather than millions
 
 # Output settings
 output_dir: reports
