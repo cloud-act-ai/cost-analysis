@@ -9,6 +9,5 @@ SELECT
 FROM `{project_id}.{dataset}.{table}`
 WHERE date BETWEEN '2025-02-01' AND DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)
 GROUP BY display_id, product_name, pillar_team
-HAVING SUM(CASE WHEN environment = 'NON-PROD' THEN cost ELSE 0 END) > 0
-ORDER BY pillar_team, nonprod_ytd_cost DESC
+ORDER BY prod_ytd_cost DESC
 LIMIT {top_n}
