@@ -287,25 +287,26 @@ def get_pillar_costs(client: bigquery.Client, project_id: str, dataset: str, tab
 def get_daily_trend_data(client: bigquery.Client, project_id: str, dataset: str, avg_table: str, days: int = 90) -> pd.DataFrame:
     """
     Get daily trend data from avg_daily_cost_table.
-    
+
     Args:
         client: BigQuery client
         project_id: Google Cloud project ID
         dataset: BigQuery dataset name
         avg_table: BigQuery avg_daily_cost_table name
         days: Number of days to include in the trend
-        
+
     Returns:
         DataFrame with daily trend data
     """
-    end_date = datetime.now().date() - timedelta(days=3)  # Latest available data
-    start_date = end_date - timedelta(days=days)
-    
-    query = load_sql_query("daily_trend_data", 
-                          project_id=project_id, 
-                          dataset=dataset, 
+    # Set fixed date range to match requirements (data up to 2026-01-31)
+    start_date = datetime(2025, 2, 1).date()  # Start of FY26
+    end_date = datetime(2026, 1, 31).date()  # End of FY26
+
+    query = load_sql_query("daily_trend_data",
+                          project_id=project_id,
+                          dataset=dataset,
                           avg_table=avg_table,
                           start_date=start_date.strftime('%Y-%m-%d'),
                           end_date=end_date.strftime('%Y-%m-%d'))
-    
+
     return run_query(client, query)

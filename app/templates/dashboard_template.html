@@ -316,6 +316,73 @@
             margin-top: 40px;
         }
     </style>
+    
+    {% if use_interactive_charts %}
+    <!-- Include Plotly.js from CDN for interactive charts -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+    <!-- JavaScript for interactive charts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize interactive charts if data is available
+            {% if daily_trend_chart and daily_trend_chart.json_data %}
+            try {
+                const dailyTrendData = JSON.parse('{{ daily_trend_chart.json_data|safe }}');
+                Plotly.newPlot('daily_trend_chart', dailyTrendData.data, dailyTrendData.layout);
+            } catch (e) {
+                console.error('Error initializing daily trend chart:', e);
+            }
+            {% endif %}
+            
+            {% if cto_costs_chart and cto_costs_chart.json_data %}
+            try {
+                const ctoCostsData = JSON.parse('{{ cto_costs_chart.json_data|safe }}');
+                Plotly.newPlot('cto_costs_chart', ctoCostsData.data, ctoCostsData.layout);
+            } catch (e) {
+                console.error('Error initializing CTO costs chart:', e);
+            }
+            {% endif %}
+            
+            {% if pillar_costs_chart and pillar_costs_chart.json_data %}
+            try {
+                const pillarCostsData = JSON.parse('{{ pillar_costs_chart.json_data|safe }}');
+                Plotly.newPlot('pillar_costs_chart', pillarCostsData.data, pillarCostsData.layout);
+            } catch (e) {
+                console.error('Error initializing pillar costs chart:', e);
+            }
+            {% endif %}
+            
+            {% if product_costs_chart and product_costs_chart.json_data %}
+            try {
+                const productCostsData = JSON.parse('{{ product_costs_chart.json_data|safe }}');
+                Plotly.newPlot('product_costs_chart', productCostsData.data, productCostsData.layout);
+            } catch (e) {
+                console.error('Error initializing product costs chart:', e);
+            }
+            {% endif %}
+            
+            // Make charts responsive
+            window.addEventListener('resize', function() {
+                Plotly.relayout('daily_trend_chart', {
+                    'xaxis.autorange': true,
+                    'yaxis.autorange': true
+                });
+                Plotly.relayout('cto_costs_chart', {
+                    'xaxis.autorange': true,
+                    'yaxis.autorange': true
+                });
+                Plotly.relayout('pillar_costs_chart', {
+                    'xaxis.autorange': true,
+                    'yaxis.autorange': true
+                });
+                Plotly.relayout('product_costs_chart', {
+                    'xaxis.autorange': true,
+                    'yaxis.autorange': true
+                });
+            });
+        });
+    </script>
+    {% endif %}
 </head>
 <body>
     <div class="container">
@@ -403,8 +470,47 @@
             </div>
         </div>
         
-        <!-- Charts section removed, keeping only tables -->
+        {% if use_interactive_charts %}
+        <!-- Interactive Charts Section -->
+        <div class="chart-section">
+            <div class="chart-container full-width">
+                <h2>FY26 Daily Cost for PROD and NON-PROD (Including Forecast)</h2>
+                <div id="daily_trend_chart" class="chart">
+                    {{ daily_trend_chart.html|safe }}
+                </div>
+            </div>
+        </div>
         
+        <!-- Interactive CTO Costs Chart -->
+        <div class="chart-section">
+            <div class="chart-container full-width">
+                <h2>CTO Organization Costs</h2>
+                <div id="cto_costs_chart" class="chart">
+                    {{ cto_costs_chart.html|safe }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Interactive Pillar Costs Chart -->
+        <div class="chart-section">
+            <div class="chart-container full-width">
+                <h2>Product Pillar Team Costs</h2>
+                <div id="pillar_costs_chart" class="chart">
+                    {{ pillar_costs_chart.html|safe }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Interactive Product Costs Chart -->
+        <div class="chart-section">
+            <div class="chart-container full-width">
+                <h2>Top Product Costs</h2>
+                <div id="product_costs_chart" class="chart">
+                    {{ product_costs_chart.html|safe }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
         
         <!-- CTO Cost Table -->
         <div class="table-section">

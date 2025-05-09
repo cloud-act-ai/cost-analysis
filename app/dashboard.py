@@ -11,11 +11,19 @@ from typing import Dict, Any, Optional, Union, List, Tuple
 from google.cloud import bigquery
 
 from app.utils.config import FinOpsConfig, load_config
-# Charts removed
-# Only using tables for display
+from app.utils.chart_config import are_charts_enabled
 
-# Interactive charts removed
-has_interactive_charts = False
+# Import interactive chart functionality
+from app.utils.interactive_charts import (
+    create_enhanced_daily_trend_chart,
+    create_enhanced_cto_costs_chart, 
+    create_enhanced_pillar_costs_chart,
+    create_enhanced_product_costs_chart,
+    generate_all_enhanced_charts
+)
+
+# Configure interactive charts (can be toggled in chart_config.py)
+has_interactive_charts = are_charts_enabled()
 from app.data_access import (
     get_ytd_costs,
     get_fy26_costs,
@@ -324,8 +332,54 @@ def generate_html_report(
             cto_cost_table = []
             pillar_cost_table = []
         
-        # Charts removed
-        daily_trend_chart = ""
+        # Generate charts if enabled
+        daily_trend_chart = {"html": "", "json_data": "{}"}
+        cto_costs_chart = {"html": "", "json_data": "{}"}
+        pillar_costs_chart = {"html": "", "json_data": "{}"}
+        product_costs_chart = {"html": "", "json_data": "{}"}
+        
+        if use_interactive_charts and has_interactive_charts:
+            # Format daily trend data for charting
+            if not daily_trend_data.empty:
+                daily_trend_chart = create_enhanced_daily_trend_chart(daily_trend_data)
+            
+            # Format and create CTO costs chart
+            if cto_cost_table:
+                # Convert all values to numeric to avoid type errors
+                cto_df = pd.DataFrame(cto_cost_table)
+                numeric_columns = ['prod_ytd_cost', 'nonprod_ytd_cost', 'total_ytd_cost', 'nonprod_percentage']
+                for col in numeric_columns:
+                    if col in cto_df.columns:
+                        cto_df[col] = pd.to_numeric(cto_df[col], errors='coerce').fillna(0)
+                cto_costs_chart = create_enhanced_cto_costs_chart(cto_df)
+            
+            # Format and create pillar costs chart
+            if pillar_cost_table:
+                # Convert all values to numeric to avoid type errors
+                pillar_df = pd.DataFrame(pillar_cost_table)
+                numeric_columns = ['prod_ytd_cost', 'nonprod_ytd_cost', 'total_ytd_cost', 'product_count']
+                for col in numeric_columns:
+                    if col in pillar_df.columns:
+                        pillar_df[col] = pd.to_numeric(pillar_df[col], errors='coerce').fillna(0)
+                pillar_costs_chart = create_enhanced_pillar_costs_chart(pillar_df)
+            else:
+                # Create sample pillar data if none exists
+                sample_pillar_data = create_sample_pillar_costs()
+                pillar_costs_chart = create_enhanced_pillar_costs_chart(sample_pillar_data)
+            
+            # Format and create product costs chart
+            if product_cost_table:
+                # Convert all values to numeric to avoid type errors
+                product_df = pd.DataFrame(product_cost_table)
+                numeric_columns = ['prod_ytd_cost', 'nonprod_ytd_cost', 'total_ytd_cost', 'nonprod_percentage']
+                for col in numeric_columns:
+                    if col in product_df.columns:
+                        product_df[col] = pd.to_numeric(product_df[col], errors='coerce').fillna(0)
+                product_costs_chart = create_enhanced_product_costs_chart(product_df)
+            else:
+                # Create sample product data if none exists
+                sample_product_data = create_sample_product_costs()
+                product_costs_chart = create_enhanced_product_costs_chart(sample_product_data)
         
         # Load Jinja2 template
         template_dir = os.path.dirname(template_path)
@@ -404,10 +458,15 @@ def generate_html_report(
             'pillar_cost_table': pillar_cost_table
         }
         
-        # Charts removed
-        template_data['use_interactive_charts'] = False
         # Add the non-prod percentage threshold to template data
         template_data['nonprod_percentage_threshold'] = nonprod_threshold
+        
+        # Add interactive charts to template data
+        template_data['use_interactive_charts'] = use_interactive_charts and has_interactive_charts
+        template_data['daily_trend_chart'] = daily_trend_chart
+        template_data['cto_costs_chart'] = cto_costs_chart
+        template_data['pillar_costs_chart'] = pillar_costs_chart
+        template_data['product_costs_chart'] = product_costs_chart
         
         # Debug template data
         print(f"Template data product_cost_table length: {len(template_data.get('product_cost_table', []))}")

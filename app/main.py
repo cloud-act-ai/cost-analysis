@@ -113,7 +113,9 @@ def main():
             os.system(f"start {report_path}")
             
     except Exception as e:
+        import traceback
         logger.error(f"Error: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         sys.exit(1)
 
 if __name__ == "__main__":
