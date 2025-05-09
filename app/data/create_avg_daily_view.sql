@@ -1,9 +1,9 @@
 -- Create view for average daily costs using the exact logic provided
--- Set variables (replace with your actual project and dataset)
-DECLARE PROJECT_ID STRING DEFAULT 'finops360-dev-2025';
-DECLARE DATASET STRING DEFAULT 'test';
-DECLARE COST_TABLE STRING DEFAULT 'cost_analysis_new';
-DECLARE AVG_TABLE STRING DEFAULT 'avg_daily_cost_table';
+-- Variables will be replaced by script with values from config.yaml
+DECLARE PROJECT_ID STRING DEFAULT '{project_id}';
+DECLARE DATASET STRING DEFAULT '{dataset}';
+DECLARE COST_TABLE STRING DEFAULT '{cost_table}';
+DECLARE AVG_TABLE STRING DEFAULT '{avg_table}';
 
 -- Create the view using the provided query logic
 EXECUTE IMMEDIATE FORMAT("""

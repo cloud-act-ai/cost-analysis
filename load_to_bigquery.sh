@@ -2,11 +2,11 @@
 # Script to load FinOps data to BigQuery
 # This script will create new tables with updated schemas and load the data
 
-# Configuration
-PROJECT_ID="finops360-dev-2025"
-DATASET="test"
-COST_TABLE="cost_analysis_new"
-AVG_TABLE="avg_daily_cost_table"
+# Get configuration from config.yaml
+PROJECT_ID=$(grep -A3 "project_id:" config.yaml | grep "project_id:" | awk '{print $2}' | tr -d '"')
+DATASET=$(grep -A3 "dataset:" config.yaml | grep "dataset:" | awk '{print $2}' | tr -d '"')
+COST_TABLE=$(grep -A3 "table:" config.yaml | grep "table:" | awk '{print $2}' | tr -d '"')
+AVG_TABLE=$(grep -A3 "avg_table:" config.yaml | grep "avg_table:" | awk '{print $2}' | tr -d '"')
 COST_SCHEMA_FILE="app/data/cost_analysis_schema.json"
 AVG_SCHEMA_FILE="app/data/avg_daily_cost_schema.json"
 COST_DATA_FILE="app/data/cost_analysis_new_no_header.csv"

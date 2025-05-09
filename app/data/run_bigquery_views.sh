@@ -1,15 +1,22 @@
 #!/bin/bash
 # Script to run BigQuery view creation for FinOps360 cost analysis
 
-# Configuration
-PROJECT_ID="finops360-dev-2025"
-DATASET="test"
+# Get configuration from config.yaml
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+CONFIG_PATH="${BASE_DIR}/config.yaml"
+PROJECT_ID=$(grep -A3 "project_id:" "${CONFIG_PATH}" | grep "project_id:" | awk '{print $2}' | tr -d '"')
+DATASET=$(grep -A3 "dataset:" "${CONFIG_PATH}" | grep "dataset:" | awk '{print $2}' | tr -d '"')
+COST_TABLE=$(grep -A3 "table:" "${CONFIG_PATH}" | grep "table:" | awk '{print $2}' | tr -d '"')
+AVG_TABLE=$(grep -A3 "avg_table:" "${CONFIG_PATH}" | grep "avg_table:" | awk '{print $2}' | tr -d '"')
 SQL_FILE="app/data/create_avg_daily_view.sql"
+TEMP_SQL=$(mktemp)
 
 # Print configuration
 echo "Running BigQuery view creation with the following configuration:"
 echo "  Project: $PROJECT_ID"
 echo "  Dataset: $DATASET"
+echo "  Cost Table: $COST_TABLE"
+echo "  Avg Table: $AVG_TABLE"
 echo "  SQL File: $SQL_FILE"
 
 # Check if necessary files exist
@@ -32,13 +39,26 @@ if ! bq ls &> /dev/null; then
   exit 1
 fi
 
+# Replace variables in SQL file
+echo "Preparing SQL script with configuration values..."
+cat "$SQL_FILE" | sed \
+  -e "s/{project_id}/$PROJECT_ID/g" \
+  -e "s/{dataset}/$DATASET/g" \
+  -e "s/{cost_table}/$COST_TABLE/g" \
+  -e "s/{avg_table}/$AVG_TABLE/g" \
+  > "$TEMP_SQL"
+
 # Run the SQL script to create views
 echo "Running SQL script to create views..."
-bq query --use_legacy_sql=false < "$SQL_FILE"
+bq query --use_legacy_sql=false < "$TEMP_SQL"
 
 if [ $? -ne 0 ]; then
   echo "Error: Failed to create views!"
+  rm "$TEMP_SQL"
   exit 1
 fi
+
+# Clean up
+rm "$TEMP_SQL"
 
 echo "Views created successfully."

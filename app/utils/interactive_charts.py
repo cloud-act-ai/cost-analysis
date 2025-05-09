@@ -24,11 +24,11 @@ logger = logging.getLogger(__name__)
 
 def create_interactive_daily_trend_chart(df: pd.DataFrame) -> str:
     """
-    Create an interactive daily trend chart with both actual and forecasted costs.
-    
+    Create an interactive daily trend chart with separate styling for forecasted costs.
+
     Args:
         df: DataFrame with daily cost data
-        
+
     Returns:
         JSON representation of the Plotly figure
     """
@@ -49,41 +49,45 @@ def create_interactive_daily_trend_chart(df: pd.DataFrame) -> str:
                 title_x=0.5
             )
             return json.dumps(fig, cls=PlotlyJSONEncoder)
-        
+
         # Create the figure
         fig = go.Figure()
-        
+
         # Define colors - enhanced for better contrast and visual appeal
         prod_color = '#4285F4'  # Bright blue for PROD
         nonprod_color = '#34A853'  # Bright green for NON-PROD
         avg_color = '#666666'  # Gray for averages
-        forecast_prod_color = '#9966ff'  # Purple for PROD forecast
-        forecast_nonprod_color = '#ff6666'  # Red for NON-PROD forecast
-        
+
         # Get unique environments
         environments = df['environment_type'].unique()
-        
+
+        # Get today's date (3 days ago to match dashboard logic)
+        today = datetime.now().date() - timedelta(days=3)
+
         # Process each environment type
         for env in environments:
             env_data = df[df['environment_type'] == env]
-            
+
+            # Only use actual data - no forecast
+            actual_data = env_data[pd.to_datetime(env_data['date']).dt.date <= today]
+
             # Line color based on environment
             color = prod_color if env == 'PROD' else nonprod_color
-            forecast_color = forecast_prod_color if env == 'PROD' else forecast_nonprod_color
-            
+
             # Add actual daily cost line
-            fig.add_trace(go.Scatter(
-                x=env_data['date'],
-                y=env_data['daily_cost'],
-                mode='lines',
-                name=f"{env} Daily Cost (FY26)",
-                line=dict(color=color, width=2.5, shape='spline', smoothing=0.3),
-                hovertemplate='%{x|%b %d, %Y}: $%{y:,.2f}<extra></extra>'
-            ))
+            if not actual_data.empty:
+                fig.add_trace(go.Scatter(
+                    x=actual_data['date'],
+                    y=actual_data['daily_cost'],
+                    mode='lines',
+                    name=f"{env} Daily Cost",
+                    line=dict(color=color, width=2.5, shape='spline', smoothing=0.3),
+                    hovertemplate='%{x|%b %d, %Y}: $%{y:,.2f}<extra></extra>'
+                ))
         
         # Update layout
         fig.update_layout(
-            title="FY26 Daily Cost Trend",
+            title="FY26 Daily Cost for PROD and NON-PROD",
             title_x=0.5,
             xaxis_title="Date",
             yaxis_title="Cost ($)",
@@ -134,19 +138,19 @@ def create_interactive_daily_trend_chart(df: pd.DataFrame) -> str:
                 font_family="Segoe UI, Arial, sans-serif"
             )
         )
-        
-        # We've moved grid line settings to the axis configuration
-        
+
         # Make the figure responsive
         fig.update_layout(
             autosize=True,
             legend_title_text="",
             legend_title_font_size=10
         )
-        
+
+        # No vertical line or forecast annotation needed - only showing actual data
+
         # Add chart filter buttons in a more accessible layout
         button_layer_1_height = 1.12
-        
+
         fig.update_layout(
             # Create a row of buttons for environment filtering
             updatemenus=[
@@ -166,23 +170,23 @@ def create_interactive_daily_trend_chart(df: pd.DataFrame) -> str:
                         dict(
                             label="🔵 PROD Only",
                             method="update",
-                            args=[{"visible": [True if "PROD" in trace.name and "NON-PROD" not in trace.name else False 
+                            args=[{"visible": [True if "PROD" in trace.name and "NON-PROD" not in trace.name else False
                                                for trace in fig.data]}]
                         ),
                         dict(
                             label="🟢 NON-PROD Only",
                             method="update",
-                            args=[{"visible": [True if "NON-PROD" in trace.name else False 
+                            args=[{"visible": [True if "NON-PROD" in trace.name else False
                                                for trace in fig.data]}]
                         )
                     ]
                 )
             ]
         )
-        
+
         # Add extra margin at the top for the buttons
         fig.update_layout(margin=dict(t=120))
-        
+
         # Convert to JSON
         plotly_json = json.dumps(fig, cls=PlotlyJSONEncoder)
         return plotly_json
@@ -809,48 +813,10 @@ def create_enhanced_daily_trend_chart(data: pd.DataFrame) -> Dict[str, Any]:
             lambda x: avg_mapping.get(x, 0) * 0.8 if x in avg_mapping else 0
         )
 
-    # Create more sophisticated forecast columns if they don't exist
-    if 'fy26_forecasted_avg_daily_spend' not in data.columns and 'daily_cost' in data.columns:
-        # Use March 15th as the cutoff for forecast/actual data
-        cutoff_date = datetime(2025, 3, 15).date()
+    # No forecast columns needed
 
-        # Create a copy of the dataframe to work with
-        forecast_data = data.copy()
-        forecast_data['date'] = pd.to_datetime(forecast_data['date'])
-
-        # Initialize forecast column
-        data['fy26_forecasted_avg_daily_spend'] = 0.0
-
-        # Create separate forecasts for each environment type
-        for env_type in data['environment_type'].unique():
-            # Get data up to cutoff date for this environment to build the forecast model
-            historical = forecast_data[
-                (forecast_data['environment_type'] == env_type) &
-                (forecast_data['date'].dt.date <= cutoff_date)
-            ]
-
-            if not historical.empty:
-                # Calculate average and standard deviation to use for the forecast
-                avg_cost = historical['daily_cost'].mean()
-                std_cost = historical['daily_cost'].std()
-
-                # Apply a seasonal factor based on day of week and add a slight growth trend
-                future_mask = (data['environment_type'] == env_type) & (pd.to_datetime(data['date']).dt.date > cutoff_date)
-
-                # For each future date, generate a forecast
-                for idx in data[future_mask].index:
-                    day_of_year = pd.to_datetime(data.loc[idx, 'date']).dayofyear
-                    days_from_cutoff = (pd.to_datetime(data.loc[idx, 'date']).date() - cutoff_date).days
-
-                    # Apply seasonal pattern using sine wave and growth trend
-                    seasonal_factor = 1.0 + 0.15 * np.sin(day_of_year / 30 * np.pi)
-                    trend_factor = 1.0 + (days_from_cutoff / 365) * 0.05  # 5% growth trend over year
-
-                    # Generate forecast with some randomness to make it look natural
-                    forecast_value = avg_cost * seasonal_factor * trend_factor
-
-                    # Store the forecast
-                    data.loc[idx, 'fy26_forecasted_avg_daily_spend'] = forecast_value
+    # Get today's date (3 days ago to match dashboard logic)
+    today = datetime.now().date() - timedelta(days=3)
 
     # Process each series from configuration
     for series_config in chart_config.get("series", []):
@@ -892,17 +858,62 @@ def create_enhanced_daily_trend_chart(data: pd.DataFrame) -> Dict[str, Any]:
             # Ensure the y-axis data is numeric
             series_data[column] = pd.to_numeric(series_data[column], errors='coerce').fillna(0)
 
-            # Add trace to the figure
-            fig.add_trace(go.Scatter(
-                x=series_data['date'],
-                y=series_data[column],
-                mode='lines',
-                name=series_name,
-                line=dict(color=color, dash=dash_style),
-                hovertemplate='%{x|%b %d, %Y}: $%{y:,.2f}<extra></extra>'
-            ))
+            # Split into actual and forecast data
+            series_data['date'] = pd.to_datetime(series_data['date'])
+            actual_data = series_data[series_data['date'].dt.date <= today]
+            forecast_data = series_data[series_data['date'].dt.date > today]
+
+            # Add actual data trace
+            if not actual_data.empty:
+                fig.add_trace(go.Scatter(
+                    x=actual_data['date'],
+                    y=actual_data[column],
+                    mode='lines',
+                    name=f"{series_name} (Actual)",
+                    line=dict(color=color, dash=dash_style),
+                    hovertemplate='%{x|%b %d, %Y}: $%{y:,.2f} (Actual)<extra></extra>'
+                ))
+
+            # Add forecast data with dotted line style
+            if not forecast_data.empty:
+                fig.add_trace(go.Scatter(
+                    x=forecast_data['date'],
+                    y=forecast_data[column],
+                    mode='lines',
+                    name=f"{series_name} (Forecast)",
+                    line=dict(color=color, dash='dash'),  # Always use dotted line for forecast data
+                    hovertemplate='%{x|%b %d, %Y}: $%{y:,.2f} (Forecast)<extra></extra>'
+                ))
     
-    # Do not add current date vertical line - removed per requirements
+    # Add vertical line at today's date to separate actual vs forecast data
+    fig.add_shape(
+        type="line",
+        x0=today,
+        y0=0,
+        x1=today,
+        y1=1,
+        yref="paper",
+        line=dict(
+            color="rgba(169, 169, 169, 0.5)",
+            width=2,
+            dash="dot",
+        ),
+    )
+
+    # Add annotation to indicate forecast start
+    fig.add_annotation(
+        x=today,
+        y=1,
+        yref="paper",
+        text="Forecast →",
+        showarrow=False,
+        xanchor="left",
+        bgcolor="rgba(255, 255, 255, 0.7)",
+        bordercolor="rgba(169, 169, 169, 0.5)",
+        borderwidth=1,
+        borderpad=4,
+        font=dict(size=10)
+    )
     
     # Configure axes
     x_axis_config = chart_config.get("x_axis", {})

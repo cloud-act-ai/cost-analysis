@@ -22,7 +22,11 @@
       "Bash(bash:*)",
       "Bash(bash:*)",
       "Bash(./run.sh:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(grep \"get_fy26_ytd_costs\" app/data_access.py)",
+      "Bash(grep \"create_sample_fy26_ytd_costs\" app/utils/sample_data.py)",
+      "Bash(grep \"FY26 YTD Cost\" app/templates/dashboard_template.html)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

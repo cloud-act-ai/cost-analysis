@@ -15,29 +15,46 @@ logger = logging.getLogger(__name__)
 def get_ytd_costs(client: bigquery.Client, project_id: str, dataset: str, table: str) -> pd.DataFrame:
     """
     Get year-to-date costs for production and non-production.
-    
+
     Args:
         client: BigQuery client
         project_id: Google Cloud project ID
         dataset: BigQuery dataset name
         table: BigQuery table name
-        
+
     Returns:
         DataFrame with YTD costs by environment
     """
     query = load_sql_query("ytd_costs", project_id=project_id, dataset=dataset, table=table)
     return run_query(client, query)
 
-def get_fy26_costs(client: bigquery.Client, project_id: str, dataset: str, table: str) -> pd.DataFrame:
+def get_fy26_ytd_costs(client: bigquery.Client, project_id: str, dataset: str, table: str) -> pd.DataFrame:
     """
-    Get projected FY26 costs for production and non-production.
-    
+    Get FY26 year-to-date costs for production and non-production.
+    This represents actual costs from the beginning of FY26 (2025-02-01) to current date - 3 days.
+
     Args:
         client: BigQuery client
         project_id: Google Cloud project ID
         dataset: BigQuery dataset name
         table: BigQuery table name
-        
+
+    Returns:
+        DataFrame with FY26 YTD costs by environment
+    """
+    query = load_sql_query("fy26_ytd_costs", project_id=project_id, dataset=dataset, table=table)
+    return run_query(client, query)
+
+def get_fy26_costs(client: bigquery.Client, project_id: str, dataset: str, table: str) -> pd.DataFrame:
+    """
+    Get projected FY26 costs for production and non-production.
+
+    Args:
+        client: BigQuery client
+        project_id: Google Cloud project ID
+        dataset: BigQuery dataset name
+        table: BigQuery table name
+
     Returns:
         DataFrame with FY26 costs by environment
     """
@@ -286,13 +303,13 @@ def get_pillar_costs(client: bigquery.Client, project_id: str, dataset: str, tab
 
 def get_daily_trend_data(client: bigquery.Client, project_id: str, dataset: str, avg_table: str, days: int = 90) -> pd.DataFrame:
     """
-    Get daily trend data from avg_daily_cost_table.
+    Get daily trend data from avg_table.
 
     Args:
         client: BigQuery client
         project_id: Google Cloud project ID
         dataset: BigQuery dataset name
-        avg_table: BigQuery avg_daily_cost_table name
+        avg_table: BigQuery average daily cost table name from config
         days: Number of days to include in the trend
 
     Returns:

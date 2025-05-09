@@ -293,6 +293,26 @@
             border-color: #3498db;
         }
         
+        /* Section container for chart + table */
+        .section-container {
+            background-color: #ffffff;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-container .chart-section {
+            margin-bottom: 15px;
+        }
+
+        .section-container .table-section {
+            box-shadow: none;
+            padding: 0;
+            margin: 0;
+            background-color: transparent;
+        }
+
         /* Responsive design */
         @media (max-width: 768px) {
             .scorecard-section, .chart-section {
@@ -388,7 +408,6 @@
     <div class="container">
         <div class="dashboard-header">
             <h1>FinOps360 Cost Analysis Dashboard</h1>
-            <div class="date-range">Reporting Period: {{ report_start_date }} to {{ report_end_date }}</div>
         </div>
         
         <div class="scorecard-section">
@@ -406,11 +425,18 @@
                     {% if nonprod_ytd_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(nonprod_ytd_percent) }} vs ${% if display_in_millions %}{{ "{:,.2f}M".format(nonprod_fy25_cost/1000000) }}{% else %}{{ "{:,.2f}".format(nonprod_fy25_cost) }}{% endif %} FY25
                 </div>
             </div>
+            <div class="scorecard prod">
+                <h3>FY26 YTD Cost (Actual)</h3>
+                <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(total_fy26_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(total_fy26_ytd_cost) }}{% endif %}</div>
+                <div class="change {{ fy26_ytd_percent_class }}">
+                    {% if fy26_ytd_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(fy26_ytd_percent) }} vs ${% if display_in_millions %}{{ "{:,.2f}M".format(total_fy25_ytd_cost/1000000) }}{% else %}{{ "{:,.2f}".format(total_fy25_ytd_cost) }}{% endif %} FY25 YTD
+                </div>
+            </div>
             <div class="scorecard">
                 <h3>Total FY26 Projected Cost</h3>
                 <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(total_fy26_cost/1000000) }}{% else %}${{ "{:,.2f}".format(total_fy26_cost) }}{% endif %}</div>
                 <div class="change {{ fy26_percent_class }}">
-                    {% if fy26_percent != 0 %}{% if fy26_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(fy26_percent) }} vs FY25{% endif %}
+                    {% if fy26_percent != 0 %}{% if fy26_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(fy26_percent) }} vs FY25 YTD{% endif %}
                 </div>
             </div>
             <div class="scorecard">
@@ -470,148 +496,154 @@
             </div>
         </div>
         
+        <!-- Daily Cost Trend Chart -->
         {% if use_interactive_charts %}
-        <!-- Interactive Charts Section -->
         <div class="chart-section">
             <div class="chart-container full-width">
-                <h2>FY26 Daily Cost for PROD and NON-PROD (Including Forecast)</h2>
+                <h2>FY26 Daily Cost for PROD and NON-PROD</h2>
                 <div id="daily_trend_chart" class="chart">
                     {{ daily_trend_chart.html|safe }}
                 </div>
             </div>
         </div>
-        
-        <!-- Interactive CTO Costs Chart -->
-        <div class="chart-section">
-            <div class="chart-container full-width">
-                <h2>CTO Organization Costs</h2>
-                <div id="cto_costs_chart" class="chart">
-                    {{ cto_costs_chart.html|safe }}
-                </div>
-            </div>
-        </div>
-        
-        <!-- Interactive Pillar Costs Chart -->
-        <div class="chart-section">
-            <div class="chart-container full-width">
-                <h2>Product Pillar Team Costs</h2>
-                <div id="pillar_costs_chart" class="chart">
-                    {{ pillar_costs_chart.html|safe }}
-                </div>
-            </div>
-        </div>
-        
-        <!-- Interactive Product Costs Chart -->
-        <div class="chart-section">
-            <div class="chart-container full-width">
-                <h2>Top Product Costs</h2>
-                <div id="product_costs_chart" class="chart">
-                    {{ product_costs_chart.html|safe }}
-                </div>
-            </div>
-        </div>
         {% endif %}
-        
-        <!-- CTO Cost Table -->
-        <div class="table-section">
-            <h2>CTO Organization Cost Details</h2>
-            
-            <!-- CTO chart removed -->
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>CTO Organization</th>
-                        <th class="text-right">Prod YTD Cost</th>
-                        <th class="text-right">Non-Prod YTD Cost</th>
-                        <th class="text-right">Total YTD Cost</th>
-                        <th class="text-right">Non-Prod %</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in cto_cost_table %}
-                    <tr>
-                        <td>{{ item.cto_org }}</td>
-                        <td class="text-right prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.prod_ytd_cost) }}{% endif %}</td>
-                        <td class="text-right non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}{% endif %}</td>
-                        <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
-                        <td class="text-right {% if item.nonprod_percentage > nonprod_percentage_threshold %}highlight-danger{% endif %}">
-                            {{ "{:.1f}%".format(item.nonprod_percentage) }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+        <!-- CTO Organization Section -->
+        <div class="section-container">
+            {% if use_interactive_charts %}
+            <!-- CTO Costs Chart -->
+            <div class="chart-section">
+                <div class="chart-container full-width">
+                    <h2>CTO Organization Costs</h2>
+                    <div id="cto_costs_chart" class="chart">
+                        {{ cto_costs_chart.html|safe }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- CTO Cost Table -->
+            <div class="table-section">
+                <h2>CTO Organization Cost Details</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>CTO Organization</th>
+                            <th class="text-right">Prod YTD Cost</th>
+                            <th class="text-right">Non-Prod YTD Cost</th>
+                            <th class="text-right">Total YTD Cost</th>
+                            <th class="text-right">Non-Prod %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cto_cost_table %}
+                        <tr>
+                            <td>{{ item.cto_org }}</td>
+                            <td class="text-right prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.prod_ytd_cost) }}{% endif %}</td>
+                            <td class="text-right non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}{% endif %}</td>
+                            <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
+                            <td class="text-right {% if item.nonprod_percentage > nonprod_percentage_threshold %}highlight-danger{% endif %}">
+                                {{ "{:.1f}%".format(item.nonprod_percentage) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-        
-        <!-- Pillar Cost Table -->
-        <div class="table-section">
-            <h2>Product Pillar Team Cost Details</h2>
-            
-            <!-- Pillar chart removed -->
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>Pillar Name</th>
-                        <th class="text-right">Product Count</th>
-                        <th class="text-right">Prod YTD Cost</th>
-                        <th class="text-right">Non-Prod YTD Cost</th>
-                        <th class="text-right">Total YTD Cost</th>
-                        <th class="text-right">Non-Prod %</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in pillar_cost_table %}
-                    <tr>
-                        <td>{{ item.pillar_name }}</td>
-                        <td class="text-right">{{ item.product_count }}</td>
-                        <td class="text-right prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.prod_ytd_cost) }}{% endif %}</td>
-                        <td class="text-right non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}{% endif %}</td>
-                        <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
-                        <td class="text-right {% if item.nonprod_percentage > nonprod_percentage_threshold %}highlight-danger{% endif %}">
-                            {{ "{:.1f}%".format(item.nonprod_percentage) }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+        <!-- Pillar Team Section -->
+        <div class="section-container">
+            {% if use_interactive_charts %}
+            <!-- Pillar Costs Chart -->
+            <div class="chart-section">
+                <div class="chart-container full-width">
+                    <h2>Product Pillar Team Costs</h2>
+                    <div id="pillar_costs_chart" class="chart">
+                        {{ pillar_costs_chart.html|safe }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Pillar Cost Table -->
+            <div class="table-section">
+                <h2>Product Pillar Team Cost Details</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pillar Name</th>
+                            <th class="text-right">Product Count</th>
+                            <th class="text-right">Prod YTD Cost</th>
+                            <th class="text-right">Non-Prod YTD Cost</th>
+                            <th class="text-right">Total YTD Cost</th>
+                            <th class="text-right">Non-Prod %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in pillar_cost_table %}
+                        <tr>
+                            <td>{{ item.pillar_name }}</td>
+                            <td class="text-right">{{ item.product_count }}</td>
+                            <td class="text-right prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.prod_ytd_cost) }}{% endif %}</td>
+                            <td class="text-right non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}{% endif %}</td>
+                            <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
+                            <td class="text-right {% if item.nonprod_percentage > nonprod_percentage_threshold %}highlight-danger{% endif %}">
+                                {{ "{:.1f}%".format(item.nonprod_percentage) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-        
-        <!-- Product Cost Table -->
-        <div class="table-section">
-            <h2>Product ID Cost Details</h2>
-            
-            <!-- Product chart removed -->
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>Product ID</th>
-                        <th>Product Name</th>
-                        <th>Product Pillar Team</th>
-                        <th class="text-right">Prod YTD Cost</th>
-                        <th class="text-right">Non-Prod YTD Cost</th>
-                        <th class="text-right">Total YTD Cost</th>
-                        <th class="text-right">Non-Prod %</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in product_cost_table %}
-                    <tr>
-                        <td>{{ item.product_id }}</td>
-                        <td>{{ item.product_name }}</td>
-                        <td>{{ item.pillar_team }}</td>
-                        <td class="text-right prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.prod_ytd_cost) }}{% endif %}</td>
-                        <td class="text-right non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}{% endif %}</td>
-                        <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
-                        <td class="text-right {% if item.nonprod_percentage > nonprod_percentage_threshold %}highlight-danger{% endif %}">
-                            {{ "{:.1f}%".format(item.nonprod_percentage) }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+        <!-- Product Section -->
+        <div class="section-container">
+            {% if use_interactive_charts %}
+            <!-- Product Costs Chart -->
+            <div class="chart-section">
+                <div class="chart-container full-width">
+                    <h2>Top Product Costs</h2>
+                    <div id="product_costs_chart" class="chart">
+                        {{ product_costs_chart.html|safe }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Product Cost Table -->
+            <div class="table-section">
+                <h2>Product ID Cost Details</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product ID</th>
+                            <th>Product Name</th>
+                            <th>Product Pillar Team</th>
+                            <th class="text-right">Prod YTD Cost</th>
+                            <th class="text-right">Non-Prod YTD Cost</th>
+                            <th class="text-right">Total YTD Cost</th>
+                            <th class="text-right">Non-Prod %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in product_cost_table %}
+                        <tr>
+                            <td>{{ item.product_id }}</td>
+                            <td>{{ item.product_name }}</td>
+                            <td>{{ item.pillar_team }}</td>
+                            <td class="text-right prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.prod_ytd_cost) }}{% endif %}</td>
+                            <td class="text-right non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}{% endif %}</td>
+                            <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
+                            <td class="text-right {% if item.nonprod_percentage > nonprod_percentage_threshold %}highlight-danger{% endif %}">
+                                {{ "{:.1f}%".format(item.nonprod_percentage) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <footer>

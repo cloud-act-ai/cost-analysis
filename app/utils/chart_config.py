@@ -69,22 +69,6 @@ CHART_OPTIONS = {
                 "type": "line",
                 "dash": "dash",
             },
-            {
-                "name": "PROD Forecasted Daily Cost (FY26)",
-                "column": "fy26_forecasted_avg_daily_spend",
-                "filter": {"environment_type": "PROD"},
-                "color": CHART_COLORS["FORECAST"],
-                "type": "line",
-                "dash": "dot",
-            },
-            {
-                "name": "NON-PROD Forecasted Daily Cost (FY26)",
-                "column": "fy26_forecasted_avg_daily_spend",
-                "filter": {"environment_type": "NON-PROD"},
-                "color": CHART_COLORS["FORECAST"],
-                "type": "line",
-                "dash": "dot",
-            },
         ],
         "annotations": [
             {

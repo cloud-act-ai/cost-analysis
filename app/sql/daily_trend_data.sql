@@ -1,10 +1,9 @@
 -- Basic daily trend data query
 SELECT
     date,
-    CASE 
+    CASE
         WHEN environment_type LIKE 'PROD%' THEN 'PROD'
-        WHEN environment_type LIKE '%NON-PROD%' THEN 'NON-PROD'
-        ELSE 'OTHER'
+        ELSE 'NON-PROD'
     END AS environment_type,
     daily_cost
 FROM `{project_id}.{dataset}.{avg_table}`

@@ -26,9 +26,10 @@ from app.utils.interactive_charts import (
 has_interactive_charts = are_charts_enabled()
 from app.data_access import (
     get_ytd_costs,
+    get_fy26_ytd_costs,
     get_fy26_costs,
     get_fy25_costs,
-    get_recent_comparisons, 
+    get_recent_comparisons,
     get_product_costs,
     get_cto_costs,
     get_pillar_costs,
@@ -38,6 +39,7 @@ from app.data_access import (
 # Import sample data for when BigQuery is not available
 from app.utils.sample_data import (
     create_sample_ytd_costs,
+    create_sample_fy26_ytd_costs,
     create_sample_fy26_costs,
     create_sample_fy25_costs,
     create_sample_day_comparison,
@@ -104,6 +106,7 @@ def generate_html_report(
         try:
             # Get data from BigQuery
             ytd_costs = get_ytd_costs(client, project_id, dataset, cost_table)
+            fy26_ytd_costs = get_fy26_ytd_costs(client, project_id, dataset, cost_table)
             fy26_costs = get_fy26_costs(client, project_id, dataset, cost_table)
             fy25_costs = get_fy25_costs(client, project_id, dataset, cost_table)
             day_comparison, week_comparison, month_comparison, date_info = get_recent_comparisons(
@@ -138,6 +141,7 @@ def generate_html_report(
             # If tables don't exist, create sample data
             logger.info("Using sample data for dashboard generation")
             ytd_costs = create_sample_ytd_costs()
+            fy26_ytd_costs = create_sample_fy26_ytd_costs()
             fy26_costs = create_sample_fy26_costs()
             fy25_costs = create_sample_fy25_costs()
             day_comparison = create_sample_day_comparison()
@@ -166,21 +170,32 @@ def generate_html_report(
         # Extract and process data (same regardless of source)
         prod_ytd = ytd_costs[ytd_costs['environment_type'] == 'PROD'] if not ytd_costs.empty and 'PROD' in ytd_costs['environment_type'].values else pd.DataFrame()
         nonprod_ytd = ytd_costs[ytd_costs['environment_type'] == 'NON-PROD'] if not ytd_costs.empty and 'NON-PROD' in ytd_costs['environment_type'].values else pd.DataFrame()
-        
+
+        # Extract FY26 YTD cost data
+        prod_fy26_ytd = fy26_ytd_costs[fy26_ytd_costs['environment_type'] == 'PROD'] if not fy26_ytd_costs.empty and 'PROD' in fy26_ytd_costs['environment_type'].values else pd.DataFrame()
+        nonprod_fy26_ytd = fy26_ytd_costs[fy26_ytd_costs['environment_type'] == 'NON-PROD'] if not fy26_ytd_costs.empty and 'NON-PROD' in fy26_ytd_costs['environment_type'].values else pd.DataFrame()
+
         prod_fy26 = fy26_costs[fy26_costs['environment_type'] == 'PROD'] if not fy26_costs.empty and 'PROD' in fy26_costs['environment_type'].values else pd.DataFrame()
         nonprod_fy26 = fy26_costs[fy26_costs['environment_type'] == 'NON-PROD'] if not fy26_costs.empty and 'NON-PROD' in fy26_costs['environment_type'].values else pd.DataFrame()
-        
+
         prod_fy25 = fy25_costs[fy25_costs['environment_type'] == 'PROD'] if not fy25_costs.empty and 'PROD' in fy25_costs['environment_type'].values else pd.DataFrame()
         nonprod_fy25 = fy25_costs[fy25_costs['environment_type'] == 'NON-PROD'] if not fy25_costs.empty and 'NON-PROD' in fy25_costs['environment_type'].values else pd.DataFrame()
         
         # Get the YTD cost values first
         prod_ytd_cost = prod_ytd['ytd_cost'].iloc[0] if not prod_ytd.empty and 'ytd_cost' in prod_ytd.columns else 0
         nonprod_ytd_cost = nonprod_ytd['ytd_cost'].iloc[0] if not nonprod_ytd.empty and 'ytd_cost' in nonprod_ytd.columns else 0
-            
+
+        # Get the FY26 YTD cost values
+        prod_fy26_ytd_cost = prod_fy26_ytd['ytd_cost'].iloc[0] if not prod_fy26_ytd.empty and 'ytd_cost' in prod_fy26_ytd.columns else 0
+        nonprod_fy26_ytd_cost = nonprod_fy26_ytd['ytd_cost'].iloc[0] if not nonprod_fy26_ytd.empty and 'ytd_cost' in nonprod_fy26_ytd.columns else 0
+
+        # Calculate total FY26 YTD cost
+        total_fy26_ytd_cost = prod_fy26_ytd_cost + nonprod_fy26_ytd_cost
+
         # Get FY25 costs for comparison - now directly from the ytd_cost column
         prod_fy25_cost = 0
         nonprod_fy25_cost = 0
-            
+
         # Get FY25 YTD costs for direct comparison with current YTD
         if not fy25_costs.empty and not prod_fy25.empty and 'ytd_cost' in prod_fy25.columns:
             prod_fy25_cost = prod_fy25['ytd_cost'].iloc[0]
@@ -200,15 +215,28 @@ def generate_html_report(
         else:
             nonprod_ytd_percent = 0
         
-        # Calculate total FY26 cost with percentage change vs FY25
+        # Calculate total FY26 cost with percentage change vs FY25 YTD (not total FY25)
         total_fy26_cost = fy26_costs['total_cost'].sum() if not fy26_costs.empty and 'total_cost' in fy26_costs.columns else 0
-        total_fy25_cost = fy25_costs['total_cost'].sum() if not fy25_costs.empty and 'total_cost' in fy25_costs.columns else 0
-        
-        # Calculate percentage change
-        if total_fy25_cost > 0:
-            fy26_percent = ((total_fy26_cost - total_fy25_cost) / total_fy25_cost) * 100
+
+        # Use FY25 YTD for percentage comparison, not total FY25
+        total_fy25_ytd_cost = 0
+        if not fy25_costs.empty and 'ytd_cost' in fy25_costs.columns:
+            total_fy25_ytd_cost = fy25_costs['ytd_cost'].sum()
         else:
-            fy26_percent = 0
+            total_fy25_ytd_cost = prod_fy25_cost + nonprod_fy25_cost
+
+        # Store total FY25 cost for display
+        total_fy25_cost = fy25_costs['total_cost'].sum() if not fy25_costs.empty and 'total_cost' in fy25_costs.columns else 0
+
+        # Calculate percentage change vs FY25 YTD
+        fy26_ytd_percent = 0
+        if total_fy25_ytd_cost > 0:
+            fy26_ytd_percent = ((total_fy26_ytd_cost - total_fy25_ytd_cost) / total_fy25_ytd_cost) * 100
+
+        # Calculate percentage change for Total FY26 Projected Cost vs FY25 YTD
+        fy26_percent = 0
+        if total_fy25_ytd_cost > 0:
+            fy26_percent = ((total_fy26_cost - total_fy25_ytd_cost) / total_fy25_ytd_cost) * 100
         
         # Calculate overall nonprod percentage
         total_ytd_cost = 0
@@ -273,30 +301,8 @@ def generate_html_report(
                     'nonprod_percentage': row.get('nonprod_percentage', 0.0)
                 })
         else:
-            # Fallback with hard-coded CTO data for testing
-            cto_cost_table = [
-                {
-                    'cto_org': 'Core Tech',
-                    'prod_ytd_cost': 320000.0,
-                    'nonprod_ytd_cost': 130000.0,
-                    'total_ytd_cost': 450000.0,
-                    'nonprod_percentage': 28.89
-                },
-                {
-                    'cto_org': 'Digital',
-                    'prod_ytd_cost': 280000.0,
-                    'nonprod_ytd_cost': 110000.0,
-                    'total_ytd_cost': 390000.0,
-                    'nonprod_percentage': 28.21
-                },
-                {
-                    'cto_org': 'Enterprise',
-                    'prod_ytd_cost': 240000.0,
-                    'nonprod_ytd_cost': 90000.0,
-                    'total_ytd_cost': 330000.0,
-                    'nonprod_percentage': 27.27
-                }
-            ]
+            # Empty fallback instead of hardcoded data
+            cto_cost_table = []
             
         # Process pillar cost table data
         if not pillar_costs.empty:
@@ -414,12 +420,17 @@ def generate_html_report(
             # Scorecard data
             'prod_ytd_cost': prod_ytd_cost,
             'nonprod_ytd_cost': nonprod_ytd_cost,
+            'prod_fy26_ytd_cost': prod_fy26_ytd_cost,
+            'nonprod_fy26_ytd_cost': nonprod_fy26_ytd_cost,
+            'total_fy26_ytd_cost': total_fy26_ytd_cost,
+            'total_fy25_ytd_cost': total_fy25_ytd_cost,
             'prod_fy25_cost': prod_fy25_cost,
             'nonprod_fy25_cost': nonprod_fy25_cost,
             'total_fy26_cost': total_fy26_cost,
             'total_fy25_cost': total_fy25_cost,
             'prod_ytd_percent': prod_ytd_percent,
             'nonprod_ytd_percent': nonprod_ytd_percent,
+            'fy26_ytd_percent': fy26_ytd_percent,
             'fy26_percent': fy26_percent,
             'nonprod_percentage': nonprod_percentage,
             'nonprod_percentage_change': nonprod_percentage_change,
@@ -428,6 +439,7 @@ def generate_html_report(
             'prod_ytd_percent_class': get_percent_class(prod_ytd_percent),
             'nonprod_ytd_percent_class': get_percent_class(nonprod_ytd_percent),
             'fy26_percent_class': get_percent_class(fy26_percent),
+            'fy26_ytd_percent_class': get_percent_class(fy26_ytd_percent),
             'nonprod_percentage_change_class': get_percent_class(nonprod_percentage_change),
 
             # Recent comparisons

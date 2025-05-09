@@ -65,7 +65,7 @@ def main():
         project_id = config.get('bigquery_project_id')
         dataset = config.get('bigquery_dataset')
         cost_table = config.get('bigquery_table', 'cost_analysis_new')
-        avg_table = config.get('avg_table', 'avg_daily_cost_table')
+        avg_table = config.get('bigquery_avg_table')
         
         # Verify required configurations
         if not project_id or not dataset:

@@ -18,6 +18,16 @@ def create_sample_ytd_costs() -> pd.DataFrame:
     return pd.DataFrame(data)
 
 
+def create_sample_fy26_ytd_costs() -> pd.DataFrame:
+    """Create sample FY26 year-to-date costs DataFrame."""
+    data = {
+        'environment_type': ['PROD', 'NON-PROD'],
+        'ytd_cost': [1250000.0, 450000.0],
+        'days': [90, 90]  # Assuming 90 days since start of FY26
+    }
+    return pd.DataFrame(data)
+
+
 def create_sample_fy26_costs() -> pd.DataFrame:
     """Create sample FY26 costs DataFrame."""
     data = {
@@ -263,17 +273,7 @@ def create_sample_daily_trend_data() -> pd.DataFrame:
         fy24_prod_cost = prod_fy24_avg * fy24_month_factor
         fy24_nonprod_cost = nonprod_fy24_avg * fy24_month_factor
         
-        # Generate forecast costs (only for dates after current date)
-        forecast_prod_cost = 0.0
-        forecast_nonprod_cost = 0.0
-        
-        if date > current_date:
-            # Simple linear forecast with some randomness
-            days_from_current = (date - current_date).days
-            forecast_growth = 1.0 + (days_from_current / 365) * 0.15  # 15% growth over the year
-            forecast_random = np.random.normal(1.0, 0.04)  # Small random factor
-            forecast_prod_cost = prod_cost * forecast_growth * forecast_random
-            forecast_nonprod_cost = nonprod_cost * forecast_growth * forecast_random
+        # No forecast generation needed
         
         # Production data
         daily_data.append({
@@ -283,8 +283,7 @@ def create_sample_daily_trend_data() -> pd.DataFrame:
             'fy26_avg_daily_spend': round(prod_daily_base, 2),  # Constant average line
             'fy25_avg_daily_spend': round(prod_fy25_avg, 2),  # Constant baseline
             'fy24_avg_daily_spend': round(prod_fy24_avg, 2),  # Constant baseline
-            'fy26_ytd_avg_daily_spend': round(prod_cost, 2) if date <= current_date else 0.0,
-            'fy26_forecasted_avg_daily_spend': 0.0 if date <= current_date else round(forecast_prod_cost, 2)
+            'fy26_ytd_avg_daily_spend': round(prod_cost, 2) if date <= current_date else 0.0
         })
 
         # Non-production data
@@ -295,8 +294,7 @@ def create_sample_daily_trend_data() -> pd.DataFrame:
             'fy26_avg_daily_spend': round(nonprod_daily_base, 2),  # Constant average line
             'fy25_avg_daily_spend': round(fy25_nonprod_cost, 2),
             'fy24_avg_daily_spend': round(fy24_nonprod_cost, 2),
-            'fy26_ytd_avg_daily_spend': round(nonprod_cost, 2) if date <= current_date else 0.0,
-            'fy26_forecasted_avg_daily_spend': 0.0 if date <= current_date else round(forecast_nonprod_cost, 2)
+            'fy26_ytd_avg_daily_spend': round(nonprod_cost, 2) if date <= current_date else 0.0
         })
     
     return pd.DataFrame(daily_data)
