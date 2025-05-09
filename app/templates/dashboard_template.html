@@ -429,14 +429,14 @@
                 <h3>FY26 YTD Cost (Actual)</h3>
                 <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(total_fy26_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(total_fy26_ytd_cost) }}{% endif %}</div>
                 <div class="change {{ fy26_ytd_percent_class }}">
-                    {% if fy26_ytd_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(fy26_ytd_percent) }} vs ${% if display_in_millions %}{{ "{:,.2f}M".format(total_fy25_ytd_cost/1000000) }}{% else %}{{ "{:,.2f}".format(total_fy25_ytd_cost) }}{% endif %} FY25 YTD
+                    {% if fy26_ytd_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(fy26_ytd_percent) }} FY25 YTD
                 </div>
             </div>
             <div class="scorecard">
                 <h3>Total FY26 Projected Cost</h3>
                 <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(total_fy26_cost/1000000) }}{% else %}${{ "{:,.2f}".format(total_fy26_cost) }}{% endif %}</div>
-                <div class="change {{ fy26_percent_class }}">
-                    {% if fy26_percent != 0 %}{% if fy26_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(fy26_percent) }} vs FY25 YTD{% endif %}
+                <div class="change">
+                    <!-- No FY25 comparison shown here -->
                 </div>
             </div>
             <div class="scorecard">

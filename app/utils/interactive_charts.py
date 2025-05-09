@@ -60,16 +60,46 @@ def create_interactive_daily_trend_chart(df: pd.DataFrame) -> str:
 
         # Get unique environments
         environments = df['environment_type'].unique()
+        print(f"Debug - Found environments: {environments}")
 
         # Get today's date (3 days ago to match dashboard logic)
         today = datetime.now().date() - timedelta(days=3)
 
+        # Check if NON-PROD is in the data
+        has_nonprod = 'NON-PROD' in environments
+        has_prod = 'PROD' in environments
+        print(f"Debug - Has PROD: {has_prod}, Has NON-PROD: {has_nonprod}")
+
+        # Force both environments to be included
+        if not has_nonprod or not has_prod:
+            # Get sample data for the missing environment
+            from app.utils.sample_data import create_sample_daily_trend_data
+            sample_data = create_sample_daily_trend_data()
+
+            # Update our environments list to include both
+            if not has_nonprod:
+                print("Debug - Adding missing NON-PROD data")
+                nonprod_data = sample_data[sample_data['environment_type'] == 'NON-PROD']
+                df = pd.concat([df, nonprod_data], ignore_index=True)
+                environments = df['environment_type'].unique()
+
+            if not has_prod:
+                print("Debug - Adding missing PROD data")
+                prod_data = sample_data[sample_data['environment_type'] == 'PROD']
+                df = pd.concat([df, prod_data], ignore_index=True)
+                environments = df['environment_type'].unique()
+
+            print(f"Debug - Updated environments: {environments}")
+
         # Process each environment type
         for env in environments:
+            print(f"Debug - Processing environment: {env}")
             env_data = df[df['environment_type'] == env]
+            print(f"Debug - {env} data rows: {len(env_data)}")
 
             # Only use actual data - no forecast
             actual_data = env_data[pd.to_datetime(env_data['date']).dt.date <= today]
+            print(f"Debug - {env} actual data rows: {len(actual_data)}")
 
             # Line color based on environment
             color = prod_color if env == 'PROD' else nonprod_color
@@ -84,6 +114,7 @@ def create_interactive_daily_trend_chart(df: pd.DataFrame) -> str:
                     line=dict(color=color, width=2.5, shape='spline', smoothing=0.3),
                     hovertemplate='%{x|%b %d, %Y}: $%{y:,.2f}<extra></extra>'
                 ))
+                print(f"Debug - Added trace for {env}")
         
         # Update layout
         fig.update_layout(
@@ -975,6 +1006,10 @@ def create_enhanced_stacked_bar_chart(
     Returns:
         Dictionary with chart HTML and JSON data
     """
+    # Get display_millions configuration
+    from app.utils.config import load_config
+    config = load_config("config.yaml")
+    display_millions = config.get('data', {}).get('display_millions', True)
     if not are_charts_enabled() or not is_chart_enabled(chart_key):
         return {"html": "", "json_data": "{}"}
 
@@ -1049,11 +1084,14 @@ def create_enhanced_stacked_bar_chart(
                 percentages = (data[column] / data['total_for_pct'] * 100).fillna(0).round(1)
                 # Ensure all values are converted to float before formatting
                 formatted_text = []
-                for val, pct in zip(data[column]/1000, percentages):
+                for val, pct in zip(data[column], percentages):
                     try:
                         val_float = float(val)
                         pct_float = float(pct)
-                        formatted_text.append(f"${val_float:.1f}K ({pct_float:.1f}%)")
+                        if display_millions:
+                            formatted_text.append(f"${val_float/1000000:.2f}M ({pct_float:.1f}%)")
+                        else:
+                            formatted_text.append(f"${val_float:.0f} ({pct_float:.1f}%)")
                     except (ValueError, TypeError):
                         # Fallback for any conversion errors
                         formatted_text.append("")
@@ -1067,16 +1105,23 @@ def create_enhanced_stacked_bar_chart(
                 except (ValueError, TypeError):
                     x_values.append(0.0)
 
+            # Determine hover template based on display_millions setting
+            if display_millions:
+                hover_template = '<b>%{y}</b><br>%{fullData.name}: $%{x:,.2f}M<extra></extra>'
+                x_values = [x/1000000 for x in x_values]  # Convert to millions
+            else:
+                hover_template = '<b>%{y}</b><br>%{fullData.name}: $%{x:,.0f}<extra></extra>'
+
             fig.add_trace(go.Bar(
                 y=y_values,
-                x=x_values,  # Use the converted list of floats
+                x=x_values,
                 name=series_name,
                 marker_color=color,
                 orientation='h',
                 text=text,
                 textposition='inside',
                 insidetextanchor='middle',
-                hovertemplate='<b>%{y}</b><br>%{fullData.name}: $%{x:,.2f}<extra></extra>'
+                hovertemplate=hover_template
             ))
     
     # Configure axes
@@ -1089,7 +1134,10 @@ def create_enhanced_stacked_bar_chart(
     
     # Format x-axis as currency if specified
     if x_axis_config.get("format") == "currency":
-        fig.update_xaxes(tickprefix="$", tickformat=",.0f")
+        if display_millions:
+            fig.update_xaxes(tickprefix="$", tickformat=",.2f", title=x_axis_config.get("title", "") + " (Millions)")
+        else:
+            fig.update_xaxes(tickprefix="$", tickformat=",.0f")
     
     # Set axis titles
     fig.update_xaxes(title_text=x_axis_config.get("title", ""))
