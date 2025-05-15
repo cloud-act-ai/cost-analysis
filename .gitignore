@@ -86,7 +86,7 @@ yarn-error.log*
 reports/*.html
 !reports/.gitkeep
 credentials.json
-config.yaml
+
 
 # Generated data
 tmp/
