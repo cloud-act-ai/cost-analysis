@@ -225,8 +225,8 @@ def generate_html_report(
         else:
             total_fy25_ytd_cost = prod_fy25_cost + nonprod_fy25_cost
 
-        # Store total FY25 cost for display
-        total_fy25_cost = fy25_costs['total_cost'].sum() if not fy25_costs.empty and 'total_cost' in fy25_costs.columns else 0
+        # Store total FY25 cost for display - also use YTD cost, not total cost
+        total_fy25_cost = total_fy25_ytd_cost
 
         # Calculate percentage change vs FY25 YTD
         fy26_ytd_percent = 0
@@ -253,12 +253,12 @@ def generate_html_report(
         else:
             nonprod_percentage = 0
             
-        # Calculate nonprod percentage change compared to FY25
-        total_fy25_ytd_cost = fy25_costs['total_cost'].sum() if not fy25_costs.empty and 'total_cost' in fy25_costs.columns else 0
-        nonprod_fy25_cost = nonprod_fy25['total_cost'].iloc[0] if not nonprod_fy25.empty and 'total_cost' in nonprod_fy25.columns else 0
+        # Calculate nonprod percentage change compared to FY25 - using YTD costs for both
+        # We already have total_fy25_ytd_cost calculated above
+        nonprod_fy25_ytd_cost = nonprod_fy25['ytd_cost'].iloc[0] if not nonprod_fy25.empty and 'ytd_cost' in nonprod_fy25.columns else 0
         
         if total_fy25_ytd_cost > 0:
-            fy25_nonprod_percentage = (nonprod_fy25_cost / total_fy25_ytd_cost) * 100
+            fy25_nonprod_percentage = (nonprod_fy25_ytd_cost / total_fy25_ytd_cost) * 100
             nonprod_percentage_change = nonprod_percentage - fy25_nonprod_percentage
         else:
             nonprod_percentage_change = 0

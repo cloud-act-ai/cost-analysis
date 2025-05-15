@@ -7,9 +7,6 @@ mkdir -p reports
 echo "FinOps360 Cost Analysis Dashboard Generator"
 echo "-------------------------------------------"
 
-# Set Google Application Credentials
-export GOOGLE_APPLICATION_CREDENTIALS=~/finops360-dev-2025-8fe770ea99a8.json
-
 echo "✓ Setting Google Application Credentials"
 
 # Check BigQuery authentication
