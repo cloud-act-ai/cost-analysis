@@ -6,7 +6,11 @@ SELECT
     SUM(CASE WHEN environment = 'NON-PROD' THEN cost ELSE 0 END) AS nonprod_ytd_cost,
     SUM(cost) AS total_ytd_cost
 FROM `{project_id}.{dataset}.{table}`
-WHERE date BETWEEN '2025-02-01' AND DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)
+WHERE 
+    date BETWEEN '2025-02-01' AND DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)
+    {cto_filter}
+    {pillar_filter}
+    {product_filter}
 GROUP BY pillar_name
 HAVING SUM(CASE WHEN environment = 'NON-PROD' THEN cost ELSE 0 END) > 0
 ORDER BY nonprod_ytd_cost DESC

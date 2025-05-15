@@ -30,11 +30,27 @@ logger = logging.getLogger(__name__)
 # Thread pool for running BigQuery queries in async functions
 _thread_pool = ThreadPoolExecutor(max_workers=5)
 
-async def get_ytd_costs_async(client: bigquery.Client, project_id: str, dataset: str, table: str) -> pd.DataFrame:
+async def get_ytd_costs_async(
+    client: bigquery.Client, 
+    project_id: str, 
+    dataset: str, 
+    table: str,
+    cto_filter: str = "",
+    pillar_filter: str = "",
+    product_filter: str = ""
+) -> pd.DataFrame:
     """
     Get year-to-date costs for production and non-production (async version).
     """
-    query = load_sql_query("ytd_costs", project_id=project_id, dataset=dataset, table=table)
+    query = load_sql_query(
+        "ytd_costs", 
+        project_id=project_id, 
+        dataset=dataset, 
+        table=table,
+        cto_filter=cto_filter,
+        pillar_filter=pillar_filter,
+        product_filter=product_filter
+    )
     
     try:
         # Run the query in a thread to not block the event loop
@@ -48,12 +64,28 @@ async def get_ytd_costs_async(client: bigquery.Client, project_id: str, dataset:
         # Return sample data on error
         return create_sample_ytd_costs()
 
-async def get_fy26_ytd_costs_async(client: bigquery.Client, project_id: str, dataset: str, table: str) -> pd.DataFrame:
+async def get_fy26_ytd_costs_async(
+    client: bigquery.Client, 
+    project_id: str, 
+    dataset: str, 
+    table: str,
+    cto_filter: str = "",
+    pillar_filter: str = "",
+    product_filter: str = ""
+) -> pd.DataFrame:
     """
     Get FY26 year-to-date costs for production and non-production (async version).
     This represents actual costs from the beginning of FY26 (2025-02-01) to current date - 3 days.
     """
-    query = load_sql_query("fy26_ytd_costs", project_id=project_id, dataset=dataset, table=table)
+    query = load_sql_query(
+        "fy26_ytd_costs", 
+        project_id=project_id, 
+        dataset=dataset, 
+        table=table,
+        cto_filter=cto_filter,
+        pillar_filter=pillar_filter,
+        product_filter=product_filter
+    )
     
     try:
         result = await asyncio.get_event_loop().run_in_executor(
@@ -65,11 +97,27 @@ async def get_fy26_ytd_costs_async(client: bigquery.Client, project_id: str, dat
         logger.error(f"Error in get_fy26_ytd_costs_async: {e}")
         return create_sample_fy26_ytd_costs()
 
-async def get_fy26_costs_async(client: bigquery.Client, project_id: str, dataset: str, table: str) -> pd.DataFrame:
+async def get_fy26_costs_async(
+    client: bigquery.Client, 
+    project_id: str, 
+    dataset: str, 
+    table: str,
+    cto_filter: str = "",
+    pillar_filter: str = "",
+    product_filter: str = ""
+) -> pd.DataFrame:
     """
     Get projected FY26 costs for production and non-production (async version).
     """
-    query = load_sql_query("fy26_costs", project_id=project_id, dataset=dataset, table=table)
+    query = load_sql_query(
+        "fy26_costs", 
+        project_id=project_id, 
+        dataset=dataset, 
+        table=table,
+        cto_filter=cto_filter,
+        pillar_filter=pillar_filter,
+        product_filter=product_filter
+    )
     
     try:
         result = await asyncio.get_event_loop().run_in_executor(
@@ -81,11 +129,27 @@ async def get_fy26_costs_async(client: bigquery.Client, project_id: str, dataset
         logger.error(f"Error in get_fy26_costs_async: {e}")
         return create_sample_fy26_costs()
 
-async def get_fy25_costs_async(client: bigquery.Client, project_id: str, dataset: str, table: str) -> pd.DataFrame:
+async def get_fy25_costs_async(
+    client: bigquery.Client, 
+    project_id: str, 
+    dataset: str, 
+    table: str,
+    cto_filter: str = "",
+    pillar_filter: str = "",
+    product_filter: str = ""
+) -> pd.DataFrame:
     """
     Get FY25 costs for year-over-year comparison (async version).
     """
-    query = load_sql_query("fy25_costs", project_id=project_id, dataset=dataset, table=table)
+    query = load_sql_query(
+        "fy25_costs", 
+        project_id=project_id, 
+        dataset=dataset, 
+        table=table,
+        cto_filter=cto_filter,
+        pillar_filter=pillar_filter,
+        product_filter=product_filter
+    )
     
     try:
         result = await asyncio.get_event_loop().run_in_executor(
@@ -287,7 +351,10 @@ async def get_product_costs_async(
     dataset: str, 
     table: str, 
     top_n: int = 10, 
-    nonprod_pct_threshold: int = 30
+    nonprod_pct_threshold: int = 30,
+    cto_filter: str = "",
+    pillar_filter: str = "",
+    product_filter: str = ""
 ) -> pd.DataFrame:
     """
     Get costs by product ID with prod/nonprod breakdown (async version).
@@ -297,7 +364,10 @@ async def get_product_costs_async(
         project_id=project_id, 
         dataset=dataset, 
         table=table,
-        top_n=top_n
+        top_n=top_n,
+        cto_filter=cto_filter,
+        pillar_filter=pillar_filter,
+        product_filter=product_filter
     )
     
     try:
@@ -315,7 +385,10 @@ async def get_cto_costs_async(
     project_id: str, 
     dataset: str, 
     table: str, 
-    top_n: int = 10
+    top_n: int = 10,
+    cto_filter: str = "",
+    pillar_filter: str = "",
+    product_filter: str = ""
 ) -> pd.DataFrame:
     """
     Get costs by CTO organization with prod/nonprod breakdown (async version).
@@ -325,7 +398,10 @@ async def get_cto_costs_async(
         project_id=project_id, 
         dataset=dataset, 
         table=table,
-        top_n=top_n
+        top_n=top_n,
+        cto_filter=cto_filter,
+        pillar_filter=pillar_filter,
+        product_filter=product_filter
     )
     
     try:
@@ -343,7 +419,10 @@ async def get_pillar_costs_async(
     project_id: str, 
     dataset: str, 
     table: str, 
-    top_n: int = 10
+    top_n: int = 10,
+    cto_filter: str = "",
+    pillar_filter: str = "",
+    product_filter: str = ""
 ) -> pd.DataFrame:
     """
     Get costs by product pillar team with prod/nonprod breakdown (async version).
@@ -353,7 +432,10 @@ async def get_pillar_costs_async(
         project_id=project_id, 
         dataset=dataset, 
         table=table,
-        top_n=top_n
+        top_n=top_n,
+        cto_filter=cto_filter,
+        pillar_filter=pillar_filter,
+        product_filter=product_filter
     )
     
     try:

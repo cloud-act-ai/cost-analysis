@@ -74,7 +74,11 @@ def get_config():
 async def dashboard(
     request: Request,
     client: bigquery.Client = Depends(get_bigquery_client),
-    config: Dict[str, Any] = Depends(get_config)
+    config: Dict[str, Any] = Depends(get_config),
+    cto: Optional[str] = None,
+    pillar: Optional[str] = None,
+    product: Optional[str] = None,
+    show_sql: bool = False
 ):
     """
     Main dashboard endpoint that renders the HTML dashboard asynchronously
@@ -99,7 +103,7 @@ async def dashboard(
         os.makedirs(output_dir, exist_ok=True)
         output_path = output_dir / "finops_dashboard.html"
         
-        # Generate report asynchronously
+        # Pass filter parameters to the report generator
         await generate_html_report_async(
             client=client,
             project_id=project_id,
@@ -108,7 +112,13 @@ async def dashboard(
             avg_table=avg_table,
             template_path=str(APP_DIR / "templates" / "dashboard_template.html"),
             output_path=str(output_path),
-            use_interactive_charts=interactive_charts
+            use_interactive_charts=interactive_charts,
+            filters={
+                'cto': cto,
+                'pillar': pillar,
+                'product': product,
+                'show_sql': show_sql
+            }
         )
         
         # Read the generated HTML file and return it

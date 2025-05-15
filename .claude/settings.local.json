@@ -31,7 +31,8 @@
       "Bash(uvicorn:*)",
       "Bash(./cleanup_legacy.sh:*)",
       "Bash(./reorganize.sh:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(./run_sample.sh:*)"
     ],
     "deny": []
   }

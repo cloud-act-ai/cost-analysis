@@ -62,7 +62,8 @@ async def generate_html_report_async(
     avg_table: str,
     template_path: str,
     output_path: str,
-    use_interactive_charts: bool = True
+    use_interactive_charts: bool = True,
+    filters: Optional[Dict[str, Any]] = None
 ) -> str:
     """
     Generate a comprehensive HTML report asynchronously.
@@ -81,6 +82,29 @@ async def generate_html_report_async(
         Path to the generated HTML report
     """
     try:
+        # Initialize filters if not provided
+        if filters is None:
+            filters = {
+                'cto': None,
+                'pillar': None,
+                'product': None,
+                'show_sql': False
+            }
+        
+        # Extract filter values
+        selected_cto = filters.get('cto')
+        selected_pillar = filters.get('pillar')
+        selected_product = filters.get('product')
+        show_sql = filters.get('show_sql', False)
+        
+        # Build filter conditions for SQL queries
+        cto_filter = f"AND cto = '{selected_cto}'" if selected_cto else ""
+        pillar_filter = f"AND tr_product_pillar_team = '{selected_pillar}'" if selected_pillar else ""
+        product_filter = f"AND tr_product_id = '{selected_product}'" if selected_product else ""
+        
+        # Store SQL queries if show_sql is enabled
+        sql_queries = {}
+        
         # Load config settings for data display
         config = load_config("config.yaml")
         data_config = config.get('data', {})
@@ -111,10 +135,19 @@ async def generate_html_report_async(
 
         try:
             # Run all data fetching tasks in parallel for better performance
-            ytd_costs_task = get_ytd_costs_async(client, project_id, dataset, cost_table)
-            fy26_ytd_costs_task = get_fy26_ytd_costs_async(client, project_id, dataset, cost_table)
-            fy26_costs_task = get_fy26_costs_async(client, project_id, dataset, cost_table)
-            fy25_costs_task = get_fy25_costs_async(client, project_id, dataset, cost_table)
+            # Apply filters to all queries
+            # Core metrics tasks
+            ytd_costs_task = get_ytd_costs_async(client, project_id, dataset, cost_table, 
+                cto_filter=cto_filter, pillar_filter=pillar_filter, product_filter=product_filter)
+            
+            fy26_ytd_costs_task = get_fy26_ytd_costs_async(client, project_id, dataset, cost_table,
+                cto_filter=cto_filter, pillar_filter=pillar_filter, product_filter=product_filter)
+            
+            fy26_costs_task = get_fy26_costs_async(client, project_id, dataset, cost_table,
+                cto_filter=cto_filter, pillar_filter=pillar_filter, product_filter=product_filter)
+            
+            fy25_costs_task = get_fy25_costs_async(client, project_id, dataset, cost_table,
+                cto_filter=cto_filter, pillar_filter=pillar_filter, product_filter=product_filter)
             
             recent_comparisons_task = get_recent_comparisons_async(
                 client, project_id, dataset, cost_table, 
@@ -128,21 +161,66 @@ async def generate_html_report_async(
                 month_previous=month_previous
             )
             
+            # Breakdown cost tasks with filters
             product_costs_task = get_product_costs_async(
                 client, project_id, dataset, cost_table,
                 top_n=top_products,
-                nonprod_pct_threshold=nonprod_threshold
+                nonprod_pct_threshold=nonprod_threshold,
+                cto_filter=cto_filter,
+                pillar_filter=pillar_filter,
+                product_filter=product_filter
             )
             
             cto_costs_task = get_cto_costs_async(
                 client, project_id, dataset, cost_table,
-                top_n=top_products
+                top_n=top_products,
+                cto_filter=cto_filter,
+                pillar_filter=pillar_filter,
+                product_filter=product_filter
             )
             
             pillar_costs_task = get_pillar_costs_async(
                 client, project_id, dataset, cost_table,
-                top_n=top_products
+                top_n=top_products,
+                cto_filter=cto_filter,
+                pillar_filter=pillar_filter,
+                product_filter=product_filter
             )
+            
+            # If show_sql is enabled, save the queries
+            if show_sql:
+                sql_queries['cto_costs'] = load_sql_query(
+                    "cto_costs", 
+                    project_id=project_id, 
+                    dataset=dataset, 
+                    table=cost_table,
+                    top_n=top_products,
+                    cto_filter=cto_filter,
+                    pillar_filter=pillar_filter,
+                    product_filter=product_filter
+                )
+                
+                sql_queries['pillar_costs'] = load_sql_query(
+                    "pillar_costs", 
+                    project_id=project_id, 
+                    dataset=dataset, 
+                    table=cost_table,
+                    top_n=top_products,
+                    cto_filter=cto_filter,
+                    pillar_filter=pillar_filter,
+                    product_filter=product_filter
+                )
+                
+                sql_queries['product_costs'] = load_sql_query(
+                    "product_costs", 
+                    project_id=project_id, 
+                    dataset=dataset, 
+                    table=cost_table,
+                    top_n=top_products,
+                    cto_filter=cto_filter,
+                    pillar_filter=pillar_filter,
+                    product_filter=product_filter
+                )
             
             daily_trend_data_task = get_daily_trend_data_async(client, project_id, dataset, avg_table)
             
@@ -447,6 +525,41 @@ async def generate_html_report_async(
             else:
                 return "neutral-change"   # No change
         
+        # Create lists of CTO organizations, pillar teams, and products for filtering
+        cto_list = []
+        pillar_list = []
+        product_list = []
+        pillar_to_cto = {}  # Mapping of pillar to CTO for dropdown filtering
+        
+        # Extract unique CTOs from CTO costs
+        for item in cto_costs:
+            if 'cto_org' in item and item['cto_org'] not in cto_list:
+                cto_list.append(item['cto_org'])
+        
+        # Extract unique pillars from pillar costs
+        for item in pillar_costs:
+            if 'pillar_name' in item and item['pillar_name'] not in pillar_list:
+                pillar_list.append(item['pillar_name'])
+        
+        # Create product list with additional details for filtering
+        for item in product_costs:
+            if 'product_name' in item and 'pillar_team' in item and 'product_id' in item:
+                product_list.append({
+                    'id': item.get('product_id', ''),
+                    'name': item.get('product_name', ''),
+                    'pillar': item.get('pillar_team', ''),
+                    'display': item.get('display_id', f"{item.get('pillar_team', '')} - {item.get('product_id', '')}")
+                })
+                
+                # Build pillar to CTO mapping
+                if 'pillar_team' in item and 'cto_org' in item:
+                    pillar_to_cto[item['pillar_team']] = item['cto_org']
+        
+        # Sort the lists for easier selection
+        cto_list.sort()
+        pillar_list.sort()
+        product_list.sort(key=lambda x: x['display'])
+        
         # Prepare template data
         # Check if we're using sample data
         using_sample_data = hasattr(client, "__class__") and client.__class__.__name__ == "MagicMock"
@@ -465,6 +578,17 @@ async def generate_html_report_async(
 
             # Interactive charts flag
             'use_interactive_charts': use_interactive_charts,
+            
+            # Filter information
+            'cto_list': cto_list,
+            'pillar_list': pillar_list,
+            'product_list': product_list,
+            'pillar_to_cto': pillar_to_cto,
+            'selected_cto': selected_cto,
+            'selected_pillar': selected_pillar,
+            'selected_product': selected_product,
+            'show_sql': show_sql,
+            'sql_queries': sql_queries,
 
             # Scorecard data
             'prod_ytd_cost': prod_ytd_cost,
