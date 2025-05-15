@@ -12,7 +12,7 @@ import json
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Tuple, Union
 
-from app.utils.chart_config import (
+from app.utils.chart.config import (
     get_chart_config,
     is_chart_enabled,
     are_charts_enabled,
@@ -1007,7 +1007,7 @@ def create_enhanced_stacked_bar_chart(
         Dictionary with chart HTML and JSON data
     """
     # Get display_millions configuration
-    from app.utils.config import load_config
+    from app.utils.config_loader import load_config
     config = load_config("config.yaml")
     display_millions = config.get('data', {}).get('display_millions', True)
     if not are_charts_enabled() or not is_chart_enabled(chart_key):

@@ -1,132 +1,143 @@
 # FinOps360 Cost Analysis Dashboard
 
-A comprehensive cloud cost analysis tool with environment cost breakdowns, trend analysis, and forecasting capabilities. The system analyzes both Production and Non-Production costs with percentage breakdowns and provides detailed visualizations.
+A FastAPI application for visualizing and analyzing cloud costs data.
 
 ## Features
 
-- **Unified Environment Dashboard**: View PROD and NON-PROD costs together with percentage calculations
-- **Trend Analysis**: Track daily and monthly cost trends with historical comparisons
-- **Fiscal Year Comparisons**: Compare costs across different fiscal years (FY24, FY25, FY26)
-- **Forecasting**: Predict future costs based on historical patterns and growth trends
-- **Product Analysis**: View costs by product ID with Production/Non-Production breakdown
-- **Average Daily Cost Metrics**: Analyze cost data using average daily spend rather than raw totals
-- **Interactive HTML Reports**: Generate detailed HTML reports with interactive charts and tables
-
-## Quick Start
-
-1. Edit `config.yaml` with your BigQuery settings:
-```yaml
-bigquery:
-  project_id: your-project-id
-  dataset: your-dataset
-  table: cost_analysis_new
-  avg_table: avg_daily_cost_table
-```
-
-2. Run the dashboard with a single command:
-```bash
-./run.sh
-```
-
-This script will:
-1. Always use BigQuery for data access
-2. Generate interactive charts if Plotly is installed
-3. Create a comprehensive HTML dashboard with visualizations
+- Interactive dashboard for cost analysis
+- Asynchronous data processing for better performance
+- Support for BigQuery data source
+- Interactive charts for data visualization
+- Responsive design for all device sizes
 
 ## Installation
 
-1. Install required packages:
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd cost-analysis
+
+# Install dependencies (automatically done when running the app)
 pip install -r requirements.txt
 ```
 
-2. Enable interactive charts by installing Plotly:
+## Running the Application
+
+The application can be run in different modes depending on your needs:
+
 ```bash
-pip install plotly>=5.14.0
+# Run in production mode
+./run.sh
+
+# Run in development mode with auto-reload
+./run.sh --dev
+
+# Run on a specific port
+./run.sh --port=8081
+
+# Run with sample data (no BigQuery credentials needed)
+./run_sample.sh
+
+# Run sample data in development mode
+./run_sample.sh --dev
+
+# Display help information
+./run.sh --help
 ```
 
-3. Set up your BigQuery credentials (if needed):
+### Sample Data Mode
+
+The application can operate in two data modes:
+
+1. **BigQuery Mode** - Connects to Google BigQuery to fetch real cost data
+   - Requires valid Google Cloud credentials
+   - Set `GOOGLE_APPLICATION_CREDENTIALS` environment variable to your service account key
+
+2. **Sample Data Mode** - Uses generated sample data for demonstration
+   - No credentials required
+   - Perfect for testing and demos
+   - Displays a "DEMO MODE" banner at the top of the dashboard
+
 ```bash
-export GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
+# Production mode
+./run.sh [port] [workers]
+
+# Development mode with auto-reload
+./run.sh --dev
+
+# Examples:
+./run.sh                    # Run on default port 8080
+./run.sh 9000               # Run on port 9000
+./run.sh --port=9000        # Same as above
+./run.sh --workers=2        # Run with 2 workers
+./run.sh --dev              # Run in development mode
 ```
 
-4. Authenticate with Google Cloud (optional):
-```bash
-gcloud auth login
-gcloud config set project your-project-id
-```
+## API Endpoints
+
+- `/` - Main dashboard
+- `/loading` - Loading page with auto-redirect
+- `/api/health` - Health check endpoint
 
 ## Project Structure
 
-The application has been streamlined with a clean architecture:
-
-- `app/`: Main application code
-  - `main.py`: Primary entry point
-  - `dashboard.py`: Dashboard generation logic
-  - `data_access.py`: BigQuery data access functions
-  - `data/`: Schema definitions and data files
-  - `sql/`: SQL query templates for BigQuery
-  - `templates/`: HTML templates for the dashboard
-  - `utils/`: Utility modules for configuration, BigQuery access, and chart generation
-- `reports/`: Generated HTML reports
-- `run.sh`: Main script to run the application
-
-## Usage
-
-### Advanced Usage
-
-The dashboard offers interactive charts with the following features:
-- Filter by environment (PROD/NON-PROD)
-- View forecasted costs
-- Explore product cost breakdowns
-- Analyze trends and patterns
-
-You can run the underlying Python module directly:
-
-```bash
-python -m app.main
+```
+cost-analysis/
+├── app/                    # Main application package
+│   ├── core/               # Core application code
+│   │   ├── app.py          # FastAPI application
+│   │   ├── dashboard.py    # Dashboard generator
+│   │   └── data_access.py  # Data access functions
+│   ├── utils/              # Utility modules
+│   │   ├── chart/          # Chart generation utilities
+│   │   │   ├── config.py   # Chart configuration
+│   │   │   └── generator.py # Chart generator
+│   │   ├── config_loader.py # Configuration loader
+│   │   ├── data_generator.py # Sample data generator
+│   │   └── db.py           # Database utilities
+│   ├── config/             # Configuration files
+│   │   ├── config.yaml     # Main configuration
+│   │   └── requirements.txt # Dependencies
+│   ├── templates/          # HTML templates
+│   │   ├── dashboard_template.html
+│   │   ├── error.html
+│   │   └── loading.html
+│   ├── sql/                # SQL queries
+│   ├── static/             # Static assets
+│   └── __main__.py         # Entry point
+├── docs/                   # Documentation
+├── requirements.txt        # Symlink to app/config/requirements.txt
+├── config.yaml             # Symlink to app/config/config.yaml
+└── run.sh                  # Run script
 ```
 
-Options:
-- `--output`: Output HTML file path
-- `--config`: Path to config file
-- `--template`: Path to HTML template
-- `--no-interactive`: Disable interactive charts
+## Configuration
 
-## BigQuery Integration
+Configuration is managed via `app/config/config.yaml`:
 
-For detailed instructions on integrating with your own BigQuery data sources, see [BIGQUERY_INTEGRATION.md](BIGQUERY_INTEGRATION.md).
+```yaml
+# BigQuery settings
+bigquery:
+  project_id: your-project-id
+  dataset: your-dataset
+  cost_table: your-cost-table
+  avg_table: your-avg-table-name
 
-### Loading Sample Data to BigQuery
+# Chart settings
+charts:
+  enabled: true
 
-The application includes scripts to generate and load sample data to your BigQuery instance:
-
-1. Generate sample data:
-```bash
-python app/data/generate_data.py
-```
-
-2. Load the data to BigQuery:
-```bash
-./load_to_bigquery.sh
-```
-
-This will create and populate two tables in your configured BigQuery project:
-- `cost_analysis_new`: Contains detailed cost data by product, environment, etc.
-- `avg_daily_cost_table`: Contains daily cost averages and forecasts
-
-The script will automatically:
-- Create or replace the tables
-- Load the sample data
-- Verify the data was loaded correctly
-
-**Note**: You must be authenticated with the Google Cloud CLI for this to work:
-```bash
-gcloud auth application-default login
+# Data settings
+data:
+  day_current_date: "2025-05-03"
+  day_previous_date: "2025-05-02"
+  # ... other settings
+  
+# Output settings
+output:
+  directory: reports
 ```
 
 ## License
 
-© 2025 FinOps360
-
-
+[Include license information here]

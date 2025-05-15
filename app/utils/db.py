@@ -76,6 +76,11 @@ def run_query(client: bigquery.Client, query: str) -> pd.DataFrame:
     Returns:
         DataFrame with query results
     """
+    # Check if client is a mock (sample data mode)
+    if hasattr(client, "__class__") and client.__class__.__name__ == "MagicMock":
+        logger.warning("Using mock BigQuery client - returning empty DataFrame to trigger sample data")
+        return pd.DataFrame()
+        
     try:
         # Log the query for debugging purposes
         logger.info(f"Executing query: \n{query}\n")
@@ -87,8 +92,18 @@ def run_query(client: bigquery.Client, query: str) -> pd.DataFrame:
         logger.info(f"Query job ID: {job.job_id}")
         logger.info(f"Query state: {job.state}")
         
-        # Convert to dataframe
-        df = job.to_dataframe(create_bqstorage_client=True)
+        # Convert to dataframe with error handling for db-dtypes
+        try:
+            # Try with optimized storage client
+            df = job.to_dataframe(create_bqstorage_client=True)
+        except ImportError as e:
+            if "db-dtypes" in str(e):
+                logger.warning("db-dtypes package not found. Using standard conversion method.")
+                # Fall back to standard conversion without BigQuery Storage API
+                df = job.to_dataframe(create_bqstorage_client=False)
+            else:
+                # Re-raise other import errors
+                raise
         
         # Log result summary
         logger.info(f"Query returned {len(df)} rows")

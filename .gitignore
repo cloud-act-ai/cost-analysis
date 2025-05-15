@@ -91,3 +91,5 @@ config.yaml
 # Generated data
 tmp/
 temp/
+*.csv 
+.claude

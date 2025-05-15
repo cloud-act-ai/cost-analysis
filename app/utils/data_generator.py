@@ -10,12 +10,24 @@ from typing import Dict, Any, List, Tuple
 
 def create_sample_ytd_costs() -> pd.DataFrame:
     """Create sample year-to-date costs DataFrame."""
+    # Create more realistic values with some randomization
+    prod_cost = 3200000 * (1 + np.random.normal(0, 0.05))  # 3.2M with 5% random variation
+    nonprod_cost = 1350000 * (1 + np.random.normal(0, 0.05))  # 1.35M with 5% random variation
+    
+    # Get days since Feb 1, 2025 (start of FY26)
+    fy_start = datetime(2025, 2, 1)
+    today = datetime.now()
+    days_diff = max(1, (today - fy_start).days)
+    
     data = {
         'environment_type': ['PROD', 'NON-PROD'],
-        'ytd_cost': [207944.33, 85000.0],
-        'days': [120, 120]
+        'ytd_cost': [prod_cost, nonprod_cost],
+        'days': [days_diff, days_diff]
     }
-    return pd.DataFrame(data)
+    
+    df = pd.DataFrame(data)
+    print(f"Generated sample YTD costs data: {df.to_dict()}")
+    return df
 
 
 def create_sample_fy26_ytd_costs() -> pd.DataFrame:

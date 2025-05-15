@@ -27,7 +27,11 @@
       "Bash(grep \"create_sample_fy26_ytd_costs\" app/utils/sample_data.py)",
       "Bash(grep \"FY26 YTD Cost\" app/templates/dashboard_template.html)",
       "Bash(cat:*)",
-      "Bash(/Users/gurukallam/projects/finops360/cost-analysis/run.sh:*)"
+      "Bash(/Users/gurukallam/projects/finops360/cost-analysis/run.sh:*)",
+      "Bash(uvicorn:*)",
+      "Bash(./cleanup_legacy.sh:*)",
+      "Bash(./reorganize.sh:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }

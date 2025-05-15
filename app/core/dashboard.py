@@ -1,43 +1,44 @@
 """
-Dashboard generation for FinOps360 cost analysis.
+FastAPI-compatible async dashboard generation for FinOps360 cost analysis.
 """
 import os
 import logging
 import jinja2
 import pandas as pd
+import asyncio
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, Union, List, Tuple
+from pathlib import Path
 
 from google.cloud import bigquery
 
-from app.utils.config import FinOpsConfig, load_config
-from app.utils.chart_config import are_charts_enabled
+from app.utils.config_loader import FinOpsConfig, load_config
+from app.utils.chart.config import are_charts_enabled
 
 # Import interactive chart functionality
-from app.utils.interactive_charts import (
+from app.utils.chart.generator import (
     create_enhanced_daily_trend_chart,
     create_enhanced_cto_costs_chart, 
     create_enhanced_pillar_costs_chart,
-    create_enhanced_product_costs_chart,
-    generate_all_enhanced_charts
+    create_enhanced_product_costs_chart
 )
 
-# Configure interactive charts (can be toggled in chart_config.py)
-has_interactive_charts = are_charts_enabled()
-from app.data_access import (
-    get_ytd_costs,
-    get_fy26_ytd_costs,
-    get_fy26_costs,
-    get_fy25_costs,
-    get_recent_comparisons,
-    get_product_costs,
-    get_cto_costs,
-    get_pillar_costs,
-    get_daily_trend_data
+# Import async data access functions
+from app.core.data_access import (
+    get_ytd_costs_async,
+    get_fy26_ytd_costs_async,
+    get_fy26_costs_async,
+    get_fy25_costs_async,
+    get_recent_comparisons_async,
+    get_product_costs_async,
+    get_cto_costs_async,
+    get_pillar_costs_async,
+    get_daily_trend_data_async,
+    create_sample_date_info
 )
 
 # Import sample data for when BigQuery is not available
-from app.utils.sample_data import (
+from app.utils.data_generator import (
     create_sample_ytd_costs,
     create_sample_fy26_ytd_costs,
     create_sample_fy26_costs,
@@ -53,7 +54,7 @@ from app.utils.sample_data import (
 
 logger = logging.getLogger(__name__)
 
-def generate_html_report(
+async def generate_html_report_async(
     client: bigquery.Client,
     project_id: str,
     dataset: str,
@@ -64,7 +65,7 @@ def generate_html_report(
     use_interactive_charts: bool = True
 ) -> str:
     """
-    Generate a comprehensive HTML report.
+    Generate a comprehensive HTML report asynchronously.
     
     Args:
         client: BigQuery client
@@ -103,13 +104,19 @@ def generate_html_report(
         nonprod_threshold = data_config.get('nonprod_percentage_threshold', 30)
         display_millions = data_config.get('display_millions', True)
         
+        # Check if we're using sample data
+        using_sample_data = hasattr(client, "__class__") and client.__class__.__name__ == "MagicMock"
+        if using_sample_data:
+            logger.warning("Using SAMPLE DATA for dashboard generation")
+
         try:
-            # Get data from BigQuery
-            ytd_costs = get_ytd_costs(client, project_id, dataset, cost_table)
-            fy26_ytd_costs = get_fy26_ytd_costs(client, project_id, dataset, cost_table)
-            fy26_costs = get_fy26_costs(client, project_id, dataset, cost_table)
-            fy25_costs = get_fy25_costs(client, project_id, dataset, cost_table)
-            day_comparison, week_comparison, month_comparison, date_info = get_recent_comparisons(
+            # Run all data fetching tasks in parallel for better performance
+            ytd_costs_task = get_ytd_costs_async(client, project_id, dataset, cost_table)
+            fy26_ytd_costs_task = get_fy26_ytd_costs_async(client, project_id, dataset, cost_table)
+            fy26_costs_task = get_fy26_costs_async(client, project_id, dataset, cost_table)
+            fy25_costs_task = get_fy25_costs_async(client, project_id, dataset, cost_table)
+            
+            recent_comparisons_task = get_recent_comparisons_async(
                 client, project_id, dataset, cost_table, 
                 day_current_date=day_current_date,
                 day_previous_date=day_previous_date,
@@ -120,25 +127,65 @@ def generate_html_report(
                 month_current=month_current,
                 month_previous=month_previous
             )
-            product_costs = get_product_costs(
+            
+            product_costs_task = get_product_costs_async(
                 client, project_id, dataset, cost_table,
                 top_n=top_products,
                 nonprod_pct_threshold=nonprod_threshold
             )
-            cto_costs = get_cto_costs(
+            
+            cto_costs_task = get_cto_costs_async(
                 client, project_id, dataset, cost_table,
                 top_n=top_products
             )
-            pillar_costs = get_pillar_costs(
+            
+            pillar_costs_task = get_pillar_costs_async(
                 client, project_id, dataset, cost_table,
                 top_n=top_products
             )
-            daily_trend_data = get_daily_trend_data(client, project_id, dataset, avg_table)
-            logger.info("Successfully retrieved data from BigQuery")
+            
+            daily_trend_data_task = get_daily_trend_data_async(client, project_id, dataset, avg_table)
+            
+            # Wait for all data fetching tasks to complete
+            results = await asyncio.gather(
+                ytd_costs_task,
+                fy26_ytd_costs_task,
+                fy26_costs_task,
+                fy25_costs_task,
+                recent_comparisons_task,
+                product_costs_task,
+                cto_costs_task,
+                pillar_costs_task,
+                daily_trend_data_task,
+                return_exceptions=True  # Don't let one task failure fail all tasks
+            )
+            
+            # Extract results
+            ytd_costs = results[0] if not isinstance(results[0], Exception) else create_sample_ytd_costs()
+            fy26_ytd_costs = results[1] if not isinstance(results[1], Exception) else create_sample_fy26_ytd_costs()
+            fy26_costs = results[2] if not isinstance(results[2], Exception) else create_sample_fy26_costs()
+            fy25_costs = results[3] if not isinstance(results[3], Exception) else create_sample_fy25_costs()
+            
+            # Extract comparison results
+            if not isinstance(results[4], Exception):
+                day_comparison, week_comparison, month_comparison, date_info = results[4]
+            else:
+                day_comparison = create_sample_day_comparison()
+                week_comparison = create_sample_week_comparison()
+                month_comparison = create_sample_month_comparison()
+                date_info = create_sample_date_info()
+            
+            product_costs = results[5] if not isinstance(results[5], Exception) else create_sample_product_costs()
+            cto_costs = results[6] if not isinstance(results[6], Exception) else create_sample_cto_costs()
+            pillar_costs = results[7] if not isinstance(results[7], Exception) else create_sample_pillar_costs()
+            daily_trend_data = results[8] if not isinstance(results[8], Exception) else create_sample_daily_trend_data()
+            
+            logger.info("Successfully retrieved data for dashboard")
+            
         except Exception as e:
             logger.error(f"Error retrieving data from BigQuery: {e}")
             
-            # If tables don't exist, create sample data
+            # If tasks fail, create sample data
             logger.info("Using sample data for dashboard generation")
             ytd_costs = create_sample_ytd_costs()
             fy26_ytd_costs = create_sample_fy26_ytd_costs()
@@ -147,13 +194,14 @@ def generate_html_report(
             day_comparison = create_sample_day_comparison()
             week_comparison = create_sample_week_comparison()
             month_comparison = create_sample_month_comparison()
-            # Use simple product data
             product_costs = create_sample_product_costs()
             cto_costs = create_sample_cto_costs()
             pillar_costs = create_sample_pillar_costs()
-            print(f"Sample product costs created with {len(product_costs)} rows")
+            daily_trend_data = create_sample_daily_trend_data()
+            date_info = create_sample_date_info()
+            
+            # Create a simple fallback product data if needed
             if product_costs.empty:
-                # Create a simple fallback data frame with minimal product data
                 product_costs = pd.DataFrame({
                     'display_id': ['Platform - PROD-1000', 'Customer - PROD-1001'],
                     'product_name': ['Product 1', 'Product 2'],
@@ -162,10 +210,7 @@ def generate_html_report(
                     'nonprod_ytd_cost': [40000.0, 37000.0],
                     'total_ytd_cost': [140000.0, 129000.0]
                 })
-                print(f"Created fallback product costs with {len(product_costs)} rows")
-            
-            daily_trend_data = create_sample_daily_trend_data()
-            date_info = create_sample_date_info()
+                logger.info(f"Created fallback product costs with {len(product_costs)} rows")
         
         # Extract and process data (same regardless of source)
         prod_ytd = ytd_costs[ytd_costs['environment_type'] == 'PROD'] if not ytd_costs.empty and 'PROD' in ytd_costs['environment_type'].values else pd.DataFrame()
@@ -329,10 +374,10 @@ def generate_html_report(
             # Empty fallback instead of hardcoded data
             pillar_cost_table = []
         
-        print(f"Product cost table with {len(product_cost_table)} items")
+        logger.info(f"Product cost table with {len(product_cost_table)} items")
         try:
-            print(f"CTO cost table with {len(cto_cost_table)} items")
-            print(f"Pillar cost table with {len(pillar_cost_table)} items")
+            logger.info(f"CTO cost table with {len(cto_cost_table)} items")
+            logger.info(f"Pillar cost table with {len(pillar_cost_table)} items")
         except NameError:
             # If the tables don't exist, create empty ones
             cto_cost_table = []
@@ -344,7 +389,7 @@ def generate_html_report(
         pillar_costs_chart = {"html": "", "json_data": "{}"}
         product_costs_chart = {"html": "", "json_data": "{}"}
         
-        if use_interactive_charts and has_interactive_charts:
+        if use_interactive_charts and are_charts_enabled():
             # Format daily trend data for charting
             if not daily_trend_data.empty:
                 daily_trend_chart = create_enhanced_daily_trend_chart(daily_trend_data)
@@ -401,12 +446,16 @@ def generate_html_report(
                 return "negative-change"  # Down/green (good)
             else:
                 return "neutral-change"   # No change
-
+        
         # Prepare template data
+        # Check if we're using sample data
+        using_sample_data = hasattr(client, "__class__") and client.__class__.__name__ == "MagicMock"
+        
         template_data = {
             'report_start_date': (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d'),
             'report_end_date': (datetime.now() - timedelta(days=3)).strftime('%Y-%m-%d'),
             'report_generation_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'using_sample_data': using_sample_data,
 
             # Add BigQuery integration data
             'project_id': project_id,
@@ -467,51 +516,51 @@ def generate_html_report(
             # Calculate percentage changes if not in original data
             # For day comparison
             'day_prod_percent_calculated': ((day_comparison[day_comparison['environment_type'] == 'PROD']['day_current_cost'].iloc[0] /
-                                          day_comparison[day_comparison['environment_type'] == 'PROD']['day_previous_cost'].iloc[0] - 1) * 100
-                                         if not day_comparison.empty and 'PROD' in day_comparison['environment_type'].values and
+                                      day_comparison[day_comparison['environment_type'] == 'PROD']['day_previous_cost'].iloc[0] - 1) * 100
+                                     if not day_comparison.empty and 'PROD' in day_comparison['environment_type'].values and
+                                     'day_current_cost' in day_comparison.columns and
+                                     'day_previous_cost' in day_comparison.columns and
+                                     day_comparison[day_comparison['environment_type'] == 'PROD']['day_previous_cost'].iloc[0] > 0
+                                     else 0),
+            'day_nonprod_percent_calculated': ((day_comparison[day_comparison['environment_type'] == 'NON-PROD']['day_current_cost'].iloc[0] /
+                                          day_comparison[day_comparison['environment_type'] == 'NON-PROD']['day_previous_cost'].iloc[0] - 1) * 100
+                                         if not day_comparison.empty and 'NON-PROD' in day_comparison['environment_type'].values and
                                          'day_current_cost' in day_comparison.columns and
                                          'day_previous_cost' in day_comparison.columns and
-                                         day_comparison[day_comparison['environment_type'] == 'PROD']['day_previous_cost'].iloc[0] > 0
+                                         day_comparison[day_comparison['environment_type'] == 'NON-PROD']['day_previous_cost'].iloc[0] > 0
                                          else 0),
-            'day_nonprod_percent_calculated': ((day_comparison[day_comparison['environment_type'] == 'NON-PROD']['day_current_cost'].iloc[0] /
-                                              day_comparison[day_comparison['environment_type'] == 'NON-PROD']['day_previous_cost'].iloc[0] - 1) * 100
-                                             if not day_comparison.empty and 'NON-PROD' in day_comparison['environment_type'].values and
-                                             'day_current_cost' in day_comparison.columns and
-                                             'day_previous_cost' in day_comparison.columns and
-                                             day_comparison[day_comparison['environment_type'] == 'NON-PROD']['day_previous_cost'].iloc[0] > 0
-                                             else 0),
 
             # For week comparison
             'week_prod_percent_calculated': ((week_comparison[week_comparison['environment_type'] == 'PROD']['this_week_cost'].iloc[0] /
-                                           week_comparison[week_comparison['environment_type'] == 'PROD']['prev_week_cost'].iloc[0] - 1) * 100
-                                          if not week_comparison.empty and 'PROD' in week_comparison['environment_type'].values and
-                                          'this_week_cost' in week_comparison.columns and
-                                          'prev_week_cost' in week_comparison.columns and
-                                          week_comparison[week_comparison['environment_type'] == 'PROD']['prev_week_cost'].iloc[0] > 0
-                                          else 0),
+                                       week_comparison[week_comparison['environment_type'] == 'PROD']['prev_week_cost'].iloc[0] - 1) * 100
+                                      if not week_comparison.empty and 'PROD' in week_comparison['environment_type'].values and
+                                      'this_week_cost' in week_comparison.columns and
+                                      'prev_week_cost' in week_comparison.columns and
+                                      week_comparison[week_comparison['environment_type'] == 'PROD']['prev_week_cost'].iloc[0] > 0
+                                      else 0),
             'week_nonprod_percent_calculated': ((week_comparison[week_comparison['environment_type'] == 'NON-PROD']['this_week_cost'].iloc[0] /
-                                              week_comparison[week_comparison['environment_type'] == 'NON-PROD']['prev_week_cost'].iloc[0] - 1) * 100
-                                             if not week_comparison.empty and 'NON-PROD' in week_comparison['environment_type'].values and
-                                             'this_week_cost' in week_comparison.columns and
-                                             'prev_week_cost' in week_comparison.columns and
-                                             week_comparison[week_comparison['environment_type'] == 'NON-PROD']['prev_week_cost'].iloc[0] > 0
-                                             else 0),
+                                          week_comparison[week_comparison['environment_type'] == 'NON-PROD']['prev_week_cost'].iloc[0] - 1) * 100
+                                         if not week_comparison.empty and 'NON-PROD' in week_comparison['environment_type'].values and
+                                         'this_week_cost' in week_comparison.columns and
+                                         'prev_week_cost' in week_comparison.columns and
+                                         week_comparison[week_comparison['environment_type'] == 'NON-PROD']['prev_week_cost'].iloc[0] > 0
+                                         else 0),
 
             # For month comparison
             'month_prod_percent_calculated': ((month_comparison[month_comparison['environment_type'] == 'PROD']['this_month_cost'].iloc[0] /
-                                            month_comparison[month_comparison['environment_type'] == 'PROD']['prev_month_cost'].iloc[0] - 1) * 100
-                                           if not month_comparison.empty and 'PROD' in month_comparison['environment_type'].values and
-                                           'this_month_cost' in month_comparison.columns and
-                                           'prev_month_cost' in month_comparison.columns and
-                                           month_comparison[month_comparison['environment_type'] == 'PROD']['prev_month_cost'].iloc[0] > 0
-                                           else 0),
+                                        month_comparison[month_comparison['environment_type'] == 'PROD']['prev_month_cost'].iloc[0] - 1) * 100
+                                       if not month_comparison.empty and 'PROD' in month_comparison['environment_type'].values and
+                                       'this_month_cost' in month_comparison.columns and
+                                       'prev_month_cost' in month_comparison.columns and
+                                       month_comparison[month_comparison['environment_type'] == 'PROD']['prev_month_cost'].iloc[0] > 0
+                                       else 0),
             'month_nonprod_percent_calculated': ((month_comparison[month_comparison['environment_type'] == 'NON-PROD']['this_month_cost'].iloc[0] /
-                                               month_comparison[month_comparison['environment_type'] == 'NON-PROD']['prev_month_cost'].iloc[0] - 1) * 100
-                                              if not month_comparison.empty and 'NON-PROD' in month_comparison['environment_type'].values and
-                                              'this_month_cost' in month_comparison.columns and
-                                              'prev_month_cost' in month_comparison.columns and
-                                              month_comparison[month_comparison['environment_type'] == 'NON-PROD']['prev_month_cost'].iloc[0] > 0
-                                              else 0),
+                                           month_comparison[month_comparison['environment_type'] == 'NON-PROD']['prev_month_cost'].iloc[0] - 1) * 100
+                                          if not month_comparison.empty and 'NON-PROD' in month_comparison['environment_type'].values and
+                                          'this_month_cost' in month_comparison.columns and
+                                          'prev_month_cost' in month_comparison.columns and
+                                          month_comparison[month_comparison['environment_type'] == 'NON-PROD']['prev_month_cost'].iloc[0] > 0
+                                          else 0),
 
             # Add CSS classes for percentage changes in comparisons
             'day_prod_percent_class': get_percent_class(
@@ -593,14 +642,17 @@ def generate_html_report(
         template_data['nonprod_percentage_threshold'] = nonprod_threshold
         
         # Add interactive charts to template data
-        template_data['use_interactive_charts'] = use_interactive_charts and has_interactive_charts
+        template_data['use_interactive_charts'] = use_interactive_charts and are_charts_enabled()
         template_data['daily_trend_chart'] = daily_trend_chart
         template_data['cto_costs_chart'] = cto_costs_chart
         template_data['pillar_costs_chart'] = pillar_costs_chart
         template_data['product_costs_chart'] = product_costs_chart
         
+        # Add sample data flag to template data
+        template_data['using_sample_data'] = using_sample_data
+        
         # Debug template data
-        print(f"Template data product_cost_table length: {len(template_data.get('product_cost_table', []))}")
+        logger.info(f"Template data product_cost_table length: {len(template_data.get('product_cost_table', []))}")
         
         # Render template and save to file
         html_output = template.render(**template_data)
@@ -619,3 +671,5 @@ def generate_html_report(
     except Exception as e:
         logger.error(f"Error generating HTML report: {e}")
         raise
+
+# Asyncio imported at the top of the file

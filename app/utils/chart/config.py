@@ -2,9 +2,16 @@
 Chart configuration for FinOps360 cost analysis dashboard.
 """
 from typing import Dict, Any, List, Optional, Union
+from app.utils.config_loader import load_config
 
-# Chart enable/disable flag
-CHARTS_ENABLED = True
+# Load chart settings from config.yaml
+try:
+    config = load_config("config.yaml")
+    # Get chart enabled setting from config
+    CHARTS_ENABLED = config.get('charts', {}).get('enabled', True)
+except Exception:
+    # Default if config can't be loaded
+    CHARTS_ENABLED = True
 
 # Chart dimensions
 CHART_HEIGHT = 500
