@@ -441,14 +441,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize interactive charts if data is available
-            {% if daily_trend_chart and daily_trend_chart.json_data %}
-            try {
-                const dailyTrendData = JSON.parse('{{ daily_trend_chart.json_data|safe }}');
-                Plotly.newPlot('daily_trend_chart', dailyTrendData.data, dailyTrendData.layout);
-            } catch (e) {
-                console.error('Error initializing daily trend chart:', e);
-            }
-            {% endif %}
+            // Daily trend chart initialization removed
+            // See lineChart.md for implementation details
             
             {% if cto_costs_chart and cto_costs_chart.json_data %}
             try {
@@ -479,10 +473,7 @@
             
             // Make charts responsive
             window.addEventListener('resize', function() {
-                Plotly.relayout('daily_trend_chart', {
-                    'xaxis.autorange': true,
-                    'yaxis.autorange': true
-                });
+                // Daily trend chart resize removed - see lineChart.md
                 Plotly.relayout('cto_costs_chart', {
                     'xaxis.autorange': true,
                     'yaxis.autorange': true
@@ -628,20 +619,6 @@
         
         <div class="scorecard-section">
             <div class="scorecard prod">
-                <h3>Production YTD Cost</h3>
-                <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(prod_ytd_cost) }}{% endif %}</div>
-                <div class="change {{ prod_ytd_percent_class }}">
-                    {% if prod_ytd_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(prod_ytd_percent) }} vs ${% if display_in_millions %}{{ "{:,.2f}M".format(prod_fy25_cost/1000000) }}{% else %}{{ "{:,.2f}".format(prod_fy25_cost) }}{% endif %} FY25
-                </div>
-            </div>
-            <div class="scorecard non-prod">
-                <h3>Non-Production YTD Cost</h3>
-                <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(nonprod_ytd_cost) }}{% endif %}</div>
-                <div class="change {{ nonprod_ytd_percent_class }}">
-                    {% if nonprod_ytd_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(nonprod_ytd_percent) }} vs ${% if display_in_millions %}{{ "{:,.2f}M".format(nonprod_fy25_cost/1000000) }}{% else %}{{ "{:,.2f}".format(nonprod_fy25_cost) }}{% endif %} FY25
-                </div>
-            </div>
-            <div class="scorecard prod">
                 <h3>FY26 YTD Cost (Actual)</h3>
                 <div class="value">{% if display_in_millions %}${{ "{:,.2f}M".format(total_fy26_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(total_fy26_ytd_cost) }}{% endif %}</div>
                 <div class="change {{ fy26_ytd_percent_class }}">
@@ -667,6 +644,20 @@
         <div class="comparison-section">
             <h2>Recent Comparisons</h2>
             <div class="comparison-grid">
+                <div class="comparison-item">
+                    <h3>Year-to-Date Cost</h3>
+                    <span class="date-label">(FY26 YTD vs FY25 YTD)</span>
+                    <div class="value prod">{% if display_in_millions %}${{ "{:,.2f}M".format(prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(prod_ytd_cost) }}{% endif %} (Prod)</div>
+                    <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format(prod_fy25_cost/1000000) }}{% else %}${{ "{:,.2f}".format(prod_fy25_cost) }}{% endif %}</span>
+                    <div class="change {{ prod_ytd_percent_class }}">
+                        {% if prod_ytd_percent != 0 %}{% if prod_ytd_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(prod_ytd_percent) }}{% endif %}
+                    </div>
+                    <div class="value non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(nonprod_ytd_cost) }}{% endif %} (Non-Prod)</div>
+                    <span class="previous-value">vs {% if display_in_millions %}${{ "{:,.2f}M".format(nonprod_fy25_cost/1000000) }}{% else %}${{ "{:,.2f}".format(nonprod_fy25_cost) }}{% endif %}</span>
+                    <div class="change {{ nonprod_ytd_percent_class }}">
+                        {% if nonprod_ytd_percent != 0 %}{% if nonprod_ytd_percent > 0 %}+{% endif %}{{ "{:.1f}%".format(nonprod_ytd_percent) }}{% endif %}
+                    </div>
+                </div>
                 <div class="comparison-item">
                     <h3>Day-to-Day Change</h3>
                     <span class="date-label">({{ day_current_date|default('Current') }} vs {{ day_previous_date|default('Previous') }})</span>
@@ -712,17 +703,8 @@
             </div>
         </div>
         
-        <!-- Daily Cost Trend Chart -->
-        {% if use_interactive_charts %}
-        <div class="chart-section">
-            <div class="chart-container full-width">
-                <h2>FY26 Daily Cost for PROD and NON-PROD</h2>
-                <div id="daily_trend_chart" class="chart">
-                    {{ daily_trend_chart.html|safe }}
-                </div>
-            </div>
-        </div>
-        {% endif %}
+        <!-- Daily Cost Trend Chart has been moved to its own component
+             See lineChart.md for documentation and implementation details -->
 
         <!-- CTO Organization Section -->
         <div class="section-container">

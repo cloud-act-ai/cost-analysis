@@ -413,8 +413,8 @@ async def generate_html_report_async(
             product_cost_table = []
             
         # Process CTO cost table data
-        if not cto_costs.empty:
-            cto_cost_table = []
+        cto_cost_table = []
+        if isinstance(cto_costs, pd.DataFrame) and not cto_costs.empty:
             for _, row in cto_costs.iterrows():
                 cto_cost_table.append({
                     'cto_org': row.get('cto_org', ''),
@@ -423,13 +423,20 @@ async def generate_html_report_async(
                     'total_ytd_cost': row.get('total_ytd_cost', 0.0),
                     'nonprod_percentage': row.get('nonprod_percentage', 0.0)
                 })
-        else:
-            # Empty fallback instead of hardcoded data
-            cto_cost_table = []
+        elif isinstance(cto_costs, list) and cto_costs:
+            for item in cto_costs:
+                if isinstance(item, dict):
+                    cto_cost_table.append({
+                        'cto_org': item.get('cto_org', ''),
+                        'prod_ytd_cost': item.get('prod_ytd_cost', 0.0),
+                        'nonprod_ytd_cost': item.get('nonprod_ytd_cost', 0.0),
+                        'total_ytd_cost': item.get('total_ytd_cost', 0.0),
+                        'nonprod_percentage': item.get('nonprod_percentage', 0.0)
+                    })
             
         # Process pillar cost table data
-        if not pillar_costs.empty:
-            pillar_cost_table = []
+        pillar_cost_table = []
+        if isinstance(pillar_costs, pd.DataFrame) and not pillar_costs.empty:
             for _, row in pillar_costs.iterrows():
                 # Calculate nonprod percentage
                 prod_cost = row.get('prod_ytd_cost', 0.0)
@@ -448,9 +455,26 @@ async def generate_html_report_async(
                     'total_ytd_cost': total_cost,
                     'nonprod_percentage': nonprod_percentage
                 })
-        else:
-            # Empty fallback instead of hardcoded data
-            pillar_cost_table = []
+        elif isinstance(pillar_costs, list) and pillar_costs:
+            for item in pillar_costs:
+                if isinstance(item, dict):
+                    # Calculate nonprod percentage
+                    prod_cost = item.get('prod_ytd_cost', 0.0)
+                    nonprod_cost = item.get('nonprod_ytd_cost', 0.0)
+                    total_cost = item.get('total_ytd_cost', 0.0)
+                    if total_cost == 0 and (prod_cost > 0 or nonprod_cost > 0):
+                        total_cost = prod_cost + nonprod_cost
+                    
+                    nonprod_percentage = (nonprod_cost / total_cost * 100) if total_cost > 0 else 0
+                    
+                    pillar_cost_table.append({
+                        'pillar_name': item.get('pillar_name', ''),
+                        'product_count': item.get('product_count', 0),
+                        'prod_ytd_cost': prod_cost,
+                        'nonprod_ytd_cost': nonprod_cost,
+                        'total_ytd_cost': total_cost,
+                        'nonprod_percentage': nonprod_percentage
+                    })
         
         logger.info(f"Product cost table with {len(product_cost_table)} items")
         try:
@@ -532,28 +556,56 @@ async def generate_html_report_async(
         pillar_to_cto = {}  # Mapping of pillar to CTO for dropdown filtering
         
         # Extract unique CTOs from CTO costs
-        for item in cto_costs:
-            if 'cto_org' in item and item['cto_org'] not in cto_list:
-                cto_list.append(item['cto_org'])
+        # Handle both DataFrame and list of dictionaries format
+        if isinstance(cto_costs, pd.DataFrame):
+            if 'cto_org' in cto_costs.columns:
+                cto_list = cto_costs['cto_org'].unique().tolist()
+        else:
+            # Original list handling
+            for item in cto_costs:
+                if isinstance(item, dict) and 'cto_org' in item and item['cto_org'] not in cto_list:
+                    cto_list.append(item['cto_org'])
         
         # Extract unique pillars from pillar costs
-        for item in pillar_costs:
-            if 'pillar_name' in item and item['pillar_name'] not in pillar_list:
-                pillar_list.append(item['pillar_name'])
+        # Handle both DataFrame and list of dictionaries format
+        if isinstance(pillar_costs, pd.DataFrame):
+            if 'pillar_name' in pillar_costs.columns:
+                pillar_list = pillar_costs['pillar_name'].unique().tolist()
+        else:
+            # Original list handling
+            for item in pillar_costs:
+                if isinstance(item, dict) and 'pillar_name' in item and item['pillar_name'] not in pillar_list:
+                    pillar_list.append(item['pillar_name'])
         
         # Create product list with additional details for filtering
-        for item in product_costs:
-            if 'product_name' in item and 'pillar_team' in item and 'product_id' in item:
-                product_list.append({
-                    'id': item.get('product_id', ''),
-                    'name': item.get('product_name', ''),
-                    'pillar': item.get('pillar_team', ''),
-                    'display': item.get('display_id', f"{item.get('pillar_team', '')} - {item.get('product_id', '')}")
-                })
-                
-                # Build pillar to CTO mapping
-                if 'pillar_team' in item and 'cto_org' in item:
-                    pillar_to_cto[item['pillar_team']] = item['cto_org']
+        # Handle both DataFrame and list of dictionaries format
+        if isinstance(product_costs, pd.DataFrame):
+            if all(col in product_costs.columns for col in ['product_name', 'pillar_team', 'product_id']):
+                for _, row in product_costs.iterrows():
+                    product_list.append({
+                        'id': row.get('product_id', ''),
+                        'name': row.get('product_name', ''),
+                        'pillar': row.get('pillar_team', ''),
+                        'display': row.get('display_id', f"{row.get('pillar_team', '')} - {row.get('product_id', '')}")
+                    })
+                    
+                    # Build pillar to CTO mapping if both fields exist
+                    if 'pillar_team' in product_costs.columns and 'cto_org' in product_costs.columns:
+                        pillar_to_cto[row['pillar_team']] = row['cto_org']
+        else:
+            # Original list handling
+            for item in product_costs:
+                if isinstance(item, dict) and 'product_name' in item and 'pillar_team' in item and 'product_id' in item:
+                    product_list.append({
+                        'id': item.get('product_id', ''),
+                        'name': item.get('product_name', ''),
+                        'pillar': item.get('pillar_team', ''),
+                        'display': item.get('display_id', f"{item.get('pillar_team', '')} - {item.get('product_id', '')}")
+                    })
+                    
+                    # Build pillar to CTO mapping
+                    if 'pillar_team' in item and 'cto_org' in item:
+                        pillar_to_cto[item['pillar_team']] = item['cto_org']
         
         # Sort the lists for easier selection
         cto_list.sort()
