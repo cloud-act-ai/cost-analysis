@@ -529,9 +529,9 @@
                     <thead>
                         <tr>
                             <th>CTO Organization</th>
+                            <th class="text-right">Total YTD Cost</th>
                             <th class="text-right">Prod YTD Cost</th>
                             <th class="text-right">Non-Prod YTD Cost</th>
-                            <th class="text-right">Total YTD Cost</th>
                             <th class="text-right">Non-Prod %</th>
                         </tr>
                     </thead>
@@ -539,9 +539,9 @@
                         {% for item in cto_cost_table %}
                         <tr>
                             <td>{{ item.cto_org }}</td>
+                            <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
                             <td class="text-right prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.prod_ytd_cost) }}{% endif %}</td>
                             <td class="text-right non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}{% endif %}</td>
-                            <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
                             <td class="text-right {% if item.nonprod_percentage > nonprod_percentage_threshold %}highlight-danger{% endif %}">
                                 {{ "{:.1f}%".format(item.nonprod_percentage) }}
                             </td>
@@ -574,9 +574,9 @@
                         <tr>
                             <th>Pillar Name</th>
                             <th class="text-right">Product Count</th>
+                            <th class="text-right">Total YTD Cost</th>
                             <th class="text-right">Prod YTD Cost</th>
                             <th class="text-right">Non-Prod YTD Cost</th>
-                            <th class="text-right">Total YTD Cost</th>
                             <th class="text-right">Non-Prod %</th>
                         </tr>
                     </thead>
@@ -585,9 +585,9 @@
                         <tr>
                             <td>{{ item.pillar_name }}</td>
                             <td class="text-right">{{ item.product_count }}</td>
+                            <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
                             <td class="text-right prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.prod_ytd_cost) }}{% endif %}</td>
                             <td class="text-right non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}{% endif %}</td>
-                            <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
                             <td class="text-right {% if item.nonprod_percentage > nonprod_percentage_threshold %}highlight-danger{% endif %}">
                                 {{ "{:.1f}%".format(item.nonprod_percentage) }}
                             </td>
@@ -621,9 +621,9 @@
                             <th>Product ID</th>
                             <th>Product Name</th>
                             <th>Product Pillar Team</th>
+                            <th class="text-right">Total YTD Cost</th>
                             <th class="text-right">Prod YTD Cost</th>
                             <th class="text-right">Non-Prod YTD Cost</th>
-                            <th class="text-right">Total YTD Cost</th>
                             <th class="text-right">Non-Prod %</th>
                         </tr>
                     </thead>
@@ -633,9 +633,9 @@
                             <td>{{ item.product_id }}</td>
                             <td>{{ item.product_name }}</td>
                             <td>{{ item.pillar_team }}</td>
+                            <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
                             <td class="text-right prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.prod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.prod_ytd_cost) }}{% endif %}</td>
                             <td class="text-right non-prod">{% if display_in_millions %}${{ "{:,.2f}M".format(item.nonprod_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.nonprod_ytd_cost) }}{% endif %}</td>
-                            <td class="text-right">{% if display_in_millions %}${{ "{:,.2f}M".format(item.total_ytd_cost/1000000) }}{% else %}${{ "{:,.2f}".format(item.total_ytd_cost) }}{% endif %}</td>
                             <td class="text-right {% if item.nonprod_percentage > nonprod_percentage_threshold %}highlight-danger{% endif %}">
                                 {{ "{:.1f}%".format(item.nonprod_percentage) }}
                             </td>
