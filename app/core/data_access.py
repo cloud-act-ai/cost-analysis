@@ -173,7 +173,10 @@ async def get_recent_comparisons_async(
     week_previous_start: str = "2025-04-20", 
     week_previous_end: str = "2025-04-26",
     month_current: str = "2025-04", 
-    month_previous: str = "2025-03"
+    month_previous: str = "2025-03",
+    cto_filter: str = "",
+    pillar_filter: str = "",
+    product_filter: str = ""
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Dict[str, str]]:
     """
     Get recent day, week, and month comparisons using fixed dates from configuration (async version).
@@ -192,7 +195,10 @@ async def get_recent_comparisons_async(
             dataset=dataset,
             table=table,
             day_current=day_current_date,
-            day_previous=day_previous_date
+            day_previous=day_previous_date,
+            cto_filter=cto_filter,
+            pillar_filter=pillar_filter,
+            product_filter=product_filter
         )
         
         # Week comparison
@@ -204,7 +210,10 @@ async def get_recent_comparisons_async(
             this_week_start=week_current_start,
             this_week_end=week_current_end,
             prev_week_start=week_previous_start,
-            prev_week_end=week_previous_end
+            prev_week_end=week_previous_end,
+            cto_filter=cto_filter,
+            pillar_filter=pillar_filter,
+            product_filter=product_filter
         )
         
         # Parse month strings to get start and end dates
@@ -257,7 +266,10 @@ async def get_recent_comparisons_async(
             this_month_start=this_month_start,
             this_month_end=this_month_end,
             prev_month_start=prev_month_start,
-            prev_month_end=prev_month_end
+            prev_month_end=prev_month_end,
+            cto_filter=cto_filter,
+            pillar_filter=pillar_filter,
+            product_filter=product_filter
         )
         
         # Run all queries in parallel using thread pool
@@ -453,7 +465,10 @@ async def get_daily_trend_data_async(
     project_id: str, 
     dataset: str, 
     avg_table: str, 
-    days: int = 90
+    days: int = 90,
+    cto_filter: str = "",
+    pillar_filter: str = "",
+    product_filter: str = ""
 ) -> pd.DataFrame:
     """
     Get daily trend data from avg_table (async version).
@@ -478,7 +493,10 @@ async def get_daily_trend_data_async(
         dataset=dataset,
         avg_table=avg_table,
         start_date=start_date_str,
-        end_date=end_date_str
+        end_date=end_date_str,
+        cto_filter=cto_filter,
+        pillar_filter=pillar_filter,
+        product_filter=product_filter
     )
 
     try:

@@ -7,4 +7,7 @@ SELECT
     SUM(cost) AS ytd_cost
 FROM `{project_id}.{dataset}.{table}`
 WHERE date BETWEEN '2025-02-01' AND DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)
+    {cto_filter}
+    {pillar_filter}
+    {product_filter}
 GROUP BY environment_type

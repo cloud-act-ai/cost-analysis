@@ -99,6 +99,30 @@
             margin-top: 10px;
         }
         
+        /* Active Filters Display */
+        .active-filters {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
+        }
+        
+        .active-filters p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .filter-tag {
+            display: inline-block;
+            background-color: #e1f0fa;
+            color: #2980b9;
+            border-radius: 3px;
+            padding: 3px 8px;
+            margin-right: 5px;
+            font-weight: 600;
+        }
+        
         /* SQL Query Display */
         .sql-query-display {
             background-color: #f8f9fa;
@@ -124,6 +148,11 @@
             border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
             margin-bottom: 20px;
+        }
+        .filtered-indicator {
+            font-size: 16px;
+            color: #3498db;
+            font-weight: normal;
         }
         
         /* Dashboard Header */
@@ -565,7 +594,7 @@
     {% endif %}
     <div class="container">
         <div class="dashboard-header">
-            <h1>FinOps360 Cost Analysis Dashboard</h1>
+            <h1>FinOps360 Cost Analysis Dashboard{% if selected_cto or selected_pillar or selected_product %} <span class="filtered-indicator">(Filtered)</span>{% endif %}</h1>
             
             <!-- Hierarchical Filter Section -->
             <div class="filter-section">
@@ -614,6 +643,17 @@
                     </div>
                     {% endif %}
                 </form>
+                
+                <!-- Show active filters summary if any filters are applied -->
+                {% if selected_cto or selected_pillar or selected_product %}
+                <div class="active-filters">
+                    <p>Active filters: 
+                        {% if selected_cto %}<span class="filter-tag">CTO: {{ selected_cto }}</span>{% endif %}
+                        {% if selected_pillar %}<span class="filter-tag">Pillar: {{ selected_pillar }}</span>{% endif %}
+                        {% if selected_product %}<span class="filter-tag">Product: {{ selected_product }}</span>{% endif %}
+                    </p>
+                </div>
+                {% endif %}
             </div>
         </div>
         

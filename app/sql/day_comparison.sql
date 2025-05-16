@@ -8,4 +8,7 @@ SELECT
     SUM(CASE WHEN date = '{day_previous}' THEN cost ELSE 0 END) AS day_previous_cost
 FROM `{project_id}.{dataset}.{table}`
 WHERE date IN ('{day_current}', '{day_previous}')
+    {cto_filter}
+    {pillar_filter}
+    {product_filter}
 GROUP BY environment_type

@@ -102,6 +102,11 @@ async def generate_html_report_async(
         pillar_filter = f"AND tr_product_pillar_team = '{selected_pillar}'" if selected_pillar else ""
         product_filter = f"AND tr_product_id = '{selected_product}'" if selected_product else ""
         
+        # Log active filters for debugging
+        if selected_cto or selected_pillar or selected_product:
+            logger.info(f"Active filters: CTO='{selected_cto}', Pillar='{selected_pillar}', Product='{selected_product}'")
+            logger.info(f"Filter SQL conditions: {cto_filter} {pillar_filter} {product_filter}")
+        
         # Store SQL queries if show_sql is enabled
         sql_queries = {}
         
@@ -159,7 +164,10 @@ async def generate_html_report_async(
                 week_previous_start=week_previous_start,
                 week_previous_end=week_previous_end,
                 month_current=month_current,
-                month_previous=month_previous
+                month_previous=month_previous,
+                cto_filter=cto_filter,
+                pillar_filter=pillar_filter,
+                product_filter=product_filter
             )
             
             # Breakdown cost tasks with filters
@@ -223,7 +231,15 @@ async def generate_html_report_async(
                     product_filter=product_filter
                 )
             
-            daily_trend_data_task = get_daily_trend_data_async(client, project_id, dataset, avg_table)
+            daily_trend_data_task = get_daily_trend_data_async(
+                client, 
+                project_id, 
+                dataset, 
+                avg_table,
+                cto_filter=cto_filter,
+                pillar_filter=pillar_filter,
+                product_filter=product_filter
+            )
             
             # Wait for all data fetching tasks to complete
             results = await asyncio.gather(
