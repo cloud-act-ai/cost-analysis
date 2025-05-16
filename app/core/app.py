@@ -94,9 +94,11 @@ async def dashboard(
         # Get BigQuery connection details from config
         data_config = config.get('bigquery', {})
         project_id = data_config.get('project_id', client.project)
-        dataset = data_config.get('dataset', 'test')
-        cost_table = data_config.get('cost_table', 'cost_analysis_new')
-        avg_table = data_config.get('avg_table', 'avg_daily_cost_table')
+        
+        # Always get BigQuery configuration directly from config without defaults
+        dataset = data_config.get('dataset', '')
+        cost_table = data_config.get('cost_table', '')
+        avg_table = data_config.get('avg_table', '')
         
         # Generate in-memory report
         output_dir = Path(config.get('output', {}).get('directory', 'reports'))

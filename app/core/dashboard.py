@@ -109,24 +109,25 @@ async def generate_html_report_async(
         config = load_config("config.yaml")
         data_config = config.get('data', {})
         
-        # Get configured comparison settings
-        # Fixed dates for comparisons instead of offsets
-        day_current_date = data_config.get('day_current_date', '2025-05-03')
-        day_previous_date = data_config.get('day_previous_date', '2025-05-02')
+        # Get configured comparison settings directly from config without defaults
+        # Fixed dates for comparisons
+        day_current_date = data_config.get('day_current_date', '')
+        day_previous_date = data_config.get('day_previous_date', '')
         
         # Fixed week periods (start and end dates)
-        week_current_start = data_config.get('week_current_start', '2025-04-27')
-        week_current_end = data_config.get('week_current_end', '2025-05-03')
-        week_previous_start = data_config.get('week_previous_start', '2025-04-20')
-        week_previous_end = data_config.get('week_previous_end', '2025-04-26')
+        week_current_start = data_config.get('week_current_start', '')
+        week_current_end = data_config.get('week_current_end', '')
+        week_previous_start = data_config.get('week_previous_start', '')
+        week_previous_end = data_config.get('week_previous_end', '')
         
         # Fixed month periods
-        month_current = data_config.get('month_current', '2025-04')
-        month_previous = data_config.get('month_previous', '2025-03')
+        month_current = data_config.get('month_current', '')
+        month_previous = data_config.get('month_previous', '')
         
-        top_products = data_config.get('top_products_count', 10)
-        nonprod_threshold = data_config.get('nonprod_percentage_threshold', 30)
-        display_millions = data_config.get('display_millions', True)
+        # Display settings
+        top_products = data_config.get('top_products_count', 0)
+        nonprod_threshold = data_config.get('nonprod_percentage_threshold', 0)
+        display_millions = data_config.get('display_millions', False)
         
         # Check if we're using sample data
         using_sample_data = hasattr(client, "__class__") and client.__class__.__name__ == "MagicMock"

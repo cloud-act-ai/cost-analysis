@@ -458,17 +458,27 @@ async def get_daily_trend_data_async(
     """
     Get daily trend data from avg_table (async version).
     """
-    # Set fixed date range to match requirements (data up to 2026-01-31)
-    start_date = datetime(2025, 2, 1).date()  # Start of FY26
-    end_date = datetime(2026, 1, 31).date()  # End of FY26
-
+    # Get date range from config
+    from app.utils.config_loader import load_config
+    config = load_config("config.yaml")
+    data_config = config.get('data', {})
+    
+    # Get fiscal year start and end dates from config
+    fy_start_date_str = data_config.get('fy_start_date', '')
+    fy_end_date_str = data_config.get('fy_end_date', '')
+    
+    # Use the date strings directly in the SQL query
+    # No need to convert to date objects since SQL uses date strings
+    start_date_str = fy_start_date_str
+    end_date_str = fy_end_date_str
+    
     query = load_sql_query(
         "daily_trend_data",
         project_id=project_id,
         dataset=dataset,
         avg_table=avg_table,
-        start_date=start_date.strftime('%Y-%m-%d'),
-        end_date=end_date.strftime('%Y-%m-%d')
+        start_date=start_date_str,
+        end_date=end_date_str
     )
 
     try:

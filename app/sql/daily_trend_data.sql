@@ -7,5 +7,7 @@ SELECT
     END AS environment_type,
     daily_cost
 FROM `{project_id}.{dataset}.{avg_table}`
-WHERE date BETWEEN '{start_date}' AND '{end_date}'
+WHERE date BETWEEN 
+    IF('{start_date}' = '', '2025-02-01', '{start_date}') AND 
+    IF('{end_date}' = '', DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY), '{end_date}')
 ORDER BY date, environment_type
