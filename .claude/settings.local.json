@@ -33,7 +33,8 @@
       "Bash(./reorganize.sh:*)",
       "Bash(curl:*)",
       "Bash(./run_sample.sh:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
