@@ -478,14 +478,14 @@ async def get_daily_trend_data_async(
     config = load_config("config.yaml")
     data_config = config.get('data', {})
     
-    # Get fiscal year start and end dates from config
-    fy_start_date_str = data_config.get('fy_start_date', '')
-    fy_end_date_str = data_config.get('fy_end_date', '')
+    # Get fiscal year start and end dates from config with defaults
+    fy_start_date_str = data_config.get('fy_start_date', '2025-02-01')
+    fy_end_date_str = data_config.get('fy_end_date', '2026-01-31')
     
-    # Use the date strings directly in the SQL query
-    # No need to convert to date objects since SQL uses date strings
-    start_date_str = fy_start_date_str
-    end_date_str = fy_end_date_str
+    # Ensure we never pass empty strings as dates
+    start_date_str = fy_start_date_str if fy_start_date_str else '2025-02-01'
+    # Use current date minus 3 days as a safe default if end date is empty
+    end_date_str = fy_end_date_str if fy_end_date_str else ''
     
     query = load_sql_query(
         "daily_trend_data",

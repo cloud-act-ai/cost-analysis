@@ -12,6 +12,7 @@ show_help() {
   echo "  --port=PORT     Specify the port to run on (default: 8080)"
   echo "  --workers=N     Specify the number of workers (default: based on CPU count)"
   echo "  --sample        Use sample data instead of BigQuery"
+  echo "  --title=TITLE   Specify a custom dashboard title"
   echo ""
   echo "Examples:"
   echo "  ./run.sh                           # Run in production mode on port 8080"
@@ -19,6 +20,7 @@ show_help() {
   echo "  ./run.sh --port=8081               # Run on port 8081"
   echo "  ./run.sh --dev --port=8081         # Run in development mode on port 8081"
   echo "  ./run.sh --sample                  # Use sample data (no BigQuery credentials needed)"
+  echo "  ./run.sh --title=\"Custom Title\"     # Run with a custom dashboard title"
   echo ""
 }
 
@@ -30,6 +32,7 @@ PORT=${1:-8080}
 WORKERS=${2:-0}  # 0 means auto-detect based on CPU count
 RELOAD=0
 USE_SAMPLE_DATA=0
+CUSTOM_TITLE=""
 
 # Parse options
 while [[ $# -gt 0 ]]; do
@@ -52,6 +55,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --sample)
       USE_SAMPLE_DATA=1
+      shift
+      ;;
+    --title=*)
+      CUSTOM_TITLE="${1#*=}"
       shift
       ;;
     *)
@@ -97,6 +104,22 @@ if [[ "$@" == *"--sample"* ]] || [ -z "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
     
     # Clear any existing credentials to force sample data usage
     unset GOOGLE_APPLICATION_CREDENTIALS
+fi
+
+# Update the dashboard title in the config file if provided
+if [ -n "$CUSTOM_TITLE" ]; then
+    echo "Setting custom dashboard title: $CUSTOM_TITLE"
+    # Create a temporary file
+    temp_file=$(mktemp)
+    # Find the dashboard title line and replace it with the custom title
+    awk -v title="$CUSTOM_TITLE" '{
+        if ($0 ~ /^[[:space:]]*title:/) {
+            sub(/title:.*/, "title: \"" title "\"");
+        }
+        print $0;
+    }' config.yaml > "$temp_file"
+    # Replace the original file with the modified one
+    mv "$temp_file" config.yaml
 fi
 
 # Run the application

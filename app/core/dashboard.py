@@ -115,6 +115,10 @@ async def generate_html_report_async(
         # Load config settings for data display
         config = load_config("config.yaml")
         data_config = config.get('data', {})
+        dashboard_config = config.get('dashboard', {})
+        
+        # Get dashboard title from config
+        dashboard_title = dashboard_config.get('title') or 'FinOps360 Cost Analysis Dashboard'
         
         # Get configured comparison settings directly from config without defaults
         # Fixed dates for comparisons
@@ -641,6 +645,7 @@ async def generate_html_report_async(
         using_sample_data = hasattr(client, "__class__") and client.__class__.__name__ == "MagicMock"
         
         template_data = {
+            'dashboard_title': dashboard_title,
             'report_start_date': (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d'),
             'report_end_date': (datetime.now() - timedelta(days=3)).strftime('%Y-%m-%d'),
             'report_generation_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
