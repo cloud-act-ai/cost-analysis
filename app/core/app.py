@@ -15,6 +15,7 @@ from google.cloud import bigquery
 from app.utils.config_loader import load_config
 from app.utils.chart.config import are_charts_enabled
 from app.core.dashboard import generate_html_report_async
+from app.utils.filter_utils import get_filter_defaults_from_config
 
 # Configure logging
 logging.basicConfig(
@@ -81,8 +82,16 @@ async def dashboard(
     show_sql: bool = False
 ):
     """
-    Main dashboard endpoint that renders the HTML dashboard asynchronously
+    Main dashboard endpoint that renders the HTML dashboard asynchronously.
+    Applies filter parameters from request and default filters from config.
     """
+    # Get default filter values from config if needed
+    filter_defaults = get_filter_defaults_from_config()
+    
+    # Use provided filter values or fall back to defaults if not provided
+    cto = cto or filter_defaults.get('default_cto')
+    pillar = pillar or filter_defaults.get('default_pillar')
+    product = product or filter_defaults.get('default_product')
     try:
         # Log connected project
         logger.info(f"Connected to BigQuery project: {client.project}")

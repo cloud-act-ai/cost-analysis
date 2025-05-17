@@ -14,6 +14,7 @@ from google.cloud import bigquery
 
 from app.utils.config_loader import FinOpsConfig, load_config
 from app.utils.chart.config import are_charts_enabled
+from app.utils.filter_utils import format_sql_filters, get_filter_values, validate_filters
 
 # Import interactive chart functionality
 from app.utils.chart.generator import (
@@ -91,21 +92,22 @@ async def generate_html_report_async(
                 'show_sql': False
             }
         
-        # Extract filter values
-        selected_cto = filters.get('cto')
-        selected_pillar = filters.get('pillar')
-        selected_product = filters.get('product')
-        show_sql = filters.get('show_sql', False)
+        # Extract and validate filter values
+        selected_cto, selected_pillar, selected_product, show_sql = get_filter_values(filters)
         
-        # Build filter conditions for SQL queries
-        cto_filter = f"AND cto = '{selected_cto}'" if selected_cto else ""
-        pillar_filter = f"AND tr_product_pillar_team = '{selected_pillar}'" if selected_pillar else ""
-        product_filter = f"AND tr_product_id = '{selected_product}'" if selected_product else ""
+        # Validate that filter combinations make logical sense
+        if not validate_filters(selected_cto, selected_pillar, selected_product):
+            logger.warning("Invalid filter combination detected - filters may return unexpected results")
         
-        # Log active filters for debugging
+        # Format SQL filter conditions safely
+        sql_filters = format_sql_filters(selected_cto, selected_pillar, selected_product)
+        cto_filter = sql_filters['cto_filter']
+        pillar_filter = sql_filters['pillar_filter']
+        product_filter = sql_filters['product_filter']
+        
+        # Log filter conditions
         if selected_cto or selected_pillar or selected_product:
-            logger.info(f"Active filters: CTO='{selected_cto}', Pillar='{selected_pillar}', Product='{selected_product}'")
-            logger.info(f"Filter SQL conditions: {cto_filter} {pillar_filter} {product_filter}")
+            logger.info(f"SQL filter conditions: {cto_filter} {pillar_filter} {product_filter}")
         
         # Store SQL queries if show_sql is enabled
         sql_queries = {}
@@ -423,6 +425,7 @@ async def generate_html_report_async(
                     'prod_ytd_cost': prod_cost,
                     'nonprod_ytd_cost': nonprod_cost,
                     'total_ytd_cost': total_cost,
+                    'forecasted_cost': row.get('forecasted_cost', total_cost * 365 / max((datetime.now().date() - datetime(2025, 2, 1).date()).days, 1)),
                     'nonprod_percentage': nonprod_percentage
                 })
         else:
@@ -438,6 +441,7 @@ async def generate_html_report_async(
                     'prod_ytd_cost': row.get('prod_ytd_cost', 0.0),
                     'nonprod_ytd_cost': row.get('nonprod_ytd_cost', 0.0),
                     'total_ytd_cost': row.get('total_ytd_cost', 0.0),
+                    'forecasted_cost': row.get('forecasted_cost', row.get('total_ytd_cost', 0.0) * 365 / max((datetime.now().date() - datetime(2025, 2, 1).date()).days, 1)),
                     'nonprod_percentage': row.get('nonprod_percentage', 0.0)
                 })
         elif isinstance(cto_costs, list) and cto_costs:
@@ -448,6 +452,7 @@ async def generate_html_report_async(
                         'prod_ytd_cost': item.get('prod_ytd_cost', 0.0),
                         'nonprod_ytd_cost': item.get('nonprod_ytd_cost', 0.0),
                         'total_ytd_cost': item.get('total_ytd_cost', 0.0),
+                        'forecasted_cost': item.get('forecasted_cost', item.get('total_ytd_cost', 0.0) * 365 / max((datetime.now().date() - datetime(2025, 2, 1).date()).days, 1)),
                         'nonprod_percentage': item.get('nonprod_percentage', 0.0)
                     })
             
@@ -470,6 +475,7 @@ async def generate_html_report_async(
                     'prod_ytd_cost': prod_cost,
                     'nonprod_ytd_cost': nonprod_cost,
                     'total_ytd_cost': total_cost,
+                    'forecasted_cost': row.get('forecasted_cost', total_cost * 365 / max((datetime.now().date() - datetime(2025, 2, 1).date()).days, 1)),
                     'nonprod_percentage': nonprod_percentage
                 })
         elif isinstance(pillar_costs, list) and pillar_costs:
@@ -490,6 +496,7 @@ async def generate_html_report_async(
                         'prod_ytd_cost': prod_cost,
                         'nonprod_ytd_cost': nonprod_cost,
                         'total_ytd_cost': total_cost,
+                        'forecasted_cost': item.get('forecasted_cost', total_cost * 365 / max((datetime.now().date() - datetime(2025, 2, 1).date()).days, 1)),
                         'nonprod_percentage': nonprod_percentage
                     })
         
